@@ -2504,6 +2504,43 @@ body.opportunity-page-open nav{display:none!important}
 body.opportunity-page-open .page{visibility:hidden!important;pointer-events:none!important}
 body.opportunity-page-open #opportunityModal{visibility:visible!important;pointer-events:auto!important}
 
+
+/* V31 - Piano Asta Dinamico */
+.planBtn{
+  width:100%; margin-top:9px; border:1px solid rgba(110,168,255,.5);
+  background:#0b1b31; color:#b8d3ff; border-radius:15px;
+  padding:12px 14px; font-weight:950; font-size:13px;
+}
+#planModal{position:fixed;inset:0;display:none;background:var(--bg);z-index:8100;overflow:hidden}
+#planModal.show{display:block}
+.planShell{position:absolute;inset:0;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr);background:var(--bg)}
+.planHeader{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;background:rgba(7,16,29,.98);border-bottom:1px solid var(--line)}
+.planBack{border:1px solid var(--line);background:#0b1727;color:var(--text);border-radius:13px;padding:9px 11px;font-weight:900}
+.planTitle{font-size:18px;font-weight:950}
+.planBody{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:12px 14px calc(env(safe-area-inset-bottom) + 28px)}
+.planHero{background:linear-gradient(145deg,#172a44,#0d1a2b);border:1px solid var(--line);border-radius:17px;padding:13px}
+.planKpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.planKpi{background:#081321;border:1px solid var(--line);border-radius:11px;padding:8px 4px;text-align:center}
+.planKpi span{display:block;font-size:8px;color:var(--muted)}
+.planKpi b{display:block;font-size:15px;margin-top:2px}
+.planRoleCard{background:#0b1727;border:1px solid var(--line);border-radius:16px;padding:11px;margin:9px 0}
+.planRoleTop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.planRoleName{font-size:18px;font-weight:950}
+.planBar{height:8px;background:#07101d;border-radius:999px;overflow:hidden;margin-top:9px}
+.planBarFill{height:100%;background:var(--accent);border-radius:999px}
+.planMetrics{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px}
+.planMetric{background:#081321;border:1px solid var(--line);border-radius:10px;text-align:center;padding:6px 3px}
+.planMetric span{display:block;font-size:7px;color:var(--muted)}
+.planMetric b{display:block;font-size:12px;margin-top:2px}
+.planAdvice{font-size:10px;color:var(--muted);line-height:1.45;margin-top:8px}
+.planTargets{margin-top:8px;display:flex;gap:5px;flex-wrap:wrap}
+.planTarget{border:1px solid var(--line);background:#081321;border-radius:9px;padding:5px 7px;font-size:9px}
+.planAlert{margin-top:10px;border-radius:13px;padding:10px;border:1px solid var(--line);background:#081321;font-size:10px;line-height:1.45}
+body.plan-page-open{overflow:hidden!important;height:100dvh!important}
+body.plan-page-open nav{display:none!important}
+body.plan-page-open .page{visibility:hidden!important;pointer-events:none!important}
+body.plan-page-open #planModal{visibility:visible!important;pointer-events:auto!important}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2513,7 +2550,7 @@ body.opportunity-page-open #opportunityModal{visibility:visible!important;pointe
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V30</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V31</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2606,6 +2643,7 @@ body.opportunity-page-open #opportunityModal{visibility:visible!important;pointe
     </div>
     <button class="buyNowBtn" onclick="openBuyNowPage()">🤖 CHI COMPRO ADESSO?</button>
     <button class="opportunityBtn" onclick="openOpportunityPage()">💎 OCCASIONI D’ASTA</button>
+    <button class="planBtn" onclick="openPlanPage()">📊 PIANO ASTA DINAMICO</button>
   </div>
   <div id="listonePlayers" class="list"></div>
 </section>
@@ -2662,6 +2700,17 @@ body.opportunity-page-open #opportunityModal{visibility:visible!important;pointe
 
 
 
+
+
+<div id="planModal">
+  <div class="planShell">
+    <div class="planHeader">
+      <button class="planBack" onclick="closePlanPage()">← Indietro</button>
+      <div class="planTitle">📊 Piano Asta Dinamico</div>
+    </div>
+    <div id="planBody" class="planBody"></div>
+  </div>
+</div>
 
 <div id="opportunityModal">
   <div class="opportunityShell">
@@ -3509,6 +3558,105 @@ function renderListone(){
 
 
 
+
+
+function planRoleData(role){
+  const initial=Number(state.initialBudget)||600;
+  const cash=budget(state.me);
+  const owned=state.purchases.filter(x=>x.buyer===state.me && x.role===role);
+  const spentRole=owned.reduce((s,x)=>s+Number(x.price||0),0);
+  const filled=owned.length;
+  const missing=Math.max(0,LIMITS[role]-filled);
+
+  // Strategic starting allocation; then dynamically redistribute remaining cash.
+  const basePct={P:.08,D:.18,C:.30,A:.44}[role];
+  const baseTarget=Math.round(initial*basePct);
+  const openRoles=['P','D','C','A'].filter(r=>roleCount(state.me,r)<LIMITS[r]);
+  const openWeights={P:.08,D:.18,C:.30,A:.44};
+  const weightSum=openRoles.reduce((s,r)=>s+openWeights[r],0)||1;
+  const dynamicRemaining=missing>0 ? Math.round(cash*(openWeights[role]/weightSum)) : 0;
+
+  // Minimum credits needed elsewhere.
+  const totalMissing=remainingRosterSlots(state.me);
+  const reserveElsewhere=Math.max(0,totalMissing-missing);
+  const maxUsable=Math.max(0,cash-reserveElsewhere);
+  const recommendedRemaining=Math.min(maxUsable,dynamicRemaining);
+  const totalPlan=spentRole+recommendedRemaining;
+  const avgPerSlot=missing?Math.max(1,Math.floor(recommendedRemaining/missing)):0;
+  const progress=LIMITS[role]?Math.round((filled/LIMITS[role])*100):100;
+
+  const free=PLAYER_ARCHIVE
+    .map((p,index)=>({p,index}))
+    .filter(x=>x.p.role===role && !purchaseForArchivePlayer(x.p.name) && !isUnavailablePlayer(x.p.name))
+    .map(x=>buyNowCandidate(x.index))
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,3);
+
+  return {role,initial,cash,spentRole,filled,missing,baseTarget,recommendedRemaining,totalPlan,avgPerSlot,progress,free};
+}
+function planAdviceFor(d){
+  if(d.missing===0)return `Reparto completo. Hai speso ${d.spentRole} crediti: non destinare altro budget qui.`;
+  const diff=d.spentRole-d.baseTarget;
+  if(diff>d.baseTarget*.25)return `Hai investito molto in ${d.role}. Per i ${d.missing} posti rimasti cerca soprattutto profili economici e proteggi il budget degli altri reparti.`;
+  if(d.avgPerSlot>=25)return `Hai margine: puoi permetterti almeno un profilo importante, senza superare il tetto AI indicato.`;
+  if(d.avgPerSlot>=10)return `Budget equilibrato: punta su un titolare affidabile e completa con giocatori di valore.`;
+  return `Budget stretto: evita aste lunghe e privilegia occasioni e giocatori sottovalutati.`;
+}
+function renderPlanPage(){
+  const box=document.getElementById('planBody');
+  if(!box)return;
+  const cash=budget(state.me);
+  const spentNow=spent(state.me);
+  const slots=remainingRosterSlots(state.me);
+  const roles=['P','D','C','A'].map(planRoleData);
+  const avg=slots?Math.floor(cash/slots):0;
+  const danger=slots>0 && cash<slots*3;
+
+  box.innerHTML=`
+    <div class="planHero">
+      <div style="font-size:19px;font-weight:950">${esc(state.managers[state.me])}</div>
+      <div class="playerMetaLine">Il piano si ricalcola automaticamente dopo ogni acquisto.</div>
+      <div class="planKpis">
+        <div class="planKpi"><span>BUDGET</span><b>${cash}</b></div>
+        <div class="planKpi"><span>SPESO</span><b>${spentNow}</b></div>
+        <div class="planKpi"><span>POSTI</span><b>${slots}</b></div>
+        <div class="planKpi"><span>MEDIA/POSTO</span><b>${avg}</b></div>
+        <div class="planKpi"><span>ROSA</span><b>${LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A-slots}/${LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A}</b></div>
+        <div class="planKpi"><span>INIZIALE</span><b>${state.initialBudget}</b></div>
+      </div>
+      ${danger?`<div class="planAlert">⚠️ <strong>Budget sotto pressione.</strong> Ti restano ${cash} crediti per ${slots} giocatori: evita rilanci aggressivi e conserva almeno 1 credito per ogni posto.</div>`:''}
+    </div>
+
+    ${roles.map(d=>`
+      <div class="planRoleCard">
+        <div class="planRoleTop">
+          <div class="planRoleName">${d.role} · ${d.filled}/${LIMITS[d.role]}</div>
+          <span class="tag">${d.missing?d.missing+' mancanti':'COMPLETO'}</span>
+        </div>
+        <div class="planBar"><div class="planBarFill" style="width:${d.progress}%"></div></div>
+        <div class="planMetrics">
+          <div class="planMetric"><span>SPESO</span><b>${d.spentRole}</b></div>
+          <div class="planMetric"><span>DA DESTINARE</span><b>${d.recommendedRemaining}</b></div>
+          <div class="planMetric"><span>MEDIA/POSTO</span><b>${d.avgPerSlot}</b></div>
+          <div class="planMetric"><span>PIANO TOTALE</span><b>${d.totalPlan}</b></div>
+        </div>
+        <div class="planAdvice">${planAdviceFor(d)}</div>
+        ${d.free.length?`<div class="planTargets">${d.free.map(x=>`<button class="planTarget" onclick="closePlanPage();openAIForPlayer(${x.index})">${esc(x.p.name)} · max ${x.ai.maxRec}</button>`).join('')}</div>`:''}
+      </div>`).join('')}
+  `;
+}
+function openPlanPage(){
+  renderPlanPage();
+  document.body.classList.add('plan-page-open');
+  document.getElementById('planModal').classList.add('show');
+  const b=document.getElementById('planBody'); if(b)b.scrollTop=0;
+}
+function closePlanPage(){
+  document.getElementById('planModal').classList.remove('show');
+  document.body.classList.remove('plan-page-open');
+  document.body.style.overflow='';
+}
 
 let OPPORTUNITY_ROLE='ALL';
 
