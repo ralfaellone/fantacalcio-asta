@@ -375,6 +375,31 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   font-size:12px;
 }
 
+
+/* Punto 7 - Offerta massima sicura */
+.buySummary3{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin:10px 0 12px;
+}
+.buySummary3 .buySummaryBox{
+  padding:9px 7px;
+}
+.buySummary3 .buySummaryBox b{
+  font-size:18px;
+}
+.safeBidNote{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:6px;
+  line-height:1.35;
+}
+.safeBidDanger{
+  color:var(--danger);
+  font-weight:800;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -384,7 +409,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V8</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V9</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -487,10 +512,12 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <div class="field"><label>Prezzo</label><input id="pprice" inputmode="numeric" type="number" min="1" placeholder="1" oninput="updateBuyPreview()"></div>
   <div class="field"><label>Acquistato da</label><select id="pbuyer" onchange="updateBuyPreview()"></select></div>
 
-  <div class="buySummary">
-    <div class="buySummaryBox"><span class="k">Crediti disponibili</span><b id="buyBudget">600</b></div>
-    <div class="buySummaryBox"><span class="k">Posti nel reparto</span><b id="buySlots">3</b></div>
+  <div class="buySummary3">
+    <div class="buySummaryBox"><span class="k">Crediti</span><b id="buyBudget">600</b></div>
+    <div class="buySummaryBox"><span class="k">Posti ruolo</span><b id="buySlots">3</b></div>
+    <div class="buySummaryBox"><span class="k">Max sicura</span><b id="safeBid">576</b></div>
   </div>
+  <div id="safeBidNote" class="safeBidNote">La max sicura lascia almeno 1 credito per ogni posto rosa ancora da riempire.</div>
 
   <div id="buyStatus" class="buyStatus">Inserisci giocatore e prezzo.</div>
   <button id="saveBuyBtn" class="primary" onclick="saveBuy()">SALVA ACQUISTO</button>
@@ -695,7 +722,7 @@ function render(){
  ['P','D','C','A'].forEach(r=>document.getElementById('cnt'+r).textContent=`${roleCount(me,r)}/${LIMITS[r]}`);
  const recent=[...state.purchases].slice(-6).reverse();document.getElementById('recent').innerHTML=recent.length?recent.map(itemHTML).join(''):'<div class="empty">Nessun acquisto registrato.</div>';
  const mr=roster(me);document.getElementById('myRoster').innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
- document.getElementById('managers').innerHTML=state.managers.map((n,i)=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">TU</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
+ document.getElementById('managers').innerHTML=state.managers.map((n,i)=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">TU</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div><div class="meta" style="margin-top:4px">Max offerta sicura: ${safeMaxBid(i)} cr</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
  renderListone();
 }
 
@@ -897,6 +924,16 @@ function selectBuyRole(role){
   document.querySelectorAll('.buyRoleBtn').forEach(btn=>btn.classList.toggle('active',btn.dataset.role===role));
   updateBuyPreview();
 }
+
+function remainingRosterSlots(i){
+  return Math.max(0,25-roster(i).length);
+}
+function safeMaxBid(i){
+  const available=budget(i);
+  const slotsAfterThis=Math.max(0,remainingRosterSlots(i)-1);
+  return Math.max(0,available-slotsAfterThis);
+}
+
 function updateBuyPreview(){
   const buyer=parseInt(document.getElementById('pbuyer').value,10);
   const role=document.getElementById('prole').value;
@@ -906,8 +943,17 @@ function updateBuyPreview(){
 
   const available=budget(buyer);
   const slots=Math.max(0,LIMITS[role]-roleCount(buyer,role));
+  const safe=safeMaxBid(buyer);
   document.getElementById('buyBudget').textContent=available;
   document.getElementById('buySlots').textContent=slots;
+  document.getElementById('safeBid').textContent=safe;
+
+  const safeNote=document.getElementById('safeBidNote');
+  if(price>safe && price<=available){
+    safeNote.innerHTML=`<span class="safeBidDanger">Attenzione:</span> con ${price} crediti non resterà almeno 1 credito per ogni posto ancora da riempire.`;
+  }else{
+    safeNote.textContent='La max sicura lascia almeno 1 credito per ogni posto rosa ancora da riempire.';
+  }
 
   const status=document.getElementById('buyStatus');
   const save=document.getElementById('saveBuyBtn');
@@ -928,7 +974,8 @@ function updateBuyPreview(){
     msg='Inserisci giocatore e prezzo.';
   }else{
     const after=available-price;
-    msg=`${name} → ${state.managers[buyer]} per ${price} cr · resteranno ${after} cr.`;
+    const safeText=price>safe?' · ⚠️ oltre la max sicura':'';
+    msg=`${name} → ${state.managers[buyer]} per ${price} cr · resteranno ${after} cr${safeText}.`;
   }
 
   status.textContent=msg;
@@ -964,7 +1011,9 @@ function saveBuy(){
   if(roleCount(buyer,role)>=LIMITS[role]){hint.textContent=`${state.managers[buyer]} ha già completato il reparto ${roleName(role)}.`;hint.className='hint danger';updateBuyPreview();return}
 
   const remaining=budget(buyer)-price;
-  const confirmed=confirm(`Confermi l'acquisto?\n\n${name}\nRuolo: ${role}\nSquadra: ${state.managers[buyer]}\nPrezzo: ${price} crediti\nCrediti dopo l'acquisto: ${remaining}`);
+  const safe=safeMaxBid(buyer);
+  const warning=price>safe?`\n\n⚠️ Il prezzo supera la max sicura di ${safe} crediti.`:'';
+  const confirmed=confirm(`Confermi l'acquisto?\n\n${name}\nRuolo: ${role}\nSquadra: ${state.managers[buyer]}\nPrezzo: ${price} crediti\nCrediti dopo l'acquisto: ${remaining}${warning}`);
   if(!confirmed)return;
 
   state.purchases.push({
