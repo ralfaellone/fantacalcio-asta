@@ -1917,7 +1917,7 @@ body.subpage-open #editBuyModal.show{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V23.2</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V24</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2269,6 +2269,11 @@ body.subpage-open #editBuyModal.show{
     </div>
 
     <div class="settingsBody">
+      <div class="field">
+        <label>Budget iniziale lega</label>
+        <input id="initialBudgetInput" type="number" min="1" inputmode="numeric" value="600">
+        <div class="hint" style="margin-top:6px">Si applica a tutti i 12 partecipanti. Gli acquisti già registrati non vengono cancellati: cambiano automaticamente crediti residui, Max sicura e calcoli AI.</div>
+      </div>
       <div class="field"><label>La mia squadra</label><select id="myManager"></select></div>
       <div id="managerInputs"></div>
     </div>
@@ -2293,9 +2298,10 @@ body.subpage-open #editBuyModal.show{
 <script src="stats.js"></script>
 <script>
 const LIMITS={P:3,D:8,C:8,A:6};
-const INITIAL=600;
+let INITIAL=600;
 const PLAYER_ARCHIVE_BUILTIN=window.PLAYER_ARCHIVE_BUILTIN||[];
 let state=load();
+INITIAL=Math.max(1,parseInt(state.initialBudget,10)||600);
 let PLAYER_ARCHIVE=loadPlayerArchive();
 let selectedArchivePlayer=null;
 let listoneFilter='ALL';
@@ -2305,12 +2311,13 @@ let nextMoveSelectedRole='';
 let SIM_PLANS=loadSimPlans();
 let simPlanKey='A';
 let simAltOpenKey='';
-function defaultState(){return {favorites:[],favoriteMeta:{},managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
+function defaultState(){return {favorites:[],favoriteMeta:{},initialBudget:600,managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
 function load(){
   try{
     const s=JSON.parse(localStorage.getItem('astaFantaV1'))||defaultState();
     if(!Array.isArray(s.favorites))s.favorites=[];
     if(!s.favoriteMeta || typeof s.favoriteMeta!=='object')s.favoriteMeta={};
+    if(!Number.isFinite(Number(s.initialBudget)) || Number(s.initialBudget)<1)s.initialBudget=600;
     return s;
   }catch(e){return defaultState()}
 }
@@ -4376,6 +4383,8 @@ function del(id){if(confirm('Eliminare questo acquisto?')){state.purchases=state
 let settingsReturnScroll=0;
 function openSettings(){
   settingsReturnScroll=window.scrollY||0;
+  const budgetInput=document.getElementById('initialBudgetInput');
+  if(budgetInput)budgetInput.value=INITIAL;
   const mine=document.getElementById('myManager');
   mine.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)}</option>`).join('');
   document.getElementById('managerInputs').innerHTML=state.managers.map((n,i)=>`<div class="field"><label>Partecipante ${i+1}</label><input id="m${i}" value="${esc(n)}"></div>`).join('');
@@ -4389,7 +4398,28 @@ function closeSettings(){
   document.body.style.overflow='';
   requestAnimationFrame(()=>window.scrollTo(0,settingsReturnScroll));
 }
-function saveSettings(){state.managers=state.managers.map((_,i)=>document.getElementById('m'+i).value.trim()||`Squadra ${i+1}`);state.me=parseInt(document.getElementById('myManager').value,10);persist();closeSettings();render()}
+function saveSettings(){
+  const requested=Math.max(1,parseInt(document.getElementById('initialBudgetInput')?.value,10)||INITIAL);
+  const maxSpent=Math.max(0,...state.managers.map((_,i)=>spent(i)));
+
+  if(requested<maxSpent){
+    const ok=confirm(`Attenzione: almeno un partecipante ha già speso ${maxSpent} crediti. Impostando il budget iniziale a ${requested}, quel partecipante avrà un saldo negativo. Vuoi continuare comunque?`);
+    if(!ok)return;
+  }
+
+  const oldBudget=INITIAL;
+  INITIAL=requested;
+  state.initialBudget=requested;
+  state.managers=state.managers.map((_,i)=>document.getElementById('m'+i).value.trim()||`Squadra ${i+1}`);
+  state.me=parseInt(document.getElementById('myManager').value,10);
+  persist();
+  closeSettings();
+  render();
+
+  if(oldBudget!==requested){
+    setTimeout(()=>alert(`Budget iniziale aggiornato da ${oldBudget} a ${requested} crediti per tutti i partecipanti. Tutti i calcoli sono stati ricalcolati.`),80);
+  }
+}
 
 function populateHistoryManager(){
   const sel=document.getElementById('historyManager');
