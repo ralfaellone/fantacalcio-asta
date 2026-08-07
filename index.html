@@ -1619,6 +1619,60 @@ body:not(.splash-active) nav{
   pointer-events:auto;
 }
 
+
+/* V21.3 - Simulatore come vera schermata app */
+#simModal{
+  position:fixed !important;
+  inset:0 !important;
+  display:none;
+  background:var(--bg) !important;
+  z-index:5000 !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+}
+#simModal.show{
+  display:block !important;
+}
+#simModal .simShell{
+  position:absolute;
+  inset:0;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  overflow:hidden !important;
+  background:var(--bg);
+}
+#simModal .simBody{
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:calc(24px + env(safe-area-inset-bottom)) !important;
+}
+
+/* Quando il simulatore è aperto, Dashboard e menu non possono comparire sotto */
+body.simulator-open{
+  overflow:hidden !important;
+  height:100dvh !important;
+}
+body.simulator-open nav{
+  display:none !important;
+}
+body.simulator-open .page{
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+body.simulator-open #simModal{
+  visibility:visible !important;
+  pointer-events:auto !important;
+}
+
+/* Header del simulatore sempre visibile */
+#simModal .simHeader{
+  position:relative;
+  z-index:3;
+  flex:0 0 auto;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1628,7 +1682,7 @@ body:not(.splash-active) nav{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V21.2</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V21.3</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2815,13 +2869,19 @@ function setSimPlan(key,btn){
   renderSimulator();
 }
 function openSimulator(){
-  document.getElementById('simModal').classList.add('show');
-  document.body.style.overflow='hidden';
+  const modal=document.getElementById('simModal');
+  document.body.classList.add('simulator-open');
+  modal.classList.add('show');
+  const body=document.querySelector('#simModal .simBody');
+  if(body)body.scrollTop=0;
   renderSimulator();
 }
 function closeSimulator(){
-  document.getElementById('simModal').classList.remove('show');
+  const modal=document.getElementById('simModal');
+  modal.classList.remove('show');
+  document.body.classList.remove('simulator-open');
   document.body.style.overflow='';
+  window.scrollTo(0,0);
 }
 function simEstimatedPrice(index){
   const p=PLAYER_ARCHIVE[index];
@@ -3025,6 +3085,7 @@ function openSimAlternatives(key){
 }
 function closeSimAlternatives(){
   document.getElementById('simAltModal').classList.remove('show');
+  document.body.classList.add('simulator-open');
   document.getElementById('simModal').classList.add('show');
   renderSimulator();
 }
@@ -3974,6 +4035,10 @@ render();
   function lockBottomNav(){
     const nav=document.querySelector('nav');
     if(!nav)return;
+    if(document.body.classList.contains('simulator-open')){
+      nav.style.bottom='0px';
+      return;
+    }
     if(window.visualViewport){
       const vv=window.visualViewport;
       const offset=Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
