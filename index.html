@@ -284,6 +284,28 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   margin-top:8px;
 }
 
+
+/* Punto 5 - Listone giocatori */
+.listoneToolbar{position:sticky;top:0;z-index:8;background:var(--bg);padding:2px 0 10px}
+.listoneSearch{width:100%;border-radius:16px;border:1px solid var(--line);background:#081321;color:var(--text);padding:14px 13px;outline:none}
+.listoneSearch:focus{border-color:var(--accent)}
+.listoneFilters{display:flex;gap:7px;overflow-x:auto;padding:9px 0 2px;scrollbar-width:none}
+.listoneFilters::-webkit-scrollbar{display:none}
+.filterBtn{border:1px solid var(--line);background:#0b1727;color:var(--muted);border-radius:13px;padding:9px 12px;font-weight:900;white-space:nowrap}
+.filterBtn.active{background:var(--accent);border-color:var(--accent);color:#111}
+.listoneCount{color:var(--muted);font-size:12px;margin:8px 2px 0}
+.playerCard{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;border-radius:17px;background:var(--card);border:1px solid var(--line);cursor:pointer}
+.playerCard.taken{opacity:.62}
+.playerCard:active{transform:scale(.99)}
+.playerMain{min-width:0;flex:1}
+.playerName{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.playerInfo{color:var(--muted);font-size:11px;margin-top:4px}
+.playerRight{text-align:right;flex:0 0 auto}
+.playerFvm{font-weight:900;font-size:16px}
+.statusAvailable{color:var(--ok);font-size:10px;font-weight:900;margin-top:4px}
+.statusTaken{color:var(--danger);font-size:10px;font-weight:900;margin-top:4px}
+.topSettings{border:1px solid var(--line);background:var(--card);color:var(--text);width:38px;height:38px;border-radius:13px;font-size:18px;margin-left:7px}
+
 </style>
 </head>
 <body>
@@ -292,7 +314,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore</div></div><div class="pill">600 crediti</div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -311,6 +333,24 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 
 <section id="rosa" class="page">
   <div class="section" style="margin-top:0"><h2>La mia rosa</h2><div id="myRoster" class="list"></div></div>
+</section>
+
+<section id="listone" class="page">
+  <div class="listoneToolbar">
+    <h2 style="margin:0 0 9px">Giocatori</h2>
+    <input id="listoneSearch" class="listoneSearch" placeholder="🔎 Cerca giocatore o squadra..." autocomplete="off" oninput="renderListone()">
+    <div class="listoneFilters">
+      <button class="filterBtn active" data-filter="ALL" onclick="setListoneFilter('ALL',this)">Tutti</button>
+      <button class="filterBtn" data-filter="P" onclick="setListoneFilter('P',this)">P</button>
+      <button class="filterBtn" data-filter="D" onclick="setListoneFilter('D',this)">D</button>
+      <button class="filterBtn" data-filter="C" onclick="setListoneFilter('C',this)">C</button>
+      <button class="filterBtn" data-filter="A" onclick="setListoneFilter('A',this)">A</button>
+      <button class="filterBtn" data-filter="FREE" onclick="setListoneFilter('FREE',this)">Disponibili</button>
+      <button class="filterBtn" data-filter="TAKEN" onclick="setListoneFilter('TAKEN',this)">Acquistati</button>
+    </div>
+    <div id="listoneCount" class="listoneCount"></div>
+  </div>
+  <div id="listonePlayers" class="list"></div>
 </section>
 
 <section id="players" class="page">
@@ -333,8 +373,8 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 <nav>
 <button class="active" onclick="tab('home',this)"><span class="ico">🏠</span>Asta</button>
 <button onclick="tab('rosa',this)"><span class="ico">👕</span>Rosa</button>
+<button onclick="tab('listone',this)"><span class="ico">🔎</span>Giocatori</button>
 <button onclick="tab('players',this)"><span class="ico">👥</span>Partecipanti</button>
-<button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
 </nav>
 
 <div id="buyModal" class="modal" onclick="if(event.target===this)closeBuy()"><div class="sheet"><div class="handle"></div>
@@ -401,6 +441,7 @@ const INITIAL=600;
 const PLAYER_ARCHIVE=[{"name":"Martinez L.","team":"INT","role":"A","qi":35,"fvm":370},{"name":"Malen","team":"ROM","role":"A","qi":34,"fvm":365},{"name":"Dimarco","team":"INT","role":"D","qi":32,"fvm":265},{"name":"Paz N.","team":"COM","role":"C","qi":30,"fvm":250},{"name":"Thuram","team":"INT","role":"A","qi":29,"fvm":280},{"name":"McTominay","team":"NAP","role":"C","qi":28,"fvm":240},{"name":"Hojlund","team":"NAP","role":"A","qi":28,"fvm":271},{"name":"Calhanoglu","team":"INT","role":"C","qi":27,"fvm":230},{"name":"Ramos G.","team":"MIL","role":"A","qi":27,"fvm":240},{"name":"Orsolini","team":"BOL","role":"C","qi":26,"fvm":200},{"name":"Kolo Muani","team":"JUV","role":"A","qi":26,"fvm":225},{"name":"Kean","team":"FIO","role":"A","qi":25,"fvm":212},{"name":"Pulisic","team":"MIL","role":"C","qi":25,"fvm":180},{"name":"Yildiz","team":"JUV","role":"A","qi":23,"fvm":200},{"name":"Rabiot","team":"MIL","role":"C","qi":22,"fvm":128},{"name":"Douvikas","team":"COM","role":"A","qi":20,"fvm":157},{"name":"Scamacca","team":"ATA","role":"A","qi":19,"fvm":128},{"name":"Baturina","team":"COM","role":"C","qi":19,"fvm":102},{"name":"Davis K.","team":"UDI","role":"A","qi":19,"fvm":121},{"name":"Krstovic","team":"ATA","role":"A","qi":18,"fvm":100},{"name":"Da Cunha","team":"COM","role":"C","qi":18,"fvm":90},{"name":"Leao","team":"MIL","role":"A","qi":18,"fvm":120},{"name":"Svilar","team":"ROM","role":"P","qi":18,"fvm":65},{"name":"Berardi","team":"SAS","role":"A","qi":18,"fvm":115},{"name":"Zaniolo","team":"UDI","role":"C","qi":18,"fvm":90},{"name":"De Ketelaere","team":"ATA","role":"C","qi":17,"fvm":106},{"name":"Atta","team":"FIO","role":"C","qi":17,"fvm":87},{"name":"Martinez Jo.","team":"INT","role":"P","qi":17,"fvm":63},{"name":"Barella","team":"INT","role":"C","qi":17,"fvm":82},{"name":"McKennie","team":"JUV","role":"C","qi":17,"fvm":68},{"name":"Wesley","team":"ROM","role":"D","qi":17,"fvm":84},{"name":"Carnesecchi","team":"ATA","role":"P","qi":16,"fvm":52},{"name":"Dovbyk","team":"BOL","role":"A","qi":16,"fvm":84},{"name":"Butez","team":"COM","role":"P","qi":16,"fvm":56},{"name":"Akanji","team":"INT","role":"D","qi":16,"fvm":55},{"name":"Esposito F.P.","team":"INT","role":"A","qi":16,"fvm":93},{"name":"Zaccagni","team":"LAZ","role":"C","qi":16,"fvm":91},{"name":"Bremer","team":"JUV","role":"D","qi":15,"fvm":50},{"name":"Maignan","team":"MIL","role":"P","qi":15,"fvm":50},{"name":"De Bruyne","team":"NAP","role":"C","qi":15,"fvm":100},{"name":"Pellegrino M.","team":"PAR","role":"A","qi":15,"fvm":81},{"name":"Mancini","team":"ROM","role":"D","qi":15,"fvm":49},{"name":"Laurientè","team":"SAS","role":"A","qi":15,"fvm":88},{"name":"Simeone","team":"TOR","role":"A","qi":15,"fvm":82},{"name":"Bastoni","team":"INT","role":"D","qi":14,"fvm":44},{"name":"Pavlovic","team":"MIL","role":"D","qi":14,"fvm":48},{"name":"Rrahmani","team":"NAP","role":"D","qi":14,"fvm":47},{"name":"Santos A.","team":"NAP","role":"C","qi":14,"fvm":60},{"name":"Dybala","team":"ROM","role":"A","qi":14,"fvm":67},{"name":"Castro S.","team":"ROM","role":"A","qi":14,"fvm":83},{"name":"Vlasic","team":"TOR","role":"C","qi":14,"fvm":80},{"name":"Raspadori","team":"ATA","role":"A","qi":13,"fvm":62},{"name":"Esposito Se.","team":"CAG","role":"A","qi":13,"fvm":50},{"name":"De Gea","team":"FIO","role":"P","qi":13,"fvm":45},{"name":"Gudmundsson A.","team":"FIO","role":"A","qi":13,"fvm":61},{"name":"Kalulu","team":"JUV","role":"D","qi":13,"fvm":46},{"name":"Taylor K.","team":"LAZ","role":"C","qi":13,"fvm":64},{"name":"Nkunku","team":"MIL","role":"A","qi":13,"fvm":52},{"name":"N'Dicka","team":"ROM","role":"D","qi":13,"fvm":44},{"name":"Pinamonti","team":"SAS","role":"A","qi":13,"fvm":58},{"name":"Solet","team":"UDI","role":"D","qi":13,"fvm":46},{"name":"Ederson D.S.","team":"ATA","role":"C","qi":12,"fvm":45},{"name":"Samardzic","team":"ATA","role":"C","qi":12,"fvm":42},{"name":"Rodriguez Je.","team":"COM","role":"C","qi":12,"fvm":32},{"name":"Stones","team":"INT","role":"D","qi":12,"fvm":38},{"name":"Alajbegovic","team":"JUV","role":"C","qi":12,"fvm":57},{"name":"Conceicao","team":"JUV","role":"C","qi":12,"fvm":60},{"name":"Gila","team":"MIL","role":"D","qi":12,"fvm":31},{"name":"Modric","team":"MIL","role":"C","qi":12,"fvm":50},{"name":"Di Lorenzo","team":"NAP","role":"D","qi":12,"fvm":40},{"name":"Soulè","team":"ROM","role":"C","qi":12,"fvm":55},{"name":"Rowe","team":"BOL","role":"C","qi":11,"fvm":37},{"name":"Diao","team":"COM","role":"C","qi":11,"fvm":50},{"name":"Ostigard","team":"GEN","role":"D","qi":11,"fvm":40},{"name":"Baldanzi","team":"GEN","role":"C","qi":11,"fvm":30},{"name":"Colombo","team":"GEN","role":"A","qi":11,"fvm":63},{"name":"Bisseck","team":"INT","role":"D","qi":11,"fvm":33},{"name":"Meret","team":"NAP","role":"P","qi":11,"fvm":45},{"name":"Zambo Anguissa","team":"NAP","role":"C","qi":11,"fvm":55},{"name":"Scalvini","team":"ATA","role":"D","qi":10,"fvm":28},{"name":"Skorupski","team":"BOL","role":"P","qi":10,"fvm":37},{"name":"Ramon","team":"COM","role":"D","qi":10,"fvm":32},{"name":"Perrone","team":"COM","role":"C","qi":10,"fvm":38},{"name":"Dodò","team":"FIO","role":"D","qi":10,"fvm":30},{"name":"Zielinski","team":"INT","role":"C","qi":10,"fvm":41},{"name":"Thuram K.","team":"JUV","role":"C","qi":10,"fvm":41},{"name":"Dia","team":"LAZ","role":"A","qi":10,"fvm":31},{"name":"Ratkov","team":"LAZ","role":"A","qi":10,"fvm":32},{"name":"Saelemaekers","team":"MIL","role":"C","qi":10,"fvm":43},{"name":"Politano","team":"NAP","role":"C","qi":10,"fvm":47},{"name":"Lukaku","team":"NAP","role":"A","qi":10,"fvm":45},{"name":"Hermoso","team":"ROM","role":"D","qi":10,"fvm":26},{"name":"Konè M.","team":"ROM","role":"C","qi":10,"fvm":42},{"name":"Thorstvedt","team":"SAS","role":"C","qi":10,"fvm":41},{"name":"Casadei","team":"TOR","role":"C","qi":10,"fvm":37},{"name":"Ekkelenkamp","team":"UDI","role":"C","qi":10,"fvm":41},{"name":"Pasalic","team":"ATA","role":"C","qi":9,"fvm":32},{"name":"Bernardeschi","team":"BOL","role":"C","qi":9,"fvm":21},{"name":"Caprile","team":"CAG","role":"P","qi":9,"fvm":27},{"name":"Mandragora","team":"FIO","role":"C","qi":9,"fvm":28},{"name":"Vasquez","team":"GEN","role":"D","qi":9,"fvm":33},{"name":"Di Gregorio","team":"JUV","role":"P","qi":9,"fvm":40},{"name":"Cambiaso","team":"JUV","role":"D","qi":9,"fvm":27},{"name":"David","team":"JUV","role":"A","qi":9,"fvm":40},{"name":"Mandas","team":"LAZ","role":"P","qi":9,"fvm":30},{"name":"Cancellieri","team":"LAZ","role":"C","qi":9,"fvm":28},{"name":"Isaksen","team":"LAZ","role":"C","qi":9,"fvm":25},{"name":"Adams C.","team":"TOR","role":"A","qi":9,"fvm":32},{"name":"Okoye","team":"UDI","role":"P","qi":9,"fvm":29},{"name":"Hien","team":"ATA","role":"D","qi":8,"fvm":16},{"name":"Zappacosta","team":"ATA","role":"D","qi":8,"fvm":24},{"name":"Lucumì","team":"BOL","role":"D","qi":8,"fvm":18},{"name":"Miranda J.","team":"BOL","role":"D","qi":8,"fvm":24},{"name":"Odgaard","team":"BOL","role":"C","qi":8,"fvm":22},{"name":"Cambiaghi","team":"BOL","role":"C","qi":8,"fvm":25},{"name":"Dallinga","team":"BOL","role":"A","qi":8,"fvm":23},{"name":"Mina","team":"CAG","role":"D","qi":8,"fvm":20},{"name":"Dragusin","team":"FIO","role":"D","qi":8,"fvm":27},{"name":"Jimenez A.","team":"FIO","role":"D","qi":8,"fvm":23},{"name":"Fagioli","team":"FIO","role":"C","qi":8,"fvm":23},{"name":"Ndour","team":"FIO","role":"C","qi":8,"fvm":25},{"name":"Piccoli","team":"FIO","role":"A","qi":8,"fvm":24},{"name":"Bijlow","team":"GEN","role":"P","qi":8,"fvm":18},{"name":"Norton-Cuffy","team":"GEN","role":"D","qi":8,"fvm":22},{"name":"Vitinha O.","team":"GEN","role":"A","qi":8,"fvm":20},{"name":"Diouf","team":"INT","role":"C","qi":8,"fvm":37}];
 let state=load();
 let selectedArchivePlayer=null;
+let listoneFilter='ALL';
 function defaultState(){return {managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
 function load(){try{return JSON.parse(localStorage.getItem('astaFantaV1'))||defaultState()}catch(e){return defaultState()}}
 function persist(){localStorage.setItem('astaFantaV1',JSON.stringify(state))}
@@ -415,6 +456,56 @@ function render(){
  const recent=[...state.purchases].slice(-6).reverse();document.getElementById('recent').innerHTML=recent.length?recent.map(itemHTML).join(''):'<div class="empty">Nessun acquisto registrato.</div>';
  const mr=roster(me);document.getElementById('myRoster').innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
  document.getElementById('managers').innerHTML=state.managers.map((n,i)=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">TU</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
+ renderListone();
+}
+
+
+function setListoneFilter(filter,btn){
+  listoneFilter=filter;
+  document.querySelectorAll('.filterBtn').forEach(x=>x.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderListone();
+}
+function purchaseForArchivePlayer(name){
+  const key=normalizePlayerText(name);
+  return state.purchases.find(x=>normalizePlayerText(x.name)===key);
+}
+function renderListone(){
+  const box=document.getElementById('listonePlayers');
+  if(!box) return;
+  const input=document.getElementById('listoneSearch');
+  const q=normalizePlayerText(input?input.value:'');
+  let rows=PLAYER_ARCHIVE.filter(p=>{
+    const bought=!!purchaseForArchivePlayer(p.name);
+    const text=normalizePlayerText(`${p.name} ${p.team}`);
+    if(q && !text.includes(q)) return false;
+    if(['P','D','C','A'].includes(listoneFilter) && p.role!==listoneFilter) return false;
+    if(listoneFilter==='FREE' && bought) return false;
+    if(listoneFilter==='TAKEN' && !bought) return false;
+    return true;
+  });
+  rows.sort((a,b)=>a.role.localeCompare(b.role)||b.fvm-a.fvm||a.name.localeCompare(b.name));
+  document.getElementById('listoneCount').textContent=`${rows.length} giocatori visualizzati · ${PLAYER_ARCHIVE.filter(p=>!purchaseForArchivePlayer(p.name)).length} disponibili`;
+  box.innerHTML=rows.length?rows.map(p=>{
+    const bought=purchaseForArchivePlayer(p.name);
+    const idx=PLAYER_ARCHIVE.indexOf(p);
+    return `<div class="playerCard ${bought?'taken':''}" onclick="${bought?'openParticipant('+bought.buyer+')':'buyFromListone('+idx+')'}">
+      <div class="playerMain">
+        <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}</div>
+        <div class="playerInfo">${p.team} · QI ${p.qi}</div>
+      </div>
+      <div class="playerRight">
+        <div class="playerFvm">FVM ${p.fvm}</div>
+        ${bought?`<div class="statusTaken">ACQUISTATO · ${esc(state.managers[bought.buyer])} · ${bought.price} cr</div>`:'<div class="statusAvailable">DISPONIBILE</div>'}
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">Nessun giocatore trovato con questi filtri.</div>';
+}
+function buyFromListone(index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p || alreadyBoughtPlayer(p.name)) return;
+  openBuy();
+  setTimeout(()=>selectArchivePlayer(index),0);
 }
 
 function openParticipant(i){
