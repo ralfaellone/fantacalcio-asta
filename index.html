@@ -3878,6 +3878,51 @@ body.rose-pro-open{
   box-shadow:0 7px 18px rgba(0,0,0,.10)!important;
 }
 
+
+/* V47 - AI Core 3.0 */
+.aiCore3Grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px;
+  margin-top:7px;
+}
+.aiCore3Metric{
+  background:#071321;
+  border:1px solid rgba(142,164,189,.15);
+  border-radius:10px;
+  padding:7px 3px;
+  text-align:center;
+}
+.aiCore3Metric span{
+  display:block;
+  color:var(--muted);
+  font-size:6.5px;
+}
+.aiCore3Metric b{
+  display:block;
+  margin-top:2px;
+  font-size:11px;
+}
+.aiCore3Info{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  margin-top:7px;
+}
+.aiCore3Info span{
+  border:1px solid rgba(57,217,138,.22);
+  background:#092119;
+  color:#8be8b7;
+  border-radius:999px;
+  padding:4px 7px;
+  font-size:7px;
+  font-weight:850;
+}
+@media(max-width:390px){
+  .aiCore3Metric span{font-size:6px}
+  .aiCore3Metric b{font-size:10px}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3887,7 +3932,7 @@ body.rose-pro-open{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V46</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V47</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5778,7 +5823,7 @@ function opportunityCandidate(index){
   const price=Math.max(1,ai.ideal);
   const fvm=Math.max(1,Number(p.fvm)||1);
   const statBoost=st ? clamp((Number(st.fm||0)-5.7)*10 + Math.min(12,Number(st.pv||0)*.35),0,20) : 6;
-  const rawValue=(quality*0.52)+(fvm/price)*8.5+(fit*0.16)+(afford*0.12)+statBoost*0.08;
+  const rawValue=(quality*0.58)+(fvm/price)*7.2+(fit*0.13)+(afford*0.10)+statBoost*0.06+(ai.confidence||50)*0.03;
   const valueIndex=Math.round(clamp(rawValue,0,99));
 
   let label='PREZZO GIUSTO', cls='giusto';
@@ -6101,7 +6146,7 @@ function alternativeScore(index,sourceIndex){
   const statsSimilarity=(st&&srcSt)
     ? 100-Math.min(100,Math.abs(Number(st.fm||0)-Number(srcSt.fm||0))*22 + Math.abs(Number(st.pv||0)-Number(srcSt.pv||0))*1.2)
     : 55;
-  const score=Math.round(clamp(quality*.38+fit*.24+afford*.18+fvmSimilarity*.12+statsSimilarity*.08,0,99));
+  const score=Math.round(clamp(quality*.42+fit*.21+afford*.16+fvmSimilarity*.10+statsSimilarity*.06+(ai.confidence||50)*.03+(ai.futureBudget||50)*.02,0,99));
   return {index,p,ai,st,score,fit,afford};
 }
 function bestAlternativesFor(sourceIndex){
@@ -7165,7 +7210,7 @@ function rivalRoleDemand(role,buyerIndex=state.me){
   return {active:active.length,strong:strong.length};
 }
 
-function aiPlayerAnalysis(index,buyerIndex=state.me){
+function aiPlayerAnalysisBase(index,buyerIndex=state.me){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return null;
 
@@ -7368,6 +7413,218 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   return {p,buyerIndex,available,safe,roleSlots,totalSlots,scarcityPct,ideal,low,high,maxRec,score,reasons,verdict};
 }
 
+
+function aiCore3AuctionStage(){
+  const totalSlots=state.managers.length*(LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A);
+  const sold=state.purchases.length;
+  const pct=totalSlots? sold/totalSlots : 0;
+  if(pct<.18)return {id:'EARLY',label:'INIZIO',pct};
+  if(pct<.58)return {id:'MID',label:'CENTRO',pct};
+  if(pct<.84)return {id:'LATE',label:'FINALE',pct};
+  return {id:'END',label:'ULTIMI SLOT',pct};
+}
+
+function aiCore3RoleSupply(p){
+  const free=PLAYER_ARCHIVE
+    .filter(x=>x.role===p.role && !purchaseForArchivePlayer(x.name) && !isUnavailablePlayer(x.name));
+  const target=playerMarketComposite(p);
+  const comparable=free.filter(x=>playerMarketComposite(x)>=target*.88);
+  const elite=free.filter(x=>playerMarketComposite(x)>=target*.96);
+  return {
+    free:free.length,
+    comparable:comparable.length,
+    elite:elite.length,
+    scarcity:clamp(1-(comparable.length/Math.max(3,LIMITS[p.role]*3)),0,1)
+  };
+}
+
+function aiCore3FutureBudgetStress(role,buyerIndex=state.me){
+  const cash=budget(buyerIndex);
+  const totalMissing=remainingRosterSlots(buyerIndex);
+  const roleMissing=Math.max(0,LIMITS[role]-roleCount(buyerIndex,role));
+  if(totalMissing<=0)return 100;
+  const reserve=Math.max(0,totalMissing-1);
+  const spendable=Math.max(0,cash-reserve);
+  const strategy=strategyData(buyerIndex).find(x=>x.role===role);
+  const roleComfort=strategy ? strategy.nextComfort : 1;
+  const avgCash=cash/Math.max(1,totalMissing);
+  const pressure=(avgCash/Math.max(1,INITIAL/25))*45 + (roleComfort/Math.max(1,avgCash))*25 + (roleMissing/Math.max(1,totalMissing))*30;
+  return Math.round(clamp(pressure,0,100));
+}
+
+function aiCore3Confidence(p,base,buyerIndex=state.me){
+  const roleMarket=auctionMarketLearning(p.role);
+  const comparable=comparableAuctionLearning(p);
+  const global=globalAuctionLearning();
+  const stats=statsFor(p.name);
+  const stage=aiCore3AuctionStage();
+  let c=28;
+  c+=Math.min(26,roleMarket.count*3.2);
+  c+=Math.min(20,comparable.count*5);
+  c+=Math.min(10,global.count*.7);
+  if(stats && stats.pv>=15)c+=8;
+  if(stats && stats.pv>=28)c+=5;
+  if(stage.id==='MID'||stage.id==='LATE')c+=5;
+  return Math.round(clamp(c,25,96));
+}
+
+function aiCore3RivalPressure(role,buyerIndex=state.me){
+  const rivals=state.managers.map((_,i)=>{
+    if(i===buyerIndex)return null;
+    const missing=Math.max(0,LIMITS[role]-roleCount(i,role));
+    if(!missing)return null;
+    const cash=budget(i);
+    const max=safeMaxBid(i);
+    const totalMissing=remainingRosterSlots(i);
+    const need=missing/Math.max(1,LIMITS[role]);
+    const liquidity=cash/Math.max(1,INITIAL);
+    const focus=missing/Math.max(1,totalMissing);
+    const score=need*.38+liquidity*.36+focus*.16+clamp(max/(INITIAL*.22),0,1)*.10;
+    return {i,cash,missing,max,score};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score);
+  const top=rivals.slice(0,5);
+  const pressure=top.length ? top.reduce((s,x)=>s+x.score,0)/top.length : 0;
+  return {score:Math.round(clamp(pressure*100,0,100)),active:rivals.length,top};
+}
+
+function aiCore3MarketBias(p){
+  const role=auctionMarketLearning(p.role);
+  const comp=comparableAuctionLearning(p);
+  const global=globalAuctionLearning();
+  let factor=1;
+  let weight=0;
+  if(role.count){
+    factor*=1+(role.factor-1)*.52;
+    weight+=Math.min(.5,role.confidence*.5);
+  }
+  if(comp.count>=2){
+    factor*=1+(comp.factor-1)*.42;
+    weight+=Math.min(.35,comp.confidence*.35);
+  }
+  if(global.count>=6){
+    factor*=1+(global.factor-1)*.12;
+    weight+=.10;
+  }
+  return {factor:clamp(factor,.82,1.30),weight:clamp(weight,0,1),role,comp,global};
+}
+
+function aiCore3Probabilities(ideal,low,high,maxRec,confidence){
+  const spread=Math.max(2,high-low);
+  const c=confidence/100;
+  const probableLow=Math.max(1,Math.round(ideal-spread*(.45+.15*(1-c))));
+  const probableHigh=Math.max(probableLow,Math.round(ideal+spread*(.35+.20*(1-c))));
+  const possibleHigh=Math.max(probableHigh,Math.min(maxRec,Math.round(high+(maxRec-high)*.55)));
+  return {
+    probableLow,probableHigh,
+    possibleLow:Math.max(1,low),
+    possibleHigh,
+    riskFrom:Math.max(possibleHigh+1,Math.min(maxRec,high+1))
+  };
+}
+
+function aiPlayerAnalysis(index,buyerIndex=state.me){
+  const base=aiPlayerAnalysisBase(index,buyerIndex);
+  if(!base)return null;
+  const p=base.p;
+  const stage=aiCore3AuctionStage();
+  const supply=aiCore3RoleSupply(p);
+  const rivals=aiCore3RivalPressure(p.role,buyerIndex);
+  const market=aiCore3MarketBias(p);
+  const confidence=aiCore3Confidence(p,base,buyerIndex);
+  const futureBudget=aiCore3FutureBudgetStress(p.role,buyerIndex);
+  const formation=typeof formationRoleFit==='function'?formationRoleFit(p.role,buyerIndex):50;
+
+  // Adaptive modifier: one centralized correction for all app surfaces.
+  let adaptive=1;
+  adaptive*=market.factor;
+
+  // True scarcity: when comparable alternatives are running out, prices accelerate.
+  if(supply.comparable<=2)adaptive*=1.12;
+  else if(supply.comparable<=4)adaptive*=1.07;
+  else if(supply.comparable<=7)adaptive*=1.035;
+
+  // Rival pressure, softened so it never dominates player quality.
+  adaptive*=1+clamp((rivals.score-45)/100,-.05,.10);
+
+  // Auction phase: avoid overpaying early; allow stronger moves late if slots are scarce.
+  if(stage.id==='EARLY')adaptive*=.97;
+  else if(stage.id==='LATE' && supply.comparable<=5)adaptive*=1.035;
+  else if(stage.id==='END' && base.roleSlots>0 && supply.comparable<=4)adaptive*=1.055;
+
+  // Future-budget simulation. Protect the rest of the roster if finances are tight.
+  if(futureBudget<35)adaptive*=.91;
+  else if(futureBudget<50)adaptive*=.95;
+  else if(futureBudget>78 && formation>68)adaptive*=1.025;
+
+  adaptive=clamp(adaptive,.82,1.24);
+
+  const safe=Math.max(1,base.safe);
+  let ideal=Math.round(clamp(base.ideal*adaptive,1,safe));
+  let maxRec=Math.round(clamp(base.maxRec*(.96+adaptive*.04),1,safe));
+
+  // Keep max above ideal and strategic, but never above safe/budget.
+  maxRec=Math.max(ideal,Math.min(safe,maxRec));
+  if(maxRec>=4 && ideal>=maxRec)ideal=Math.max(1,maxRec-1);
+
+  const tier=base.scarcityPct>=.80;
+  let low=Math.max(1,Math.round(ideal*(tier?.86:.81)));
+  let high=Math.min(maxRec,Math.max(ideal+1,Math.round(ideal*(tier?1.14:1.11))));
+  if(high<=low && maxRec>2){
+    low=Math.max(1,maxRec-2);
+    high=maxRec;
+  }
+
+  const probs=aiCore3Probabilities(ideal,low,high,maxRec,confidence);
+
+  // Unified directional score used by Dashboard / Buy Now / Alternatives / Builder.
+  const value=Math.round(clamp(
+    base.score*.42 +
+    formation*.14 +
+    (100-Math.min(100,Math.max(0,(ideal/Math.max(1,budget(buyerIndex)))*100)))*.10 +
+    rivals.score*.08 +
+    supply.scarcity*100*.12 +
+    futureBudget*.10 +
+    confidence*.04
+  ,1,99));
+
+  const reasons=[...base.reasons];
+  reasons.unshift(`AI Core 3.0: confidenza ${confidence}% · fase ${stage.label.toLowerCase()} · pressione rivali ${rivals.score}/100 · scarsità ${Math.round(supply.scarcity*100)}/100.`);
+  if(market.role.count){
+    const delta=Math.round((market.role.factor-1)*100);
+    reasons.unshift(`Mercato adattivo ${p.role}: ${market.role.count} acquisti osservati, correzione ${delta>=0?'+':''}${delta}% con apprendimento progressivo.`);
+  }
+  reasons.unshift(`Disponibilità: ${supply.comparable} alternative di fascia comparabile ancora libere; sostenibilità futura ${futureBudget}/100.`);
+
+  let verdict=base.verdict;
+  if(value>=86)verdict='PRIORITÀ AI';
+  else if(value>=76)verdict='Obiettivo forte';
+  else if(value>=64)verdict='Interessante';
+  else if(value<45)verdict='Solo a prezzo';
+
+  return {
+    ...base,
+    ideal,low,high,maxRec,
+    score:value,
+    verdict,
+    confidence,
+    stage:stage.label,
+    rivalPressure:rivals.score,
+    rivalActive:rivals.active,
+    comparableLeft:supply.comparable,
+    scarcity100:Math.round(supply.scarcity*100),
+    futureBudget,
+    formationFit:formation,
+    adaptiveFactor:adaptive,
+    probableLow:probs.probableLow,
+    probableHigh:probs.probableHigh,
+    possibleLow:probs.possibleLow,
+    possibleHigh:probs.possibleHigh,
+    riskFrom:probs.riskFrom,
+    reasons
+  };
+}
+
+
 function liveBidAlternatives(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return [];
@@ -7457,6 +7714,16 @@ function renderAIAnalysis(a){
       <div class="aiMetric"><span class="k">Prezzo ideale</span><b>${a.ideal}</b></div>
       <div class="aiMetric"><span class="k">Range</span><b>${a.low}-${a.high}</b></div>
       <div class="aiMetric"><span class="k">MAX AI</span><b>${a.maxRec}</b></div>
+    </div>
+
+    <div class="aiCore3Grid">
+      <div class="aiCore3Metric"><span>PROBABILE</span><b>${a.probableLow}-${a.probableHigh}</b></div>
+      <div class="aiCore3Metric"><span>POSSIBILE</span><b>${a.possibleLow}-${a.possibleHigh}</b></div>
+      <div class="aiCore3Metric"><span>RISCHIO DA</span><b>${a.riskFrom}+</b></div>
+      <div class="aiCore3Metric"><span>CONFIDENZA</span><b>${a.confidence}%</b></div>
+    </div>
+    <div class="aiCore3Info">
+      <span>Fase ${a.stage}</span><span>Rivali ${a.rivalPressure}/100</span><span>Scarsità ${a.scarcity100}/100</span><span>Budget futuro ${a.futureBudget}/100</span>
     </div>
 
     ${statsFor(p.name)?`<div class="advisorStats" style="margin-top:12px">
