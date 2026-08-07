@@ -1911,12 +1911,13 @@ body.subpage-open #editBuyModal.show{
 
 /* V25 - Svincoli mercato */
 .releaseBtn{
-  border:1px solid rgba(255,107,107,.45);
+  border:0;
   background:transparent;
   color:var(--danger);
   border-radius:10px;
-  padding:7px 9px;
-  font-size:10px;
+  width:34px;
+  height:34px;
+  font-size:18px;
   font-weight:950;
   margin-left:7px;
 }
@@ -2036,7 +2037,7 @@ body.subpage-open #editBuyModal.show{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V25</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V25.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2380,50 +2381,6 @@ body.subpage-open #editBuyModal.show{
   </div>
 </div>
 
-
-<div id="releaseModal">
-  <div class="releaseShell">
-    <div class="releaseHeader">
-      <button class="releaseBack" onclick="closeReleasePage()">← Indietro</button>
-      <div class="releaseTitle">Svincola giocatore</div>
-    </div>
-    <div class="releaseBody">
-      <input id="releasePurchaseId" type="hidden">
-      <input id="releaseManagerId" type="hidden">
-      <div id="releaseHero" class="releaseHero"></div>
-
-      <div class="field">
-        <label>Motivo dello svincolo</label>
-        <select id="releaseReason" onchange="releaseReasonChanged()">
-          <option value="Scelta tecnica">Scelta tecnica</option>
-          <option value="Infortunio">Infortunio</option>
-          <option value="Scarso utilizzo / non gioca">Scarso utilizzo / non gioca</option>
-          <option value="Trasferito fuori Serie A">Trasferito fuori Serie A</option>
-          <option value="Altro">Altro</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Crediti restituiti</label>
-        <input id="releaseRefund" type="number" min="0" inputmode="numeric" oninput="updateReleaseInfo()">
-        <div class="hint" style="margin-top:6px">Puoi decidere quanti crediti restituire in base al regolamento della lega.</div>
-      </div>
-
-      <label class="releaseCheck">
-        <input id="releaseBackToMarket" type="checkbox" checked onchange="updateReleaseInfo()">
-        <div>
-          <strong>Rendi il giocatore nuovamente disponibile</strong>
-          <span>Se attivo, torna libero nel Listone e può essere acquistato da un altro partecipante. Per “Trasferito fuori Serie A” viene disattivato automaticamente.</span>
-        </div>
-      </label>
-
-      <div id="releaseInfo" class="statsState" style="margin-top:12px"></div>
-    </div>
-    <div class="releaseFooter">
-      <button class="releaseConfirm" onclick="confirmRelease()">CONFERMA SVINCOLO</button>
-    </div>
-  </div>
-</div>
 
 <div id="settingsModal" class="modal">
   <div class="settingsShell">
@@ -4289,6 +4246,37 @@ function buyFromListone(index){
 }
 
 
+
+function quickRelease(purchaseId,managerIndex){
+  const x=state.purchases.find(p=>p.id===purchaseId);
+  if(!x)return;
+  if(!confirm(`Rimuovere ${x.name} dalla rosa di ${state.managers[x.buyer]}?\\n\\nI ${x.price} crediti pagati torneranno interamente nelle casse.`))return;
+
+  state.releases=state.releases||[];
+  state.unavailablePlayers=state.unavailablePlayers||[];
+
+  state.releases.push({
+    id:'rel_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    purchaseId:x.id,
+    name:x.name,
+    role:x.role,
+    buyer:x.buyer,
+    originalPrice:x.price,
+    refund:x.price,
+    reason:'Rimosso dalla rosa',
+    backToMarket:true,
+    ts:Date.now()
+  });
+
+  state.purchases=state.purchases.filter(p=>p.id!==purchaseId);
+  const key=normalizePlayerText(x.name);
+  state.unavailablePlayers=state.unavailablePlayers.filter(k=>k!==key);
+
+  persist();
+  render();
+  openParticipant(managerIndex);
+}
+
 let releaseReturnManager=-1;
 
 function openReleasePage(purchaseId,managerIndex){
@@ -4383,7 +4371,7 @@ function openParticipant(i){
     if(!players.length) return '';
     const totalRole=players.reduce((sum,x)=>sum+x.price,0);
     return `<div class="detailSectionTitle"><span>${roleName(role)}</span><span class="tag">${players.length}/${LIMITS[role]} · ${totalRole} cr</span></div>`+
-      players.map(x=>`<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">Acquistato a ${x.price} crediti</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="releaseBtn" onclick="event.stopPropagation();openReleasePage('${x.id}',${i})">SVINCOLA</button></div></div>`).join('');
+      players.map(x=>`<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">Acquistato a ${x.price} crediti</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="releaseBtn" title="Rimuovi dalla rosa" onclick="event.stopPropagation();quickRelease('${x.id}',${i})">✕</button></div></div>`).join('');
   }).join('');
 
   const released=(state.releases||[]).filter(x=>x.buyer===i).slice().reverse();
@@ -4414,7 +4402,6 @@ function openParticipant(i){
     </div>
 
     ${grouped || '<div class="empty" style="margin-top:14px">Nessun giocatore acquistato da questo partecipante.</div>'}
-    ${releaseHistory}
   `;
   document.getElementById('participantModal').classList.add('show');
   document.body.style.overflow='hidden';
