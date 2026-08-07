@@ -3332,7 +3332,7 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V40</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V41</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
@@ -3886,7 +3886,10 @@ function load(){
     return s;
   }catch(e){return defaultState()}
 }
-function persist(){localStorage.setItem('astaFantaV1',JSON.stringify(state))}
+function persist(){
+  localStorage.setItem('astaFantaV1',JSON.stringify(state));
+  setTimeout(refreshAIRosterIfOpen,0);
+}
 
 function loadPlayerStats(){
   try{
@@ -4800,6 +4803,7 @@ function aiRosterCandidatePool(role,slotBudget,tier){
 function buildAIRosterPlan(plan){
   const result=[];
   const used=new Set();
+  const displayedOptions=new Set();
   const reserve=aiRosterReserveBudget();
   const planningBudget=aiRosterAvailablePlanningBudget();
   const roles=['P','D','C','A'];
@@ -4833,14 +4837,21 @@ function buildAIRosterPlan(plan){
       const tier=aiRosterTier(role,slot,plan);
       const slotBudget=Math.max(1,Math.round(roleBudget*(weights[m]||1/missing)));
 
-      const pool=aiRosterCandidatePool(role,slotBudget,tier)
-        .filter(x=>!used.has(normalizePlayerText(x.p.name)));
+      let pool=aiRosterCandidatePool(role,slotBudget,tier)
+        .filter(x=>!used.has(normalizePlayerText(x.p.name)))
+        .filter(x=>!displayedOptions.has(normalizePlayerText(x.p.name)));
 
-      const options=[];
-      for(const cand of pool){
-        if(options.length>=3)break;
-        options.push(cand);
+      let options=pool.slice(0,3);
+      if(options.length<3){
+        const fallback=aiRosterCandidatePool(role,slotBudget,tier)
+          .filter(x=>!used.has(normalizePlayerText(x.p.name)))
+          .filter(x=>!options.some(o=>o.index===x.index));
+        for(const cand of fallback){
+          if(options.length>=3)break;
+          options.push(cand);
+        }
       }
+      options.forEach(o=>displayedOptions.add(normalizePlayerText(o.p.name)));
 
       const chosen=options[0]||null;
       if(chosen)used.add(normalizePlayerText(chosen.p.name));
@@ -4881,7 +4892,7 @@ function renderFormationPage(){
   body.innerHTML=`
     <div class="formationHero">
       <div style="font-size:18px;font-weight:950">Costruisci la tua rosa completa</div>
-      <div class="playerMetaLine">Scegli il modulo. L'AI mantiene i giocatori già tuoi e costruisce tutti i 25 slot con un piano principale + 2 alternative per ogni acquisto.</div>
+      <div class="playerMetaLine">Scegli il modulo. L'AI mantiene i giocatori già tuoi e costruisce tutti i 25 slot con un piano principale + 2 alternative per ogni acquisto.</div><div style="margin-top:6px"><span class="ai2Chip">● PIANO LIVE</span> <span class="playerMetaLine">Si aggiorna automaticamente dopo ogni acquisto o svincolo.</span></div>
 
       <div class="aiRosterSelector">
         ${FORMATION_PLANS.map(x=>`<button class="${x.id===plan.id?'active':''}" onclick="setAIRosterModule('${x.id}')">${x.name}</button>`).join('')}
@@ -4956,6 +4967,10 @@ function renderFormationPage(){
   `;
 }
 
+function refreshAIRosterIfOpen(){
+  const modal=document.getElementById('formationModal');
+  if(modal && modal.classList.contains('show')) renderFormationPage();
+}
 function openFormationPage(){
   renderFormationPage();
   document.body.classList.add('formation-page-open');
