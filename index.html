@@ -212,6 +212,78 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   opacity:.45;
 }
 
+
+.playerSearchWrap{position:relative}
+.playerSuggestions{
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% + 6px);
+  z-index:80;
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:0 18px 36px rgba(0,0,0,.38);
+  max-height:270px;
+  overflow:auto;
+  display:none;
+}
+.playerSuggestions.show{display:block}
+.playerSuggestion{
+  padding:11px 12px;
+  border-bottom:1px solid var(--line);
+  cursor:pointer;
+}
+.playerSuggestion:last-child{border-bottom:0}
+.playerSuggestion:active{background:#152943}
+.playerSuggestionTop{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+}
+.playerSuggestionName{font-weight:900}
+.playerMetaLine{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:4px;
+}
+.playerSelected{
+  display:none;
+  margin-top:9px;
+  background:linear-gradient(145deg,#142840,#0a1626);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:11px 12px;
+}
+.playerSelected.show{display:block}
+.playerSelectedTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.playerValueGrid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin-top:9px;
+}
+.playerValue{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:8px 6px;
+  text-align:center;
+}
+.playerValue b{display:block;font-size:16px;margin-top:2px}
+.archiveNote{
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.35;
+  margin-top:8px;
+}
+
 </style>
 </head>
 <body>
@@ -271,7 +343,15 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
     <button class="closeX" onclick="closeBuy()">×</button>
   </div>
 
-  <div class="field"><label>Giocatore</label><input id="pname" placeholder="Es. Lautaro Martínez" autocomplete="off" oninput="updateBuyPreview()"></div>
+  <div class="field">
+    <label>Giocatore</label>
+    <div class="playerSearchWrap">
+      <input id="pname" placeholder="Cerca nel Listone Fantacalcio.it" autocomplete="off" oninput="searchPlayers()" onfocus="searchPlayers()">
+      <div id="playerSuggestions" class="playerSuggestions"></div>
+    </div>
+    <div id="playerSelected" class="playerSelected"></div>
+    <div class="archiveNote">Archivio Classic Fantacalcio.it 2026/27: nome, squadra, ruolo, quotazione iniziale e FVM. Se un nome non è ancora presente puoi comunque inserirlo manualmente.</div>
+  </div>
 
   <div class="field">
     <label>Ruolo</label>
@@ -318,7 +398,9 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 <script>
 const LIMITS={P:3,D:8,C:8,A:6};
 const INITIAL=600;
+const PLAYER_ARCHIVE=[{"name":"Martinez L.","team":"INT","role":"A","qi":35,"fvm":370},{"name":"Malen","team":"ROM","role":"A","qi":34,"fvm":365},{"name":"Dimarco","team":"INT","role":"D","qi":32,"fvm":265},{"name":"Paz N.","team":"COM","role":"C","qi":30,"fvm":250},{"name":"Thuram","team":"INT","role":"A","qi":29,"fvm":280},{"name":"McTominay","team":"NAP","role":"C","qi":28,"fvm":240},{"name":"Hojlund","team":"NAP","role":"A","qi":28,"fvm":271},{"name":"Calhanoglu","team":"INT","role":"C","qi":27,"fvm":230},{"name":"Ramos G.","team":"MIL","role":"A","qi":27,"fvm":240},{"name":"Orsolini","team":"BOL","role":"C","qi":26,"fvm":200},{"name":"Kolo Muani","team":"JUV","role":"A","qi":26,"fvm":225},{"name":"Kean","team":"FIO","role":"A","qi":25,"fvm":212},{"name":"Pulisic","team":"MIL","role":"C","qi":25,"fvm":180},{"name":"Yildiz","team":"JUV","role":"A","qi":23,"fvm":200},{"name":"Rabiot","team":"MIL","role":"C","qi":22,"fvm":128},{"name":"Douvikas","team":"COM","role":"A","qi":20,"fvm":157},{"name":"Scamacca","team":"ATA","role":"A","qi":19,"fvm":128},{"name":"Baturina","team":"COM","role":"C","qi":19,"fvm":102},{"name":"Davis K.","team":"UDI","role":"A","qi":19,"fvm":121},{"name":"Krstovic","team":"ATA","role":"A","qi":18,"fvm":100},{"name":"Da Cunha","team":"COM","role":"C","qi":18,"fvm":90},{"name":"Leao","team":"MIL","role":"A","qi":18,"fvm":120},{"name":"Svilar","team":"ROM","role":"P","qi":18,"fvm":65},{"name":"Berardi","team":"SAS","role":"A","qi":18,"fvm":115},{"name":"Zaniolo","team":"UDI","role":"C","qi":18,"fvm":90},{"name":"De Ketelaere","team":"ATA","role":"C","qi":17,"fvm":106},{"name":"Atta","team":"FIO","role":"C","qi":17,"fvm":87},{"name":"Martinez Jo.","team":"INT","role":"P","qi":17,"fvm":63},{"name":"Barella","team":"INT","role":"C","qi":17,"fvm":82},{"name":"McKennie","team":"JUV","role":"C","qi":17,"fvm":68},{"name":"Wesley","team":"ROM","role":"D","qi":17,"fvm":84},{"name":"Carnesecchi","team":"ATA","role":"P","qi":16,"fvm":52},{"name":"Dovbyk","team":"BOL","role":"A","qi":16,"fvm":84},{"name":"Butez","team":"COM","role":"P","qi":16,"fvm":56},{"name":"Akanji","team":"INT","role":"D","qi":16,"fvm":55},{"name":"Esposito F.P.","team":"INT","role":"A","qi":16,"fvm":93},{"name":"Zaccagni","team":"LAZ","role":"C","qi":16,"fvm":91},{"name":"Bremer","team":"JUV","role":"D","qi":15,"fvm":50},{"name":"Maignan","team":"MIL","role":"P","qi":15,"fvm":50},{"name":"De Bruyne","team":"NAP","role":"C","qi":15,"fvm":100},{"name":"Pellegrino M.","team":"PAR","role":"A","qi":15,"fvm":81},{"name":"Mancini","team":"ROM","role":"D","qi":15,"fvm":49},{"name":"Laurientè","team":"SAS","role":"A","qi":15,"fvm":88},{"name":"Simeone","team":"TOR","role":"A","qi":15,"fvm":82},{"name":"Bastoni","team":"INT","role":"D","qi":14,"fvm":44},{"name":"Pavlovic","team":"MIL","role":"D","qi":14,"fvm":48},{"name":"Rrahmani","team":"NAP","role":"D","qi":14,"fvm":47},{"name":"Santos A.","team":"NAP","role":"C","qi":14,"fvm":60},{"name":"Dybala","team":"ROM","role":"A","qi":14,"fvm":67},{"name":"Castro S.","team":"ROM","role":"A","qi":14,"fvm":83},{"name":"Vlasic","team":"TOR","role":"C","qi":14,"fvm":80},{"name":"Raspadori","team":"ATA","role":"A","qi":13,"fvm":62},{"name":"Esposito Se.","team":"CAG","role":"A","qi":13,"fvm":50},{"name":"De Gea","team":"FIO","role":"P","qi":13,"fvm":45},{"name":"Gudmundsson A.","team":"FIO","role":"A","qi":13,"fvm":61},{"name":"Kalulu","team":"JUV","role":"D","qi":13,"fvm":46},{"name":"Taylor K.","team":"LAZ","role":"C","qi":13,"fvm":64},{"name":"Nkunku","team":"MIL","role":"A","qi":13,"fvm":52},{"name":"N'Dicka","team":"ROM","role":"D","qi":13,"fvm":44},{"name":"Pinamonti","team":"SAS","role":"A","qi":13,"fvm":58},{"name":"Solet","team":"UDI","role":"D","qi":13,"fvm":46},{"name":"Ederson D.S.","team":"ATA","role":"C","qi":12,"fvm":45},{"name":"Samardzic","team":"ATA","role":"C","qi":12,"fvm":42},{"name":"Rodriguez Je.","team":"COM","role":"C","qi":12,"fvm":32},{"name":"Stones","team":"INT","role":"D","qi":12,"fvm":38},{"name":"Alajbegovic","team":"JUV","role":"C","qi":12,"fvm":57},{"name":"Conceicao","team":"JUV","role":"C","qi":12,"fvm":60},{"name":"Gila","team":"MIL","role":"D","qi":12,"fvm":31},{"name":"Modric","team":"MIL","role":"C","qi":12,"fvm":50},{"name":"Di Lorenzo","team":"NAP","role":"D","qi":12,"fvm":40},{"name":"Soulè","team":"ROM","role":"C","qi":12,"fvm":55},{"name":"Rowe","team":"BOL","role":"C","qi":11,"fvm":37},{"name":"Diao","team":"COM","role":"C","qi":11,"fvm":50},{"name":"Ostigard","team":"GEN","role":"D","qi":11,"fvm":40},{"name":"Baldanzi","team":"GEN","role":"C","qi":11,"fvm":30},{"name":"Colombo","team":"GEN","role":"A","qi":11,"fvm":63},{"name":"Bisseck","team":"INT","role":"D","qi":11,"fvm":33},{"name":"Meret","team":"NAP","role":"P","qi":11,"fvm":45},{"name":"Zambo Anguissa","team":"NAP","role":"C","qi":11,"fvm":55},{"name":"Scalvini","team":"ATA","role":"D","qi":10,"fvm":28},{"name":"Skorupski","team":"BOL","role":"P","qi":10,"fvm":37},{"name":"Ramon","team":"COM","role":"D","qi":10,"fvm":32},{"name":"Perrone","team":"COM","role":"C","qi":10,"fvm":38},{"name":"Dodò","team":"FIO","role":"D","qi":10,"fvm":30},{"name":"Zielinski","team":"INT","role":"C","qi":10,"fvm":41},{"name":"Thuram K.","team":"JUV","role":"C","qi":10,"fvm":41},{"name":"Dia","team":"LAZ","role":"A","qi":10,"fvm":31},{"name":"Ratkov","team":"LAZ","role":"A","qi":10,"fvm":32},{"name":"Saelemaekers","team":"MIL","role":"C","qi":10,"fvm":43},{"name":"Politano","team":"NAP","role":"C","qi":10,"fvm":47},{"name":"Lukaku","team":"NAP","role":"A","qi":10,"fvm":45},{"name":"Hermoso","team":"ROM","role":"D","qi":10,"fvm":26},{"name":"Konè M.","team":"ROM","role":"C","qi":10,"fvm":42},{"name":"Thorstvedt","team":"SAS","role":"C","qi":10,"fvm":41},{"name":"Casadei","team":"TOR","role":"C","qi":10,"fvm":37},{"name":"Ekkelenkamp","team":"UDI","role":"C","qi":10,"fvm":41},{"name":"Pasalic","team":"ATA","role":"C","qi":9,"fvm":32},{"name":"Bernardeschi","team":"BOL","role":"C","qi":9,"fvm":21},{"name":"Caprile","team":"CAG","role":"P","qi":9,"fvm":27},{"name":"Mandragora","team":"FIO","role":"C","qi":9,"fvm":28},{"name":"Vasquez","team":"GEN","role":"D","qi":9,"fvm":33},{"name":"Di Gregorio","team":"JUV","role":"P","qi":9,"fvm":40},{"name":"Cambiaso","team":"JUV","role":"D","qi":9,"fvm":27},{"name":"David","team":"JUV","role":"A","qi":9,"fvm":40},{"name":"Mandas","team":"LAZ","role":"P","qi":9,"fvm":30},{"name":"Cancellieri","team":"LAZ","role":"C","qi":9,"fvm":28},{"name":"Isaksen","team":"LAZ","role":"C","qi":9,"fvm":25},{"name":"Adams C.","team":"TOR","role":"A","qi":9,"fvm":32},{"name":"Okoye","team":"UDI","role":"P","qi":9,"fvm":29},{"name":"Hien","team":"ATA","role":"D","qi":8,"fvm":16},{"name":"Zappacosta","team":"ATA","role":"D","qi":8,"fvm":24},{"name":"Lucumì","team":"BOL","role":"D","qi":8,"fvm":18},{"name":"Miranda J.","team":"BOL","role":"D","qi":8,"fvm":24},{"name":"Odgaard","team":"BOL","role":"C","qi":8,"fvm":22},{"name":"Cambiaghi","team":"BOL","role":"C","qi":8,"fvm":25},{"name":"Dallinga","team":"BOL","role":"A","qi":8,"fvm":23},{"name":"Mina","team":"CAG","role":"D","qi":8,"fvm":20},{"name":"Dragusin","team":"FIO","role":"D","qi":8,"fvm":27},{"name":"Jimenez A.","team":"FIO","role":"D","qi":8,"fvm":23},{"name":"Fagioli","team":"FIO","role":"C","qi":8,"fvm":23},{"name":"Ndour","team":"FIO","role":"C","qi":8,"fvm":25},{"name":"Piccoli","team":"FIO","role":"A","qi":8,"fvm":24},{"name":"Bijlow","team":"GEN","role":"P","qi":8,"fvm":18},{"name":"Norton-Cuffy","team":"GEN","role":"D","qi":8,"fvm":22},{"name":"Vitinha O.","team":"GEN","role":"A","qi":8,"fvm":20},{"name":"Diouf","team":"INT","role":"C","qi":8,"fvm":37}];
 let state=load();
+let selectedArchivePlayer=null;
 function defaultState(){return {managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
 function load(){try{return JSON.parse(localStorage.getItem('astaFantaV1'))||defaultState()}catch(e){return defaultState()}}
 function persist(){localStorage.setItem('astaFantaV1',JSON.stringify(state))}
@@ -380,6 +462,79 @@ function closeParticipant(){
 function roleName(r){return {P:'Portieri',D:'Difensori',C:'Centrocampisti',A:'Attaccanti'}[r]}
 function itemHTML(x){return `<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="delete" onclick="del('${x.id}')">×</button></div></div>`}
 function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
+
+function normalizePlayerText(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function alreadyBoughtPlayer(name){
+  const key=normalizePlayerText(name);
+  return state.purchases.some(x=>normalizePlayerText(x.name)===key);
+}
+function searchPlayers(){
+  const input=document.getElementById('pname');
+  const box=document.getElementById('playerSuggestions');
+  const q=normalizePlayerText(input.value.trim());
+
+  if(selectedArchivePlayer && normalizePlayerText(selectedArchivePlayer.name)!==q){
+    selectedArchivePlayer=null;
+    document.getElementById('playerSelected').classList.remove('show');
+  }
+
+  let list=PLAYER_ARCHIVE.filter(p=>{
+    const hay=normalizePlayerText(`${p.name} ${p.team}`);
+    return !q || hay.includes(q);
+  }).slice(0,12);
+
+  if(!input.value.trim()){
+    list=PLAYER_ARCHIVE.filter(p=>!alreadyBoughtPlayer(p.name)).slice(0,10);
+  }
+
+  if(!list.length){
+    box.innerHTML='<div class="playerSuggestion"><div class="playerMetaLine">Nessun risultato nell’archivio. Puoi comunque scrivere il nome manualmente.</div></div>';
+    box.classList.add('show');
+    updateBuyPreview();
+    return;
+  }
+
+  box.innerHTML=list.map((p,i)=>{
+    const taken=alreadyBoughtPlayer(p.name);
+    return `<div class="playerSuggestion" style="${taken?'opacity:.45':''}" onclick="${taken?'':'selectArchivePlayer('+PLAYER_ARCHIVE.indexOf(p)+')'}">
+      <div class="playerSuggestionTop">
+        <div class="playerSuggestionName">${esc(p.name)}</div>
+        <span class="tag">${p.role}</span>
+      </div>
+      <div class="playerMetaLine">${p.team} · QI ${p.qi} · FVM ${p.fvm}${taken?' · GIÀ ACQUISTATO':''}</div>
+    </div>`;
+  }).join('');
+  box.classList.add('show');
+  updateBuyPreview();
+}
+function selectArchivePlayer(index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p || alreadyBoughtPlayer(p.name)) return;
+  selectedArchivePlayer=p;
+  document.getElementById('pname').value=p.name;
+  document.getElementById('playerSuggestions').classList.remove('show');
+  selectBuyRole(p.role);
+
+  const selected=document.getElementById('playerSelected');
+  selected.innerHTML=`<div class="playerSelectedTop">
+      <div><div style="font-weight:900">${esc(p.name)}</div><div class="playerMetaLine">${p.team} · ruolo Classic ${p.role}</div></div>
+      <span class="tag good">LISTONE</span>
+    </div>
+    <div class="playerValueGrid">
+      <div class="playerValue"><span class="k">Ruolo</span><b>${p.role}</b></div>
+      <div class="playerValue"><span class="k">QI</span><b>${p.qi}</b></div>
+      <div class="playerValue"><span class="k">FVM/1000</span><b>${p.fvm}</b></div>
+    </div>`;
+  selected.classList.add('show');
+  updateBuyPreview();
+}
+function closePlayerSuggestions(){
+  const box=document.getElementById('playerSuggestions');
+  if(box) box.classList.remove('show');
+}
+
 function selectBuyRole(role){
   document.getElementById('prole').value=role;
   document.querySelectorAll('.buyRoleBtn').forEach(btn=>btn.classList.toggle('active',btn.dataset.role===role));
@@ -402,7 +557,10 @@ function updateBuyPreview(){
   let ok=true;
   let msg='Pronto per registrare l’acquisto.';
 
-  if(slots<=0){
+  if(alreadyBoughtPlayer(name)){
+    ok=false;
+    msg=`${name} risulta già acquistato nell’asta.`;
+  }else if(slots<=0){
     ok=false;
     msg=`${state.managers[buyer]} ha già completato il reparto ${roleName(role)}.`;
   }else if(price>available){
@@ -425,6 +583,10 @@ function openBuy(){
   sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)} · ${budget(i)} cr</option>`).join('');
   document.getElementById('pname').value='';
   document.getElementById('pprice').value='';
+  selectedArchivePlayer=null;
+  document.getElementById('playerSelected').innerHTML='';
+  document.getElementById('playerSelected').classList.remove('show');
+  document.getElementById('playerSuggestions').classList.remove('show');
   document.getElementById('buyHint').textContent='';
   selectBuyRole('P');
   document.getElementById('buyModal').classList.add('show');
@@ -440,6 +602,7 @@ function saveBuy(){
   const hint=document.getElementById('buyHint');
 
   if(!name||!price||price<1){hint.textContent='Inserisci nome e prezzo.';hint.className='hint danger';updateBuyPreview();return}
+  if(alreadyBoughtPlayer(name)){hint.textContent='Questo giocatore risulta già acquistato.';hint.className='hint danger';updateBuyPreview();return}
   if(price>budget(buyer)){hint.textContent='Crediti insufficienti.';hint.className='hint danger';updateBuyPreview();return}
   if(roleCount(buyer,role)>=LIMITS[role]){hint.textContent=`${state.managers[buyer]} ha già completato il reparto ${roleName(role)}.`;hint.className='hint danger';updateBuyPreview();return}
 
@@ -447,7 +610,13 @@ function saveBuy(){
   const confirmed=confirm(`Confermi l'acquisto?\n\n${name}\nRuolo: ${role}\nSquadra: ${state.managers[buyer]}\nPrezzo: ${price} crediti\nCrediti dopo l'acquisto: ${remaining}`);
   if(!confirmed)return;
 
-  state.purchases.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,role,price,buyer,ts:Date.now()});
+  state.purchases.push({
+    id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    name,role,price,buyer,ts:Date.now(),
+    team:selectedArchivePlayer?selectedArchivePlayer.team:'',
+    qi:selectedArchivePlayer?selectedArchivePlayer.qi:null,
+    fvm:selectedArchivePlayer?selectedArchivePlayer.fvm:null
+  });
   persist();
   closeBuy();
   render();
@@ -459,6 +628,12 @@ function saveSettings(){state.managers=state.managers.map((_,i)=>document.getEle
 function resetAll(){if(confirm("Vuoi davvero cancellare tutti gli acquisti dell'asta?")){state.purchases=[];persist();render()}}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-asta-fantacalcio.json';a.click();URL.revokeObjectURL(a.href)}
 function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!d.managers||!d.purchases)throw 0;state=d;persist();render();alert('Backup importato.')}catch(_){alert('Backup non valido.')}};rd.readAsText(f);e.target.value=''}
+
+
+document.addEventListener('click',e=>{
+  const wrap=e.target.closest('.playerSearchWrap');
+  if(!wrap) closePlayerSuggestions();
+});
 
 window.addEventListener('load',()=>{
   const splash=document.getElementById('splashScreen');
