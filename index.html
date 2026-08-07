@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="theme-color" content="#08111f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Asta Fanta" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="manifest" href="manifest.json" />
+<title>Asta Fanta</title>
+<style>
+:root{--bg:#07101d;--card:#101d2f;--card2:#14243a;--text:#f7f9fc;--muted:#9fb0c5;--accent:#f4c430;--ok:#39d98a;--danger:#ff6b6b;--line:#24364e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;min-height:100%}
+body{padding:calc(env(safe-area-inset-top) + 8px) 14px calc(env(safe-area-inset-bottom) + 86px)}
+button,input,select{font:inherit}
+.top{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 14px}.title{font-weight:900;font-size:26px;letter-spacing:-.6px}.sub{color:var(--muted);font-size:12px;margin-top:2px}.pill{background:var(--accent);color:#111;padding:8px 11px;border-radius:14px;font-weight:900;font-size:13px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:20px;padding:14px;box-shadow:0 10px 24px rgba(0,0,0,.18)}.k{color:var(--muted);font-size:12px}.v{font-size:28px;font-weight:900;margin-top:3px}.v small{font-size:13px;color:var(--muted);font-weight:700}
+.rolebar{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:11px 0}.role{border:1px solid var(--line);background:#0b1727;border-radius:16px;padding:10px 4px;text-align:center}.role b{font-size:17px}.role span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.section{margin-top:16px}.section h2{font-size:17px;margin:0 0 9px}.primary{width:100%;border:0;border-radius:18px;background:var(--accent);color:#111;font-weight:900;padding:16px;font-size:18px}.secondary{width:100%;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--text);font-weight:800;padding:13px}.row{display:flex;gap:8px}.row>*{flex:1}
+.list{display:flex;flex-direction:column;gap:8px}.item{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;border-radius:17px;background:var(--card);border:1px solid var(--line)}.item .name{font-weight:800}.item .meta{color:var(--muted);font-size:12px;margin-top:3px}.price{font-weight:900;font-size:18px;text-align:right}.delete{border:0;background:transparent;color:var(--danger);font-size:20px;padding:4px 0 4px 10px}
+nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-inset-bottom) + 8px);background:rgba(7,16,29,.94);backdrop-filter:blur(16px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:5px;z-index:10}nav button{border:0;background:transparent;color:var(--muted);padding:8px 2px 5px;border-radius:14px;font-size:11px;font-weight:800}nav button .ico{font-size:20px;display:block;margin-bottom:3px}nav button.active{background:var(--card2);color:var(--text)}
+.page{display:none}.page.active{display:block}.empty{color:var(--muted);text-align:center;padding:24px 12px;border:1px dashed var(--line);border-radius:18px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:flex-end;z-index:30}.modal.show{display:flex}.sheet{width:100%;background:#0d1828;border-radius:26px 26px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);border-top:1px solid var(--line);max-height:92vh;overflow:auto}.handle{width:42px;height:5px;border-radius:9px;background:#53657b;margin:0 auto 14px}.sheet h3{font-size:21px;margin:0 0 14px}.field{margin:11px 0}.field label{display:block;color:var(--muted);font-size:12px;font-weight:700;margin:0 0 6px 3px}.field input,.field select{width:100%;border-radius:15px;border:1px solid var(--line);background:#081321;color:var(--text);padding:14px 13px;outline:none}.field input:focus,.field select:focus{border-color:var(--accent)}.hint{font-size:12px;color:var(--muted);margin-top:8px}.danger{color:var(--danger)}
+.progress{height:8px;background:#07101d;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.tag{display:inline-block;border:1px solid var(--line);background:#0b1727;padding:4px 8px;border-radius:10px;font-size:11px;color:var(--muted);margin-right:4px}.good{color:var(--ok)}
+</style>
+</head>
+<body>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore</div></div><div class="pill">600 crediti</div></header>
+
+<section id="home" class="page active">
+  <div class="grid2">
+    <div class="card"><div class="k">Crediti rimasti</div><div class="v" id="myBudget">600</div></div>
+    <div class="card"><div class="k">Giocatori presi</div><div class="v" id="myCount">0 <small>/ 25</small></div></div>
+  </div>
+  <div class="rolebar">
+    <div class="role"><b id="cntP">0/3</b><span>PORTIERI</span></div>
+    <div class="role"><b id="cntD">0/8</b><span>DIFENSORI</span></div>
+    <div class="role"><b id="cntC">0/8</b><span>CENTROCAMPISTI</span></div>
+    <div class="role"><b id="cntA">0/6</b><span>ATTACCANTI</span></div>
+  </div>
+  <button class="primary" onclick="openBuy()">＋ Registra acquisto</button>
+  <div class="section"><h2>Ultimi acquisti</h2><div id="recent" class="list"></div></div>
+</section>
+
+<section id="rosa" class="page">
+  <div class="section" style="margin-top:0"><h2>La mia rosa</h2><div id="myRoster" class="list"></div></div>
+</section>
+
+<section id="players" class="page">
+  <div class="section" style="margin-top:0"><h2>Partecipanti</h2><div id="managers" class="list"></div></div>
+</section>
+
+<section id="more" class="page">
+  <div class="card">
+    <div class="k">La mia squadra</div>
+    <div class="v" style="font-size:22px" id="myNameLabel">Parmense</div>
+    <div class="hint">Puoi cambiare i nomi dei 12 partecipanti e scegliere quale squadra è la tua.</div>
+  </div>
+  <div class="section"><button class="secondary" onclick="openSettings()">⚙️ Impostazioni partecipanti</button></div>
+  <div class="section"><button class="secondary" onclick="exportData()">⬆️ Esporta backup</button></div>
+  <div class="section"><button class="secondary" onclick="document.getElementById('importFile').click()">⬇️ Importa backup</button><input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(event)"></div>
+  <div class="section"><button class="secondary danger" onclick="resetAll()">🗑️ Azzera tutta l'asta</button></div>
+  <div class="section"><div class="empty">I dati restano salvati sul tuo iPhone anche chiudendo l'app. Per maggiore sicurezza usa ogni tanto “Esporta backup”.</div></div>
+</section>
+
+<nav>
+<button class="active" onclick="tab('home',this)"><span class="ico">🏠</span>Asta</button>
+<button onclick="tab('rosa',this)"><span class="ico">👕</span>Rosa</button>
+<button onclick="tab('players',this)"><span class="ico">👥</span>Partecipanti</button>
+<button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
+</nav>
+
+<div id="buyModal" class="modal" onclick="if(event.target===this)closeBuy()"><div class="sheet"><div class="handle"></div><h3>Registra acquisto</h3>
+  <div class="field"><label>Giocatore</label><input id="pname" placeholder="Es. Lautaro Martínez" autocomplete="off"></div>
+  <div class="row"><div class="field"><label>Ruolo</label><select id="prole"><option>P</option><option>D</option><option>C</option><option>A</option></select></div><div class="field"><label>Prezzo</label><input id="pprice" inputmode="numeric" type="number" min="1" placeholder="1"></div></div>
+  <div class="field"><label>Acquistato da</label><select id="pbuyer"></select></div>
+  <button class="primary" onclick="saveBuy()">SALVA ACQUISTO</button><div class="hint" id="buyHint"></div>
+</div></div>
+
+<div id="settingsModal" class="modal" onclick="if(event.target===this)closeSettings()"><div class="sheet"><div class="handle"></div><h3>Partecipanti</h3>
+  <div class="field"><label>La mia squadra</label><select id="myManager"></select></div>
+  <div id="managerInputs"></div>
+  <button class="primary" onclick="saveSettings()">SALVA</button>
+</div></div>
+
+<script>
+const LIMITS={P:3,D:8,C:8,A:6};
+const INITIAL=600;
+let state=load();
+function defaultState(){return {managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
+function load(){try{return JSON.parse(localStorage.getItem('astaFantaV1'))||defaultState()}catch(e){return defaultState()}}
+function persist(){localStorage.setItem('astaFantaV1',JSON.stringify(state))}
+function spent(i){return state.purchases.filter(x=>x.buyer===i).reduce((s,x)=>s+x.price,0)}
+function budget(i){return INITIAL-spent(i)}
+function roster(i){return state.purchases.filter(x=>x.buyer===i)}
+function roleCount(i,r){return roster(i).filter(x=>x.role===r).length}
+function tab(id,btn){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
+function render(){
+ const me=state.me; document.getElementById('myBudget').textContent=budget(me);document.getElementById('myCount').innerHTML=`${roster(me).length} <small>/ 25</small>`;document.getElementById('myNameLabel').textContent=state.managers[me];
+ ['P','D','C','A'].forEach(r=>document.getElementById('cnt'+r).textContent=`${roleCount(me,r)}/${LIMITS[r]}`);
+ const recent=[...state.purchases].slice(-6).reverse();document.getElementById('recent').innerHTML=recent.length?recent.map(itemHTML).join(''):'<div class="empty">Nessun acquisto registrato.</div>';
+ const mr=roster(me);document.getElementById('myRoster').innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
+ document.getElementById('managers').innerHTML=state.managers.map((n,i)=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card" style="padding:13px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">TU</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s}</div></div><div class="price">${b}</div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
+}
+function roleName(r){return {P:'Portieri',D:'Difensori',C:'Centrocampisti',A:'Attaccanti'}[r]}
+function itemHTML(x){return `<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="delete" onclick="del('${x.id}')">×</button></div></div>`}
+function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
+function openBuy(){let sel=document.getElementById('pbuyer');sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)} · ${budget(i)} cr</option>`).join('');document.getElementById('buyHint').textContent='';document.getElementById('buyModal').classList.add('show');setTimeout(()=>document.getElementById('pname').focus(),150)}
+function closeBuy(){document.getElementById('buyModal').classList.remove('show')}
+function saveBuy(){const name=document.getElementById('pname').value.trim(),role=document.getElementById('prole').value,price=parseInt(document.getElementById('pprice').value,10),buyer=parseInt(document.getElementById('pbuyer').value,10);const hint=document.getElementById('buyHint');if(!name||!price||price<1){hint.textContent='Inserisci nome e prezzo.';hint.className='hint danger';return}if(price>budget(buyer)){hint.textContent='Crediti insufficienti.';hint.className='hint danger';return}if(roleCount(buyer,role)>=LIMITS[role]){hint.textContent=`${state.managers[buyer]} ha già completato il reparto ${roleName(role)}.`;hint.className='hint danger';return}state.purchases.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,role,price,buyer,ts:Date.now()});persist();document.getElementById('pname').value='';document.getElementById('pprice').value='';closeBuy();render()}
+function del(id){if(confirm('Eliminare questo acquisto?')){state.purchases=state.purchases.filter(x=>x.id!==id);persist();render()}}
+function openSettings(){const mine=document.getElementById('myManager');mine.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)}</option>`).join('');document.getElementById('managerInputs').innerHTML=state.managers.map((n,i)=>`<div class="field"><label>Partecipante ${i+1}</label><input id="m${i}" value="${esc(n)}"></div>`).join('');document.getElementById('settingsModal').classList.add('show')}
+function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
+function saveSettings(){state.managers=state.managers.map((_,i)=>document.getElementById('m'+i).value.trim()||`Squadra ${i+1}`);state.me=parseInt(document.getElementById('myManager').value,10);persist();closeSettings();render()}
+function resetAll(){if(confirm("Vuoi davvero cancellare tutti gli acquisti dell'asta?")){state.purchases=[];persist();render()}}
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-asta-fantacalcio.json';a.click();URL.revokeObjectURL(a.href)}
+function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!d.managers||!d.purchases)throw 0;state=d;persist();render();alert('Backup importato.')}catch(_){alert('Backup non valido.')}};rd.readAsText(f);e.target.value=''}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+render();
+</script>
+</body></html>

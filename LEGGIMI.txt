@@ -1,0 +1,17 @@
+ASTA FANTA — VERSIONE IPHONE
+
+Questa versione non usa Python e non richiede un PC acceso durante l'asta una volta pubblicata online.
+Contiene:
+- index.html
+- manifest.json
+- sw.js
+- icone iPhone
+
+Dati configurati:
+- 600 crediti
+- 12 partecipanti
+- 3 P / 8 D / 8 C / 6 A
+- salvataggio automatico sul dispositivo
+- backup esportabile/importabile
+
+Per installarla come icona su iPhone deve essere pubblicata su un normale hosting HTTPS. Poi in Safari: Condividi > Aggiungi alla schermata Home.
