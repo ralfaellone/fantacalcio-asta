@@ -2424,6 +2424,86 @@ body.buy-now-page-open nav{display:none!important}
 body.buy-now-page-open .page{visibility:hidden!important;pointer-events:none!important}
 body.buy-now-page-open #buyNowModal{visibility:visible!important;pointer-events:auto!important}
 
+
+/* V30 - Occasioni d'asta */
+.opportunityBtn{
+  width:100%;
+  margin-top:9px;
+  border:1px solid rgba(57,217,138,.5);
+  background:#082219;
+  color:var(--ok);
+  border-radius:15px;
+  padding:12px 14px;
+  font-weight:950;
+  font-size:13px;
+}
+#opportunityModal{
+  position:fixed; inset:0; display:none; background:var(--bg);
+  z-index:8000; overflow:hidden;
+}
+#opportunityModal.show{display:block}
+.opportunityShell{
+  position:absolute; inset:0; height:100dvh;
+  display:grid; grid-template-rows:auto minmax(0,1fr); background:var(--bg);
+}
+.opportunityHeader{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);border-bottom:1px solid var(--line);
+}
+.opportunityBack{
+  border:1px solid var(--line);background:#0b1727;color:var(--text);
+  border-radius:13px;padding:9px 11px;font-weight:900;
+}
+.opportunityTitle{font-size:18px;font-weight:950}
+.opportunityBody{
+  min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px 14px calc(env(safe-area-inset-bottom) + 28px);
+}
+.opportunityContext{
+  background:linear-gradient(145deg,#153524,#0d1a2b);
+  border:1px solid rgba(57,217,138,.3);border-radius:16px;padding:12px;
+}
+.opFilters{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.opFilter{
+  border:1px solid var(--line);background:#081321;color:var(--text);
+  border-radius:10px;padding:7px 10px;font-size:10px;font-weight:900;
+}
+.opFilter.on{background:var(--ok);color:#07101d;border-color:var(--ok)}
+.opCard{
+  background:#0b1727;border:1px solid var(--line);
+  border-radius:16px;padding:11px;margin:8px 0;
+}
+.opCard.affare{border-color:rgba(57,217,138,.55)}
+.opCard.buono{border-color:rgba(244,196,48,.4)}
+.opBadge{
+  border-radius:9px;padding:5px 7px;font-size:9px;font-weight:950;white-space:nowrap;
+}
+.opBadge.affare{background:var(--ok);color:#07101d}
+.opBadge.buono{background:var(--accent);color:#111}
+.opBadge.giusto{background:#15304d;color:var(--text)}
+.opBadge.caro{background:var(--danger);color:#fff}
+.opTop{display:flex;align-items:flex-start;gap:9px}
+.opRank{
+  width:31px;height:31px;flex:0 0 31px;border-radius:10px;
+  background:#15304d;color:var(--text);display:flex;align-items:center;justify-content:center;font-weight:950;
+}
+.opName{font-size:17px;font-weight:950}
+.opMetrics{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px}
+.opMetric{
+  background:#081321;border:1px solid var(--line);border-radius:10px;
+  text-align:center;padding:6px 3px;
+}
+.opMetric span{display:block;font-size:7px;color:var(--muted)}
+.opMetric b{display:block;font-size:12px;margin-top:2px}
+.opWhy{font-size:10px;color:var(--muted);line-height:1.45;margin-top:8px}
+.opActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:9px}
+.opActions button{border-radius:11px;padding:9px 5px;font-size:9px;font-weight:950}
+body.opportunity-page-open{overflow:hidden!important;height:100dvh!important}
+body.opportunity-page-open nav{display:none!important}
+body.opportunity-page-open .page{visibility:hidden!important;pointer-events:none!important}
+body.opportunity-page-open #opportunityModal{visibility:visible!important;pointer-events:auto!important}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2433,7 +2513,7 @@ body.buy-now-page-open #buyNowModal{visibility:visible!important;pointer-events:
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V29</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V30</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2525,6 +2605,7 @@ body.buy-now-page-open #buyNowModal{visibility:visible!important;pointer-events:
       <button id="compareOpenBtn" class="compareOpenBtn" onclick="openComparePage()" disabled>⚖️ CONFRONTA · 0/3</button>
     </div>
     <button class="buyNowBtn" onclick="openBuyNowPage()">🤖 CHI COMPRO ADESSO?</button>
+    <button class="opportunityBtn" onclick="openOpportunityPage()">💎 OCCASIONI D’ASTA</button>
   </div>
   <div id="listonePlayers" class="list"></div>
 </section>
@@ -2580,6 +2661,17 @@ body.buy-now-page-open #buyNowModal{visibility:visible!important;pointer-events:
 
 
 
+
+
+<div id="opportunityModal">
+  <div class="opportunityShell">
+    <div class="opportunityHeader">
+      <button class="opportunityBack" onclick="closeOpportunityPage()">← Indietro</button>
+      <div class="opportunityTitle">💎 Occasioni d’asta</div>
+    </div>
+    <div id="opportunityBody" class="opportunityBody"></div>
+  </div>
+</div>
 
 <div id="buyNowModal">
   <div class="buyNowShell">
@@ -3416,6 +3508,119 @@ function renderListone(){
 
 
 
+
+
+let OPPORTUNITY_ROLE='ALL';
+
+function opportunityCandidate(index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p || purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))return null;
+  if(roleCount(state.me,p.role)>=LIMITS[p.role])return null;
+
+  const ai=aiPlayerAnalysis(index,state.me);
+  if(!ai)return null;
+  const st=statsFor(p.name);
+  const fit=rosterFitScore(p,ai,state.me);
+  const afford=affordabilityScore(ai,state.me);
+
+  // Value index: quality versus current ideal price.
+  const quality=Math.max(1,ai.score);
+  const price=Math.max(1,ai.ideal);
+  const fvm=Math.max(1,Number(p.fvm)||1);
+  const statBoost=st ? clamp((Number(st.fm||0)-5.7)*10 + Math.min(12,Number(st.pv||0)*.35),0,20) : 6;
+  const rawValue=(quality*0.52)+(fvm/price)*8.5+(fit*0.16)+(afford*0.12)+statBoost*0.08;
+  const valueIndex=Math.round(clamp(rawValue,0,99));
+
+  let label='PREZZO GIUSTO', cls='giusto';
+  if(valueIndex>=82){label='AFFARE';cls='affare';}
+  else if(valueIndex>=72){label='BUON PREZZO';cls='buono';}
+  else if(valueIndex<52){label='CARO';cls='caro';}
+
+  const targetGood=Math.max(1,Math.round(ai.low*.92));
+  const targetExcellent=Math.max(1,Math.round(ai.low*.78));
+
+  return {index,p,ai,st,fit,afford,valueIndex,label,cls,targetGood,targetExcellent};
+}
+function opportunityRows(){
+  return PLAYER_ARCHIVE
+    .map((p,index)=>opportunityCandidate(index))
+    .filter(Boolean)
+    .filter(x=>OPPORTUNITY_ROLE==='ALL'||x.p.role===OPPORTUNITY_ROLE)
+    .sort((a,b)=>b.valueIndex-a.valueIndex || b.ai.score-a.ai.score)
+    .slice(0,20);
+}
+function opportunityReason(x){
+  const bits=[];
+  if(x.valueIndex>=82)bits.push(`diventa un affare sotto ${x.targetExcellent} cr`);
+  else if(x.valueIndex>=72)bits.push(`molto interessante sotto ${x.targetGood} cr`);
+  else bits.push(`prezzo corretto intorno a ${x.ai.low}-${x.ai.ideal} cr`);
+  if(x.afford>=80)bits.push('molto sostenibile per il tuo budget');
+  if(x.fit>=75)bits.push('ottimo fit con la tua rosa');
+  if(x.ai.score>=82)bits.push('profilo AI di fascia alta');
+  return bits.slice(0,3).join(' · ');
+}
+function setOpportunityRole(role){
+  OPPORTUNITY_ROLE=role;
+  renderOpportunityPage();
+}
+function renderOpportunityPage(){
+  const box=document.getElementById('opportunityBody');
+  if(!box)return;
+  const rows=opportunityRows();
+
+  box.innerHTML=`
+    <div class="opportunityContext">
+      <div style="font-size:17px;font-weight:950">Giocatori sottovalutati rispetto al loro valore</div>
+      <div class="playerMetaLine">L’AI confronta qualità, statistiche, prezzo ideale, FIT rosa e sostenibilità col tuo budget.</div>
+      <div class="opFilters">
+        ${['ALL','P','D','C','A'].map(r=>`<button class="opFilter ${OPPORTUNITY_ROLE===r?'on':''}" onclick="setOpportunityRole('${r}')">${r==='ALL'?'TUTTI':r}</button>`).join('')}
+      </div>
+    </div>
+
+    ${rows.length?rows.map((x,n)=>`
+      <div class="opCard ${x.cls}">
+        <div class="opTop">
+          <div class="opRank">${n+1}</div>
+          <div style="flex:1">
+            <div class="opName">${esc(x.p.name)}</div>
+            <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+          </div>
+          <span class="opBadge ${x.cls}">${x.label}</span>
+        </div>
+
+        <div class="opMetrics">
+          <div class="opMetric"><span>VALORE</span><b>${x.valueIndex}</b></div>
+          <div class="opMetric"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
+          <div class="opMetric"><span>RANGE</span><b>${x.ai.low}-${x.ai.high}</b></div>
+          <div class="opMetric"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+          <div class="opMetric"><span>AFFARE SOTTO</span><b>${x.targetExcellent}</b></div>
+          <div class="opMetric"><span>BUON PREZZO</span><b>${x.targetGood}</b></div>
+          <div class="opMetric"><span>FIT ROSA</span><b>${x.fit}</b></div>
+          <div class="opMetric"><span>BUDGET</span><b>${x.afford}</b></div>
+        </div>
+
+        <div class="opWhy">${opportunityReason(x)}</div>
+
+        <div class="opActions">
+          <button class="altCompare" onclick="addBuyNowToCompare(${x.index})">⚖️ CONFRONTA</button>
+          <button class="altAI" onclick="closeOpportunityPage();openAIForPlayer(${x.index})">🤖 AI</button>
+          <button class="altAuction" onclick="closeOpportunityPage();buyFromListone(${x.index})">ASTA</button>
+        </div>
+      </div>`).join(''):'<div class="empty" style="margin-top:12px">Nessuna occasione disponibile con questo filtro.</div>'}
+  `;
+}
+function openOpportunityPage(){
+  OPPORTUNITY_ROLE='ALL';
+  renderOpportunityPage();
+  document.body.classList.add('opportunity-page-open');
+  document.getElementById('opportunityModal').classList.add('show');
+  const b=document.getElementById('opportunityBody'); if(b)b.scrollTop=0;
+}
+function closeOpportunityPage(){
+  document.getElementById('opportunityModal').classList.remove('show');
+  document.body.classList.remove('opportunity-page-open');
+  document.body.style.overflow='';
+}
 
 let BUY_NOW_ROLE='ALL';
 
