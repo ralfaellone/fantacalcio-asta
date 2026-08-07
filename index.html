@@ -3129,6 +3129,50 @@ body.formation-page-open nav{display:none!important}
 body.formation-page-open .page{visibility:hidden!important;pointer-events:none!important}
 body.formation-page-open #formationModal{visibility:visible!important;pointer-events:auto!important}
 
+
+/* V38 - Costruisci Rosa AI */
+.aiRosterSelector{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:10px 0;
+}
+.aiRosterSelector button{
+  border:1px solid var(--line);background:#0b1727;color:var(--text);
+  border-radius:11px;padding:9px 3px;font-size:10px;font-weight:950;
+}
+.aiRosterSelector button.active{background:var(--accent);border-color:var(--accent);color:#111}
+.aiRosterSummary{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:8px 0 11px;
+}
+.aiRosterSummary div{
+  background:#081321;border:1px solid var(--line);border-radius:10px;
+  text-align:center;padding:6px 3px;
+}
+.aiRosterSummary span{display:block;font-size:7px;color:var(--muted)}
+.aiRosterSummary b{display:block;font-size:12px;margin-top:2px}
+.aiRosterRoleTitle{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:13px 1px 6px;font-size:14px;font-weight:950;
+}
+.aiRosterPlayer{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;
+  background:#0b1727;border:1px solid var(--line);border-radius:12px;
+  padding:8px 9px;margin:5px 0;
+}
+.aiRosterPlayer.owned{border-color:rgba(57,217,138,.45);background:#0b211b}
+.aiRosterPlayerName{font-size:11px;font-weight:950}
+.aiRosterPlayerMeta{font-size:8px;color:var(--muted);margin-top:2px}
+.aiRosterPlayerRight{text-align:right}
+.aiRosterPrice{font-size:11px;font-weight:950}
+.aiRosterTier{font-size:7px;color:var(--accent);font-weight:900;margin-top:2px}
+.aiRosterActions{display:flex;justify-content:flex-end;gap:4px;margin-top:4px}
+.aiRosterActions button{
+  border:1px solid var(--line);background:#081321;color:var(--text);
+  border-radius:7px;padding:5px 6px;font-size:7px;font-weight:900;
+}
+.aiRosterWarning{
+  border:1px solid rgba(255,209,102,.4);background:#2b2410;color:#ffd166;
+  border-radius:11px;padding:8px 9px;font-size:9px;line-height:1.4;margin:8px 0;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3138,7 +3182,7 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V37</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V38</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
@@ -3175,8 +3219,7 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
       <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
       <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
       <button onclick="openPlanPage()">📊<span>Piano asta</span></button>
-      <button onclick="openFormationPage()">🧩<span>Piani rosa AI</span></button>
-      <button onclick="openFormationPage()">🧩<span>Piani rosa AI</span></button>
+      <button onclick="openFormationPage()">🧩<span>Costruisci Rosa AI</span></button>
     </div>
   </div>
 
@@ -3357,7 +3400,7 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
   <div class="formationShell">
     <div class="formationHeader">
       <button class="formationBack" onclick="closeFormationPage()">← Indietro</button>
-      <div class="formationTitle">🧩 Piani Rosa AI</div>
+      <div class="formationTitle">🧩 Costruisci Rosa AI</div>
     </div>
     <div id="formationBody" class="formationBody"></div>
   </div>
@@ -4534,56 +4577,124 @@ function renderListone(){
 
 
 
+
+let AI_ROSTER_MODULE='433';
+
+function setAIRosterModule(id){
+  AI_ROSTER_MODULE=id;
+  renderFormationPage();
+}
+function aiRosterTier(role,slot,plan){
+  if(slot < plan.xi[role]) return 'TITOLARE';
+  const firstAlt={P:1,D:2,C:2,A:2}[role]||1;
+  if(slot < plan.xi[role]+firstAlt) return 'PRIMA ALTERNATIVA';
+  return 'RISERVA';
+}
+function aiRosterBudgetWeights(role,count,xi){
+  const arr=[];
+  for(let i=0;i<count;i++){
+    if(i<xi) arr.push(Math.max(.7,1.75-i*.13));
+    else if(i<xi+2) arr.push(.55);
+    else arr.push(.30);
+  }
+  const sum=arr.reduce((a,b)=>a+b,0)||1;
+  return arr.map(x=>x/sum);
+}
+function buildAIRoster(plan){
+  const roles=['P','D','C','A'];
+  const result=[];
+  const ownedNames=new Set(state.purchases.filter(x=>x.buyer===state.me).map(x=>normalizePlayerText(x.name)));
+  const already=new Set();
+
+  roles.forEach(role=>{
+    const owned=state.purchases.filter(x=>x.buyer===state.me&&x.role===role)
+      .map(x=>{
+        const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(x.name));
+        return {owned:true,index:idx,p:idx>=0?PLAYER_ARCHIVE[idx]:{name:x.name,role,team:'',fvm:0,qi:0},paid:Number(x.price||0)};
+      });
+    owned.forEach(x=>{result.push({...x,tier:aiRosterTier(role,result.filter(y=>y.p.role===role).length,plan)});already.add(normalizePlayerText(x.p.name));});
+
+    const missing=Math.max(0,LIMITS[role]-owned.length);
+    const candidates=PLAYER_ARCHIVE.map((p,index)=>({p,index}))
+      .filter(x=>x.p.role===role && !ownedNames.has(normalizePlayerText(x.p.name)) && !purchaseForArchivePlayer(x.p.name) && !isUnavailablePlayer(x.p.name))
+      .map(x=>({p:x.p,index:x.index,ai:aiPlayerAnalysis(x.index,state.me),dir:ai2DirectionalScore(x.index,state.me)}))
+      .filter(x=>x.ai)
+      .sort((a,b)=>b.dir-a.dir || b.ai.score-a.ai.score || Number(b.p.fvm||0)-Number(a.p.fvm||0));
+
+    const roleRows=result.filter(y=>y.p.role===role);
+    const weights=aiRosterBudgetWeights(role,LIMITS[role],plan.xi[role]);
+    let pickPool=[...candidates];
+
+    for(let j=0;j<missing && pickPool.length;j++){
+      const slot=roleRows.length+j;
+      const tier=aiRosterTier(role,slot,plan);
+      const targetRoleBudget=Math.round(INITIAL*plan.budget[role]);
+      const target=Math.max(1,Math.round(targetRoleBudget*(weights[slot]||.05)));
+      // Pick strongest candidate whose ideal price is reasonably near slot target; fallback best directional.
+      let ranked=pickPool.map(x=>{
+        const priceFit=100-Math.min(100,Math.abs(Number(x.ai.ideal||1)-target)/Math.max(1,target)*70);
+        const tierPower=tier==='TITOLARE'?x.dir*.72+priceFit*.28:x.dir*.50+priceFit*.50;
+        return {...x,pickScore:tierPower};
+      }).sort((a,b)=>b.pickScore-a.pickScore);
+      const chosen=ranked[0];
+      if(!chosen)break;
+      result.push({...chosen,owned:false,tier,target});
+      already.add(normalizePlayerText(chosen.p.name));
+      pickPool=pickPool.filter(x=>x.index!==chosen.index);
+    }
+  });
+  return result;
+}
 function renderFormationPage(){
   const body=document.getElementById('formationBody');
   if(!body)return;
-  const plans=rankedFormationPlans(state.me);
-  const best=plans[0];
-  const cash=budget(state.me);
-  const slots=remainingRosterSlots(state.me);
+  const plan=FORMATION_PLANS.find(x=>x.id===AI_ROSTER_MODULE)||FORMATION_PLANS[1];
+  const rosterPlan=buildAIRoster(plan);
+  const owned=rosterPlan.filter(x=>x.owned);
+  const suggested=rosterPlan.filter(x=>!x.owned);
+  const estimated=owned.reduce((s,x)=>s+x.paid,0)+suggested.reduce((s,x)=>s+Number(x.ai?.ideal||x.target||1),0);
+  const nonOltre=owned.reduce((s,x)=>s+x.paid,0)+suggested.reduce((s,x)=>s+Number(x.ai?.maxRec||x.target||1),0);
+  const remaining=budget(state.me);
+  const projectedNew=suggested.reduce((s,x)=>s+Number(x.ai?.ideal||x.target||1),0);
+  const over=projectedNew>remaining;
 
   body.innerHTML=`
     <div class="formationHero">
-      <div style="font-size:18px;font-weight:950">AI Asta 2.0 · Piano consigliato: ${best.name}</div>
-      <div class="playerMetaLine">${best.style} · compatibilità ${best.score}/99</div>
-      <div class="formationWhy">L'AI sceglie il piano in base a giocatori già presi, budget speso per reparto, crediti rimasti, modificatore e mercato ancora disponibile. Hai ${cash} crediti e ${slots} posti da completare.</div>
+      <div style="font-size:18px;font-weight:950">Costruisci la tua rosa completa</div>
+      <div class="playerMetaLine">Scegli il modulo: l'AI mantiene i tuoi acquisti e completa automaticamente tutti i 25 posti con giocatori ancora liberi.</div>
+      <div class="aiRosterSelector">
+        ${FORMATION_PLANS.map(x=>`<button class="${x.id===plan.id?'active':''}" onclick="setAIRosterModule('${x.id}')">${x.name}</button>`).join('')}
+      </div>
+      <div class="formationWhy"><b>${plan.name} · ${plan.style}</b><br>${formationPlanWhy(plan)}</div>
     </div>
 
-    ${plans.map((plan,n)=>{
-      const targets=formationTargets(plan);
-      return `<div class="formationCard ${n===0?'best':''}">
-        <div class="formationCardTop">
-          <div>
-            <div class="formationName">${plan.name} ${n===0?'<span class="ai2Chip">CONSIGLIATA</span>':''}</div>
-            <div class="formationStyle">${plan.style}</div>
-          </div>
-          <div class="formationScore">${plan.score}/99</div>
-        </div>
+    <div class="aiRosterSummary">
+      <div><span>ROSA</span><b>${rosterPlan.length}/25</b></div>
+      <div><span>GIÀ TUOI</span><b>${owned.length}</b></div>
+      <div><span>STIMA ROSA</span><b>${estimated}</b></div>
+      <div><span>NON OLTRE TOT.</span><b>${nonOltre}</b></div>
+    </div>
+    ${over?`<div class="aiRosterWarning">⚠️ Con i prezzi ideali attuali servirebbero circa ${projectedNew} crediti per completare i posti mancanti, ma ne hai ${remaining}. L'AI continuerà comunque a privilegiare alternative più sostenibili mentre l'asta evolve.</div>`:''}
 
-        <div class="formationRoles">
-          ${['P','D','C','A'].map(r=>`<div class="formationRole"><span>${r} TITOLARI</span><b>${plan.xi[r]}</b></div>`).join('')}
-        </div>
-
-        <div class="formationBudget">
-          ${['P','D','C','A'].map(r=>`<div class="formationBudgetBox"><span>BUDGET ${r}</span><b>${Math.round(INITIAL*plan.budget[r])}</b></div>`).join('')}
-        </div>
-
-        <div class="formationWhy">${formationPlanWhy(plan)}</div>
-
-        ${targets.length?`<div class="formationTargets">
-          <div style="font-size:9px;font-weight:900;margin-bottom:5px">Acquisti che ti indirizzano verso questo piano</div>
-          ${targets.map(x=>`<div class="formationTarget">
+    ${['P','D','C','A'].map(role=>{
+      const rows=rosterPlan.filter(x=>x.p.role===role);
+      return `<div class="aiRosterRoleTitle"><span>${roleName(role)}</span><span>${rows.length}/${LIMITS[role]}</span></div>
+        ${rows.map((x,i)=>`
+          <div class="aiRosterPlayer ${x.owned?'owned':''}">
             <div>
-              <div class="formationTargetName">${esc(x.p.name)} <span class="tag">${x.role}</span></div>
-              <div class="formationTargetMeta">AI2 ${x.dir}/99 · ideale ${x.ai.ideal} · non oltre ${x.ai.maxRec}</div>
+              <div class="aiRosterPlayerName">${i+1}. ${esc(x.p.name)} ${x.owned?'<span class="tag good">GIÀ TUO</span>':''}</div>
+              <div class="aiRosterPlayerMeta">${esc(x.p.team||'')} · FVM ${x.p.fvm||'-'} ${x.owned?`· pagato ${x.paid}`:`· AI2 ${x.dir}/99`}</div>
             </div>
-            <div class="formationTargetActions">
-              <button onclick="closeFormationPage();openAIForPlayer(${x.index})">AI</button>
-              <button onclick="closeFormationPage();buyFromListone(${x.index})">ASTA</button>
+            <div class="aiRosterPlayerRight">
+              <div class="aiRosterPrice">${x.owned?`${x.paid} cr`:`${x.ai.ideal} cr`}</div>
+              <div class="aiRosterTier">${x.tier}</div>
+              ${!x.owned?`<div class="aiRosterPlayerMeta">non oltre ${x.ai.maxRec}</div>
+                <div class="aiRosterActions">
+                  <button onclick="closeFormationPage();openAIForPlayer(${x.index})">AI</button>
+                  <button onclick="closeFormationPage();buyFromListone(${x.index})">ASTA</button>
+                </div>`:''}
             </div>
-          </div>`).join('')}
-        </div>`:''}
-      </div>`;
+          </div>`).join('')}`;
     }).join('')}
   `;
 }
