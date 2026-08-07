@@ -1167,6 +1167,31 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 .moveDetailBtn{border:1px solid var(--line);background:#0b1727;color:var(--text)}
 .moveBuyBtn{border:0;background:var(--accent);color:#111}
 
+
+/* V18.2 - Selezione reparto Prossima Mossa */
+.nextMoveRoleBar{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+  margin-top:10px;
+}
+.nextMoveRoleBtn{
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--muted);
+  border-radius:12px;
+  padding:9px 4px;
+  font-weight:950;
+}
+.nextMoveRoleBtn.active{
+  background:var(--accent);
+  color:#111;
+  border-color:var(--accent);
+}
+.nextMoveRoleBtn.done{
+  opacity:.45;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1176,7 +1201,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V18.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V18.2</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1203,6 +1228,12 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
     <div class="nextMoveHead">
       <div class="nextMoveTitle">🤖 PROSSIMA MOSSA</div>
       <div id="nextMoveRole" class="nextMoveAction"></div>
+    </div>
+    <div class="nextMoveRoleBar">
+      <button class="nextMoveRoleBtn" data-moverole="P" onclick="setNextMoveRole('P',this)">P</button>
+      <button class="nextMoveRoleBtn" data-moverole="D" onclick="setNextMoveRole('D',this)">D</button>
+      <button class="nextMoveRoleBtn" data-moverole="C" onclick="setNextMoveRole('C',this)">C</button>
+      <button class="nextMoveRoleBtn" data-moverole="A" onclick="setNextMoveRole('A',this)">A</button>
     </div>
     <div id="nextMoveAdvice" class="nextMoveAdvice"></div>
     <div id="nextMovePlayers" class="nextMovePlayers"></div>
@@ -1497,6 +1528,7 @@ let selectedArchivePlayer=null;
 let listoneFilter='ALL';
 let PLAYER_STATS=loadPlayerStats();
 let advisorRole='';
+let nextMoveSelectedRole='';
 function defaultState(){return {favorites:[],favoriteMeta:{},managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
 function load(){
   try{
@@ -2169,19 +2201,21 @@ function renderAdvisor(){
 const ROLE_BUDGET_SHARE={P:.06,D:.20,C:.29,A:.45};
 
 
-function nextMoveRoleChoice(){
-  const data=strategyData(state.me)
-    .filter(d=>d.missing>0)
-    .map(d=>{
-      const free=PLAYER_ARCHIVE.filter(p=>p.role===d.role&&!purchaseForArchivePlayer(p.name));
-      const topFvm=free.length?Math.max(...free.map(p=>Number(p.fvm)||0)):0;
-      const urgency=(d.missing/LIMITS[d.role])*55;
-      const budgetNeed=d.recommendedRemaining>0?clamp(d.recommendedRemaining/Math.max(1,budget(state.me)),0,1)*20:0;
-      const marketQuality=clamp(topFvm/220,0,1)*25;
-      return {...d,moveScore:urgency+budgetNeed+marketQuality};
-    })
-    .sort((a,b)=>b.moveScore-a.moveScore);
-  return data[0]||null;
+
+function firstIncompleteRole(){
+  return ['P','D','C','A'].find(r=>roleCount(state.me,r)<LIMITS[r])||'';
+}
+function ensureNextMoveRole(){
+  if(!nextMoveSelectedRole || roleCount(state.me,nextMoveSelectedRole)>=LIMITS[nextMoveSelectedRole]){
+    nextMoveSelectedRole=firstIncompleteRole();
+  }
+  return nextMoveSelectedRole;
+}
+function setNextMoveRole(role,btn){
+  nextMoveSelectedRole=role;
+  document.querySelectorAll('.nextMoveRoleBtn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderNextMove();
 }
 function nextMoveCandidates(role){
   if(!role)return [];
@@ -2201,28 +2235,47 @@ function renderNextMove(){
   const listEl=document.getElementById('nextMovePlayers');
   if(!roleEl||!adviceEl||!listEl)return;
 
-  const move=nextMoveRoleChoice();
-  if(!move){
+  const role=ensureNextMoveRole();
+
+  document.querySelectorAll('.nextMoveRoleBtn').forEach(btn=>{
+    const r=btn.dataset.moverole;
+    const complete=roleCount(state.me,r)>=LIMITS[r];
+    btn.classList.toggle('done',complete);
+    btn.classList.toggle('active',r===role);
+  });
+
+  if(!role){
     roleEl.textContent='ROSA COMPLETA';
     adviceEl.textContent='Hai completato tutti i reparti.';
     listEl.innerHTML='';
     return;
   }
 
-  const cap=strategyCapForRole(move.role,state.me);
-  roleEl.textContent=`ORA: ${move.role}`;
+  const move=strategyData(state.me).find(d=>d.role===role);
+  const cap=strategyCapForRole(role,state.me);
 
-  let advice=`Hai ancora ${move.missing} ${roleName(move.role).toLowerCase()} da prendere. `;
+  roleEl.textContent=`REPARTO: ${role}`;
+  let advice=`${roleName(role)}: ${move.missing} posti ancora da coprire. `;
   advice+=`Per il prossimo acquisto starei intorno a ${move.nextComfort} crediti`;
   if(cap>move.nextComfort)advice+=`, con tetto dinamico circa ${cap}`;
   advice+=`. `;
-  if(move.status==='Sopra budget')advice+='Sei già sopra il piano del reparto: cerca soprattutto valore.';
-  else if(move.status==='Budget disponibile')advice+='Hai margine per alzare il livello del reparto.';
-  else advice+='Mantieni equilibrio con gli altri reparti.';
+
+  if(move.status==='Sopra budget'){
+    advice+='Sei già sopra il piano del reparto: cerca soprattutto valore.';
+  }else if(move.status==='Budget disponibile'){
+    advice+='Hai margine per alzare il livello del reparto.';
+  }else{
+    advice+='Mantieni equilibrio con il budget dei reparti successivi.';
+  }
+
+  if(role==='P') advice+=' Finché i portieri non sono completi, il flusso naturale resta P → D → C → A.';
+  if(role==='D') advice+=' Terminati i difensori, passa ai centrocampisti.';
+  if(role==='C') advice+=' Terminato il centrocampo, conserva il budget necessario per l’attacco.';
+
   adviceEl.textContent=advice;
 
-  const top=nextMoveCandidates(move.role);
-  listEl.innerHTML=top.map((x,i)=>{
+  const top=nextMoveCandidates(role);
+  listEl.innerHTML=top.length ? top.map((x,i)=>{
     const a=x.price;
     return `<div class="nextMovePlayer">
       <div class="nextMoveMain">
@@ -2239,7 +2292,7 @@ function renderNextMove(){
         <div class="nextMoveMeta">non oltre ${a.maxRec}</div>
       </div>
     </div>`;
-  }).join('');
+  }).join('') : '<div class="empty">Nessun giocatore disponibile in questo reparto.</div>';
 }
 
 function strategyData(buyerIndex=state.me){
