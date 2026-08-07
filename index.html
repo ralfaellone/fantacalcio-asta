@@ -2279,6 +2279,75 @@ body.compare-page-open #compareModal{
   font-weight:900;
 }
 
+
+/* V28 - Alternative AI immediate */
+.altAiBtn{
+  border:1px solid rgba(244,196,48,.5);
+  background:#171405;
+  color:var(--accent);
+  border-radius:11px;
+  padding:8px 10px;
+  font-size:10px;
+  font-weight:950;
+}
+#alternativesModal{
+  position:fixed; inset:0; display:none; background:var(--bg);
+  z-index:7800; overflow:hidden;
+}
+#alternativesModal.show{display:block}
+.altPageShell{
+  position:absolute; inset:0; height:100dvh;
+  display:grid; grid-template-rows:auto minmax(0,1fr);
+  background:var(--bg);
+}
+.altPageHeader{
+  display:flex; align-items:center; gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98); border-bottom:1px solid var(--line);
+}
+.altPageBack{
+  border:1px solid var(--line); background:#0b1727; color:var(--text);
+  border-radius:13px; padding:9px 11px; font-weight:900;
+}
+.altPageTitle{font-size:18px;font-weight:950;min-width:0}
+.altPageBody{
+  min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain; padding:12px 14px calc(env(safe-area-inset-bottom) + 28px);
+}
+.altSource{
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line); border-radius:16px; padding:12px; margin-bottom:10px;
+}
+.altCard{
+  background:#0b1727; border:1px solid var(--line);
+  border-radius:16px; padding:11px; margin:8px 0;
+}
+.altCardTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.altRank{
+  min-width:30px;height:30px;border-radius:10px;background:var(--accent);color:#111;
+  display:flex;align-items:center;justify-content:center;font-weight:950;
+}
+.altName{font-size:17px;font-weight:950}
+.altWhy{font-size:10px;color:var(--muted);line-height:1.45;margin-top:7px}
+.altMetrics{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px;
+}
+.altMetric{
+  background:#081321;border:1px solid var(--line);border-radius:10px;
+  text-align:center;padding:6px 3px;
+}
+.altMetric span{display:block;font-size:7px;color:var(--muted)}
+.altMetric b{display:block;font-size:12px;margin-top:2px}
+.altActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:9px}
+.altActions button{border-radius:11px;padding:9px 5px;font-size:9px;font-weight:950}
+.altCompare{border:1px solid var(--line);background:#081321;color:var(--text)}
+.altAI{border:1px solid var(--line);background:#081321;color:var(--text)}
+.altAuction{border:0;background:var(--accent);color:#111}
+body.alternatives-page-open{overflow:hidden!important;height:100dvh!important}
+body.alternatives-page-open nav{display:none!important}
+body.alternatives-page-open .page{visibility:hidden!important;pointer-events:none!important}
+body.alternatives-page-open #alternativesModal{visibility:visible!important;pointer-events:auto!important}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2288,7 +2357,7 @@ body.compare-page-open #compareModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V27.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V28</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2432,6 +2501,17 @@ body.compare-page-open #compareModal{
 <button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
 </nav>
 
+
+
+<div id="alternativesModal">
+  <div class="altPageShell">
+    <div class="altPageHeader">
+      <button class="altPageBack" onclick="closeAlternativesPage()">← Indietro</button>
+      <div class="altPageTitle">🤖 Migliori alternative</div>
+    </div>
+    <div id="alternativesBody" class="altPageBody"></div>
+  </div>
+</div>
 
 <div id="compareModal">
   <div class="compareShell">
@@ -3246,6 +3326,108 @@ function renderListone(){
   }).join(''):'<div class="empty">Nessun giocatore trovato con questi filtri.</div>';
 }
 
+
+
+function alternativeScore(index,sourceIndex){
+  const p=PLAYER_ARCHIVE[index];
+  const src=PLAYER_ARCHIVE[sourceIndex];
+  const ai=aiPlayerAnalysis(index,state.me);
+  if(!p||!src||!ai)return null;
+  const st=statsFor(p.name);
+  const srcSt=statsFor(src.name);
+  const quality=ai.score||0;
+  const fit=rosterFitScore(p,ai,state.me);
+  const afford=affordabilityScore(ai,state.me);
+  const fvmSimilarity=100-Math.min(100,Math.abs((Number(p.fvm)||0)-(Number(src.fvm)||0))*2.2);
+  const statsSimilarity=(st&&srcSt)
+    ? 100-Math.min(100,Math.abs(Number(st.fm||0)-Number(srcSt.fm||0))*22 + Math.abs(Number(st.pv||0)-Number(srcSt.pv||0))*1.2)
+    : 55;
+  const score=Math.round(clamp(quality*.38+fit*.24+afford*.18+fvmSimilarity*.12+statsSimilarity*.08,0,99));
+  return {index,p,ai,st,score,fit,afford};
+}
+function bestAlternativesFor(sourceIndex){
+  const src=PLAYER_ARCHIVE[sourceIndex];
+  if(!src)return [];
+  return PLAYER_ARCHIVE
+    .map((p,index)=>({p,index}))
+    .filter(x=>x.p.role===src.role && x.index!==sourceIndex)
+    .filter(x=>!purchaseForArchivePlayer(x.p.name) && !isUnavailablePlayer(x.p.name))
+    .map(x=>alternativeScore(x.index,sourceIndex))
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score || b.ai.score-a.ai.score)
+    .slice(0,10);
+}
+function alternativeWhy(x,source){
+  const bits=[];
+  if(x.fit>=75)bits.push('ottimo incastro con la tua rosa');
+  else if(x.fit>=55)bits.push('buon incastro con la tua rosa');
+  if(x.afford>=80)bits.push('prezzo molto sostenibile');
+  else if(x.afford>=55)bits.push('prezzo gestibile');
+  if(x.ai.score>=80)bits.push('profilo AI di fascia alta');
+  if(Number(x.p.fvm)>=Number(source.fvm)*.9)bits.push('valore vicino al giocatore perso');
+  if(!bits.length)bits.push('miglior compromesso tra qualità, disponibilità e budget');
+  return bits.slice(0,3).join(' · ');
+}
+
+function openAlternativesByName(name){
+  const key=normalizePlayerText(name);
+  const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===key);
+  if(idx>=0)openAlternativesPage(idx);
+}
+
+function openAlternativesPage(sourceIndex){
+  const source=PLAYER_ARCHIVE[sourceIndex];
+  if(!source)return;
+  const rows=bestAlternativesFor(sourceIndex);
+  const body=document.getElementById('alternativesBody');
+  body.innerHTML=`
+    <div class="altSource">
+      <div class="meta">ALTERNATIVE A</div>
+      <div class="altName">${esc(source.name)}</div>
+      <div class="playerMetaLine">${source.role} · ${esc(source.team)} · QI ${source.qi} · FVM ${source.fvm}</div>
+      <div class="altWhy">Le alternative sono ordinate considerando qualità, statistiche, prezzo AI, budget residuo e necessità della tua rosa.</div>
+    </div>
+    ${rows.length?rows.map((x,n)=>`
+      <div class="altCard">
+        <div class="altCardTop">
+          <div class="altRank">${n+1}</div>
+          <div style="flex:1">
+            <div class="altName">${esc(x.p.name)}</div>
+            <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+          </div>
+          <span class="tag">${x.score}/99</span>
+        </div>
+        <div class="altMetrics">
+          <div class="altMetric"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
+          <div class="altMetric"><span>RANGE</span><b>${x.ai.low}-${x.ai.high}</b></div>
+          <div class="altMetric"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+          <div class="altMetric"><span>FM</span><b>${x.st?Number(x.st.fm).toFixed(2):'—'}</b></div>
+        </div>
+        <div class="altWhy">${alternativeWhy(x,source)}</div>
+        <div class="altActions">
+          <button class="altCompare" onclick="addAlternativeToCompare(${x.index})">⚖️ CONFRONTA</button>
+          <button class="altAI" onclick="closeAlternativesPage();openAIForPlayer(${x.index})">🤖 AI</button>
+          <button class="altAuction" onclick="closeAlternativesPage();buyFromListone(${x.index})">ASTA</button>
+        </div>
+      </div>`).join(''):'<div class="empty">Nessuna alternativa libera disponibile per questo ruolo.</div>'}
+  `;
+  document.body.classList.add('alternatives-page-open');
+  document.getElementById('alternativesModal').classList.add('show');
+  body.scrollTop=0;
+}
+function closeAlternativesPage(){
+  document.getElementById('alternativesModal').classList.remove('show');
+  document.body.classList.remove('alternatives-page-open');
+  document.body.style.overflow='';
+}
+function addAlternativeToCompare(index){
+  if(!COMPARE_PLAYERS.includes(index)){
+    if(COMPARE_PLAYERS.length>=3)COMPARE_PLAYERS.shift();
+    COMPARE_PLAYERS.push(index);
+  }
+  updateCompareButton();
+  alert(`${PLAYER_ARCHIVE[index].name} aggiunto al confronto (${COMPARE_PLAYERS.length}/3).`);
+}
 
 function updateCompareButton(){
   const btn=document.getElementById('compareOpenBtn');
@@ -4848,7 +5030,7 @@ function openParticipant(i){
     if(!players.length) return '';
     const totalRole=players.reduce((sum,x)=>sum+x.price,0);
     return `<div class="detailSectionTitle"><span>${roleName(role)}</span><span class="tag">${players.length}/${LIMITS[role]} · ${totalRole} cr</span></div>`+
-      players.map(x=>`<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">Acquistato a ${x.price} crediti</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="releaseBtn" title="Rimuovi dalla rosa" onclick="event.stopPropagation();quickRelease('${x.id}',${i})">✕</button></div></div>`).join('');
+      players.map(x=>`<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">Acquistato a ${x.price} crediti</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="altAiBtn" title="Migliori alternative" onclick="event.stopPropagation();openAlternativesByName(decodeURIComponent('${encodeURIComponent(x.name)}'))">🤖</button><button class="releaseBtn" title="Rimuovi dalla rosa" onclick="event.stopPropagation();quickRelease('${x.id}',${i})">✕</button></div></div>`).join('');
   }).join('');
 
   const released=(state.releases||[]).filter(x=>x.buyer===i).slice().reverse();
