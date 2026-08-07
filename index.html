@@ -2617,7 +2617,7 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V33</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V33.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
@@ -2690,14 +2690,36 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
 </section>
 
 <section id="rosa" class="page">
-  <div class="card" style="margin-bottom:12px">
+  <div class="section" style="margin-top:0">
+    <h2>Asta</h2>
+    <div class="hint">Centro operativo per registrare gli acquisti e decidere rapidamente la prossima mossa.</div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
     <div class="k">Registra un acquisto</div>
-    <div class="hint" style="margin-top:5px">Inserisci il giocatore, il prezzo e il partecipante che lo ha acquistato.</div>
+    <div class="hint" style="margin-top:5px">Inserisci giocatore, prezzo e partecipante che lo ha acquistato.</div>
     <button class="primary" style="position:static;margin-top:10px;width:100%" onclick="openBuy()">＋ REGISTRA ACQUISTO</button>
   </div>
 
-  <div class="section" style="margin-top:0"><h2>La mia rosa</h2><div class="section" style="margin-top:16px"><h2>La mia rosa</h2></div>
-  <div id="myRoster" class="list"></div></div>
+  <div class="section" style="margin-top:14px">
+    <h2>Comandi rapidi</h2>
+    <div class="grid2">
+      <button class="secondary" onclick="goToListone()">🔎 Giocatori</button>
+      <button class="secondary" onclick="openBuyNowPage()">🤖 Chi compro adesso?</button>
+      <button class="secondary" onclick="openOpportunityPage()">💎 Occasioni d’asta</button>
+      <button class="secondary" onclick="openPlanPage()">📊 Piano asta</button>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:14px">
+    <h2>Situazione live</h2>
+    <div id="auctionLiveSummary"></div>
+  </div>
+
+  <div class="section" style="margin-top:14px">
+    <h2>Ultimi acquisti</h2>
+    <div id="auctionRecentPurchases"></div>
+  </div>
 </section>
 
 <section id="listone" class="page">
@@ -3486,7 +3508,45 @@ function goToParticipants(){
   if(btn)tab('players',btn);
 }
 
+
+function renderAuctionPage(){
+  const live=document.getElementById('auctionLiveSummary');
+  const recent=document.getElementById('auctionRecentPurchases');
+  if(!live||!recent)return;
+
+  const cash=budget(me);
+  const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
+  const mine=roster(me);
+  const slots=Math.max(0,total-mine.length);
+  const safe=safeMaxBid(me);
+
+  live.innerHTML=`
+    <div class="grid3">
+      <div class="mini"><span>CREDITI</span><b>${cash}</b></div>
+      <div class="mini"><span>ROSA</span><b>${mine.length}/${total}</b></div>
+      <div class="mini"><span>MAX SICURA</span><b>${safe}</b></div>
+    </div>
+    <div class="grid4" style="margin-top:7px">
+      ${['P','D','C','A'].map(r=>`<div class="mini"><span>${r}</span><b>${roleCount(me,r)}/${LIMITS[r]}</b></div>`).join('')}
+    </div>
+    <div class="hint" style="margin-top:8px">${slots?`${slots} posti ancora da coprire.`:'Rosa completa.'}</div>
+  `;
+
+  const rows=[...state.purchases].slice(-5).reverse();
+  recent.innerHTML=rows.length?rows.map(x=>`
+    <div class="card" style="padding:10px;margin:7px 0">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+        <div>
+          <b>${esc(x.name)}</b>
+          <div class="hint">${x.role} · ${esc(state.managers[x.buyer]||'')}</div>
+        </div>
+        <b>${x.price} cr</b>
+      </div>
+    </div>`).join(''):`<div class="empty">Nessun acquisto registrato.</div>`;
+}
+
 function render(){
+  setTimeout(renderAuctionPage,0);
  const me=state.me;
  const leaguePill=document.getElementById('leagueBudgetPill'); if(leaguePill)leaguePill.textContent=INITIAL;
  document.getElementById('myBudget').textContent=budget(me);document.getElementById('myCount').innerHTML=`${roster(me).length} <small>/ 25</small>`;document.getElementById('myNameLabel').textContent=state.managers[me];
