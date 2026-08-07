@@ -636,12 +636,24 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 #settingsModal .field{margin:9px 0}
 #settingsModal .field input,
 #settingsModal .field select{padding:12px 11px}
-#settingsModal .primary{
-  position:sticky;
-  bottom:calc(env(safe-area-inset-bottom) + 8px);
-  z-index:105;
-  margin-top:14px;
-  box-shadow:0 -10px 24px rgba(7,16,29,.75);
+#settingsModal .settingsSheet{
+  padding-bottom:calc(env(safe-area-inset-bottom) + 105px);
+}
+.settingsSaveBar{
+  position:fixed;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:120;
+  padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);
+  background:rgba(7,16,29,.97);
+  backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);
+}
+.settingsSaveBar .primary{
+  position:static;
+  margin:0;
+  box-shadow:none;
 }
 
 </style>
@@ -653,7 +665,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V11.3</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V11.4</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -819,7 +831,9 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
     </div>
     <div class="field"><label>La mia squadra</label><select id="myManager"></select></div>
     <div id="managerInputs"></div>
-    <button class="primary" onclick="saveSettings()">SALVA</button>
+    <div class="settingsSaveBar">
+      <button class="primary" onclick="saveSettings()">SALVA</button>
+    </div>
   </div>
 </div>
 
