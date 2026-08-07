@@ -1831,6 +1831,83 @@ body.ai-page-open #aiModal{
   line-height:1.45;
 }
 
+
+/* V23.2 - Navigazione a pagine: niente più schede sopra la pagina */
+#buyModal, #strategyModal, #advisorModal, #goalModal, #editBuyModal{
+  position:fixed !important;
+  inset:0 !important;
+  display:none;
+  background:var(--bg) !important;
+  z-index:6500 !important;
+  padding:0 !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+}
+#buyModal.show, #strategyModal.show, #advisorModal.show, #goalModal.show, #editBuyModal.show{
+  display:block !important;
+}
+.fullAppPage{
+  position:absolute;
+  inset:0;
+  height:100dvh;
+  max-height:100dvh;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  background:var(--bg);
+}
+.fullAppPageHeader{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);
+  border-bottom:1px solid var(--line);
+  z-index:3;
+}
+.fullAppPageBack{
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:13px;
+  padding:9px 11px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.fullAppPageTitle{
+  min-width:0;
+  font-size:18px;
+  font-weight:950;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.fullAppPageBody{
+  min-height:0 !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding:12px 14px calc(env(safe-area-inset-bottom) + 30px) !important;
+}
+body.subpage-open{
+  overflow:hidden !important;
+  height:100dvh !important;
+}
+body.subpage-open nav{
+  display:none !important;
+}
+body.subpage-open .page{
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+body.subpage-open #buyModal.show,
+body.subpage-open #strategyModal.show,
+body.subpage-open #advisorModal.show,
+body.subpage-open #goalModal.show,
+body.subpage-open #editBuyModal.show{
+  visibility:visible !important;
+  pointer-events:auto !important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1840,7 +1917,7 @@ body.ai-page-open #aiModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V23.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V23.2</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1981,13 +2058,14 @@ body.ai-page-open #aiModal{
 <button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
 </nav>
 
-<div id="buyModal" class="modal" onclick="if(event.target===this)closeBuy()"><div class="sheet"><div class="handle"></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-    <h3 style="margin:0">Registra acquisto</h3>
-    <button class="closeX" onclick="closeBuy()">×</button>
-  </div>
-
-  <div class="field">
+<div id="buyModal">
+  <div class="fullAppPage">
+    <div class="fullAppPageHeader">
+      <button class="fullAppPageBack" onclick="closeBuy()">← Indietro</button>
+      <div class="fullAppPageTitle">Registra acquisto</div>
+    </div>
+    <div class="fullAppPageBody">
+<div class="field">
     <label>Giocatore</label>
     <div class="playerSearchWrap">
       <input id="pname" placeholder="Cerca nel Listone Fantacalcio.it" autocomplete="off" oninput="searchPlayers()" onfocus="searchPlayers()">
@@ -2021,13 +2099,9 @@ body.ai-page-open #aiModal{
   <div id="buyStatus" class="buyStatus">Inserisci giocatore e prezzo.</div>
   <button id="saveBuyBtn" class="primary" onclick="saveBuy()">SALVA ACQUISTO</button>
   <div class="hint" id="buyHint"></div>
-</div></div>
-
-
-
-
-
-
+    </div>
+  </div>
+</div>
 
 <div id="simModal">
   <div class="simShell">
@@ -2071,15 +2145,16 @@ body.ai-page-open #aiModal{
   </div>
 </div>
 
-<div id="strategyModal" class="modal" onclick="if(event.target===this)closeStrategy()">
-  <div class="sheet">
-    <div class="handle"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-      <h3 style="margin:0">🧠 Strategia Budget AI</h3>
-      <button class="closeX" onclick="closeStrategy()">×</button>
+<div id="strategyModal">
+  <div class="fullAppPage">
+    <div class="fullAppPageHeader">
+      <button class="fullAppPageBack" onclick="closeStrategy()">← Indietro</button>
+      <div class="fullAppPageTitle">🧠 Strategia Budget AI</div>
     </div>
-    <div id="strategySummary" class="statsState" style="margin-top:12px"></div>
+    <div class="fullAppPageBody">
+<div id="strategySummary" class="statsState" style="margin-top:12px"></div>
     <div id="strategyList"></div>
+    </div>
   </div>
 </div>
 
@@ -2096,15 +2171,14 @@ body.ai-page-open #aiModal{
   </div>
 </div>
 
-<div id="advisorModal" class="modal" onclick="if(event.target===this)closeAdvisor()">
-  <div class="sheet">
-    <div class="handle"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-      <h3 style="margin:0">🤖 Consigliere Rosa</h3>
-      <button class="closeX" onclick="closeAdvisor()">×</button>
+<div id="advisorModal">
+  <div class="fullAppPage">
+    <div class="fullAppPageHeader">
+      <button class="fullAppPageBack" onclick="closeAdvisor()">← Indietro</button>
+      <div class="fullAppPageTitle">🤖 Consigliere Rosa</div>
     </div>
-
-    <div id="advisorStatsState" class="statsState"></div>
+    <div class="fullAppPageBody">
+<div id="advisorStatsState" class="statsState"></div>
 
     <div class="advisorRoleBar">
       <button class="advisorRoleBtn" data-arole="P" onclick="setAdvisorRole('P',this)">P</button>
@@ -2115,6 +2189,7 @@ body.ai-page-open #aiModal{
 
     <div id="advisorSummary" class="hint"></div>
     <div id="advisorList"></div>
+    </div>
   </div>
 </div>
 
@@ -2128,15 +2203,14 @@ body.ai-page-open #aiModal{
   </div>
 </div>
 
-<div id="goalModal" class="modal goalModal" onclick="if(event.target===this)closeGoalEditor()">
-  <div class="sheet">
-    <div class="handle"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-      <h3 style="margin:0">🎯 Obiettivo giocatore</h3>
-      <button class="closeX" onclick="closeGoalEditor()">×</button>
+<div id="goalModal">
+  <div class="fullAppPage">
+    <div class="fullAppPageHeader">
+      <button class="fullAppPageBack" onclick="closeGoalEditor()">← Indietro</button>
+      <div class="fullAppPageTitle">🎯 Obiettivo giocatore</div>
     </div>
-
-    <input id="goalPlayerKey" type="hidden">
+    <div class="fullAppPageBody">
+<input id="goalPlayerKey" type="hidden">
     <div id="goalPlayerPreview" class="goalPreview" style="margin-top:14px"></div>
 
     <div class="row">
@@ -2166,17 +2240,26 @@ body.ai-page-open #aiModal{
 
     <button class="primary" onclick="saveGoalMeta()">SALVA OBIETTIVO</button>
     <button class="goalDanger" onclick="removeGoalFromEditor()">RIMUOVI DAI MIEI OBIETTIVI</button>
+    </div>
   </div>
 </div>
 
-<div id="editBuyModal" class="modal" onclick="if(event.target===this)closeEditBuy()"><div class="sheet"><div class="handle"></div><h3>Modifica acquisto</h3>
-  <input id="editBuyId" type="hidden">
+<div id="editBuyModal">
+  <div class="fullAppPage">
+    <div class="fullAppPageHeader">
+      <button class="fullAppPageBack" onclick="closeEditBuy()">← Indietro</button>
+      <div class="fullAppPageTitle">Modifica acquisto</div>
+    </div>
+    <div class="fullAppPageBody">
+<input id="editBuyId" type="hidden">
   <div class="field"><label>Giocatore</label><input id="editPname" autocomplete="off"></div>
   <div class="row"><div class="field"><label>Ruolo</label><select id="editProle"><option>P</option><option>D</option><option>C</option><option>A</option></select></div><div class="field"><label>Prezzo</label><input id="editPprice" inputmode="numeric" type="number" min="1"></div></div>
   <div class="field"><label>Acquistato da</label><select id="editPbuyer"></select></div>
   <div id="editBuyHint" class="hint"></div>
   <button class="primary" onclick="saveEditBuy()">SALVA MODIFICHE</button>
-</div></div>
+    </div>
+  </div>
+</div>
 
 <div id="settingsModal" class="modal">
   <div class="settingsShell">
@@ -2646,11 +2729,11 @@ function openGoalEditor(name,event){
     ? `<div class="goalPreviewName">${esc(p.name)}</div><div class="goalPreviewMeta">${p.role} · ${p.team} · QI ${p.qi} · FVM ${p.fvm}</div>`
     : `<div class="goalPreviewName">${esc(name)}</div>`;
 
-  document.getElementById('goalModal').classList.add('show');
+  enterSubPage('goalModal');
   renderListone();
   renderHomeLive();
 }
-function closeGoalEditor(){document.getElementById('goalModal').classList.remove('show')}
+function closeGoalEditor(){leaveSubPage('goalModal')}
 function saveGoalMeta(){
   const key=document.getElementById('goalPlayerKey').value;
   if(!key)return;
@@ -2821,11 +2904,11 @@ function defaultAdvisorRole(){
 }
 function openAdvisor(){
   advisorRole=defaultAdvisorRole();
-  document.getElementById('advisorModal').classList.add('show');
+  enterSubPage('advisorModal');
   document.querySelectorAll('.advisorRoleBtn').forEach(b=>b.classList.toggle('active',b.dataset.arole===advisorRole));
   renderAdvisor();
 }
-function closeAdvisor(){document.getElementById('advisorModal').classList.remove('show')}
+function closeAdvisor(){leaveSubPage('advisorModal')}
 function setAdvisorRole(role,btn){
   advisorRole=role;
   document.querySelectorAll('.advisorRoleBtn').forEach(b=>b.classList.remove('active'));
@@ -3401,9 +3484,9 @@ function strategyCapForRole(role,buyerIndex=state.me){
 }
 function openStrategy(){
   renderStrategy();
-  document.getElementById('strategyModal').classList.add('show');
+  enterSubPage('strategyModal');
 }
-function closeStrategy(){document.getElementById('strategyModal').classList.remove('show')}
+function closeStrategy(){leaveSubPage('strategyModal')}
 function renderStrategy(){
   const data=strategyData(state.me);
   const av=budget(state.me), sp=spent(state.me), miss=remainingRosterSlots(state.me);
@@ -4217,6 +4300,26 @@ function updateBuyPreview(){
   status.className='buyStatus '+(ok?'ok':(name||price?'bad':''));
   save.disabled=!ok;
 }
+
+let subPageReturnScroll=0;
+function enterSubPage(id){
+  subPageReturnScroll=window.scrollY||0;
+  document.body.classList.add('subpage-open');
+  document.getElementById(id).classList.add('show');
+  const body=document.querySelector(`#${id} .fullAppPageBody`);
+  if(body)body.scrollTop=0;
+}
+function leaveSubPage(id){
+  document.getElementById(id).classList.remove('show');
+  const anyOpen=['buyModal','strategyModal','advisorModal','goalModal','editBuyModal']
+    .some(mid=>document.getElementById(mid)?.classList.contains('show'));
+  if(!anyOpen){
+    document.body.classList.remove('subpage-open');
+    document.body.style.overflow='';
+    requestAnimationFrame(()=>window.scrollTo(0,subPageReturnScroll));
+  }
+}
+
 function openBuy(){
   let sel=document.getElementById('pbuyer');
   sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)} · ${budget(i)} cr</option>`).join('');
@@ -4228,11 +4331,11 @@ function openBuy(){
   document.getElementById('playerSuggestions').classList.remove('show');
   document.getElementById('buyHint').textContent='';
   selectBuyRole('P');
-  document.getElementById('buyModal').classList.add('show');
+  enterSubPage('buyModal');
   updateBuyPreview();
   setTimeout(()=>document.getElementById('pname').focus(),150);
 }
-function closeBuy(){document.getElementById('buyModal').classList.remove('show')}
+function closeBuy(){leaveSubPage('buyModal')}
 function saveBuy(){
   const name=document.getElementById('pname').value.trim();
   const role=document.getElementById('prole').value;
@@ -4329,9 +4432,9 @@ function openEditBuy(id){
   const sel=document.getElementById('editPbuyer');
   sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===x.buyer?'selected':''}>${esc(n)}</option>`).join('');
   document.getElementById('editBuyHint').textContent='';
-  document.getElementById('editBuyModal').classList.add('show');
+  enterSubPage('editBuyModal');
 }
-function closeEditBuy(){document.getElementById('editBuyModal').classList.remove('show')}
+function closeEditBuy(){leaveSubPage('editBuyModal')}
 function saveEditBuy(){
   const id=document.getElementById('editBuyId').value;
   const x=state.purchases.find(p=>p.id===id); if(!x)return;
@@ -4386,7 +4489,7 @@ render();
   function lockBottomNav(){
     const nav=document.querySelector('nav');
     if(!nav)return;
-    if(document.body.classList.contains('simulator-open') || document.body.classList.contains('ai-page-open')){
+    if(document.body.classList.contains('simulator-open') || document.body.classList.contains('ai-page-open') || document.body.classList.contains('subpage-open')){
       nav.style.bottom='0px';
       return;
     }
