@@ -11,6 +11,49 @@
 <link rel="manifest" href="manifest.json" />
 <title>Asta Fanta</title>
 <style>
+
+#splashScreen{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:#07101d;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  transition:opacity .45s ease, visibility .45s ease;
+}
+#splashScreen.hide{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+#splashScreen img{
+  width:120px;
+  height:120px;
+  border-radius:28px;
+  margin-bottom:22px;
+  box-shadow:0 18px 50px rgba(0,0,0,.35);
+  animation:splashPop .7s ease;
+}
+#splashScreen h1{
+  margin:0;
+  font-size:34px;
+  font-weight:900;
+  color:#fff;
+  letter-spacing:-1px;
+}
+#splashScreen p{
+  margin:8px 0 0;
+  color:#9fb0c5;
+  font-size:15px;
+  font-weight:600;
+}
+@keyframes splashPop{
+  0%{transform:scale(.72);opacity:0}
+  70%{transform:scale(1.06);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
 :root{--bg:#07101d;--card:#101d2f;--card2:#14243a;--text:#f7f9fc;--muted:#9fb0c5;--accent:#f4c430;--ok:#39d98a;--danger:#ff6b6b;--line:#24364e}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;min-height:100%}
@@ -29,6 +72,11 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 </style>
 </head>
 <body>
+<div id="splashScreen">
+  <img src="icon-512.png" alt="Asta Fanta">
+  <h1>Asta Fanta</h1>
+  <p>La tua asta. La tua strategia.</p>
+</div>
 <header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore</div></div><div class="pill">600 crediti</div></header>
 
 <section id="home" class="page active">
@@ -119,6 +167,12 @@ function saveSettings(){state.managers=state.managers.map((_,i)=>document.getEle
 function resetAll(){if(confirm("Vuoi davvero cancellare tutti gli acquisti dell'asta?")){state.purchases=[];persist();render()}}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-asta-fantacalcio.json';a.click();URL.revokeObjectURL(a.href)}
 function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!d.managers||!d.purchases)throw 0;state=d;persist();render();alert('Backup importato.')}catch(_){alert('Backup non valido.')}};rd.readAsText(f);e.target.value=''}
+
+window.addEventListener('load',()=>{
+  const splash=document.getElementById('splashScreen');
+  setTimeout(()=>splash && splash.classList.add('hide'),1500);
+});
+
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 render();
 </script>
