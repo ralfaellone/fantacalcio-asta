@@ -1438,6 +1438,50 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   margin:7px 0;
 }
 
+
+/* V20.1 - Alternative full-screen */
+#simAltModal{
+  position:fixed;
+  inset:0;
+  display:none;
+  background:var(--bg);
+  z-index:170;
+}
+#simAltModal.show{display:block}
+.simAltShell{
+  height:100dvh;
+  width:100%;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  background:var(--bg);
+}
+.simAltHeader{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);
+  border-bottom:1px solid var(--line);
+}
+.simAltBack{
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:13px;
+  padding:9px 11px;
+  font-weight:900;
+}
+.simAltTitle{
+  font-size:17px;
+  font-weight:950;
+}
+.simAltBody{
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:12px 14px calc(env(safe-area-inset-bottom) + 20px);
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1447,7 +1491,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1667,14 +1711,13 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   </div>
 </div>
 
-<div id="simAltModal" class="modal" onclick="if(event.target===this)closeSimAlternatives()">
-  <div class="sheet">
-    <div class="handle"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-      <h3 style="margin:0">Alternative più economiche</h3>
-      <button class="closeX" onclick="closeSimAlternatives()">×</button>
+<div id="simAltModal">
+  <div class="simAltShell">
+    <div class="simAltHeader">
+      <button class="simAltBack" onclick="closeSimAlternatives()">← Indietro</button>
+      <div class="simAltTitle">Alternative più economiche</div>
     </div>
-    <div id="simAltList" style="margin-top:12px"></div>
+    <div id="simAltList" class="simAltBody"></div>
   </div>
 </div>
 
@@ -2768,9 +2811,15 @@ function openSimAlternatives(key){
         <div style="text-align:right"><div class="price">${x.est}</div><button class="simAdd" onclick="replaceSimPlayer('${key}',${x.idx})">SOSTITUISCI</button></div>
       </div>
     </div>`).join(''):'<div class="empty">Nessuna alternativa più economica trovata.</div>');
+
+  document.getElementById('simModal').classList.remove('show');
   document.getElementById('simAltModal').classList.add('show');
 }
-function closeSimAlternatives(){document.getElementById('simAltModal').classList.remove('show')}
+function closeSimAlternatives(){
+  document.getElementById('simAltModal').classList.remove('show');
+  document.getElementById('simModal').classList.add('show');
+  renderSimulator();
+}
 function replaceSimPlayer(oldKey,index){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return;
@@ -2779,7 +2828,6 @@ function replaceSimPlayer(oldKey,index){
   currentSimPlan()[pos]={key:normalizePlayerText(p.name),name:p.name,role:p.role,team:p.team,price:simEstimatedPrice(index)};
   persistSimPlans();
   closeSimAlternatives();
-  renderSimulator();
 }
 
 function auditAsta(){
