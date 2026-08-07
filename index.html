@@ -344,6 +344,37 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   font-weight:800;
 }
 
+
+/* Punto 6 - Obiettivi / Preferiti */
+.favBtn{
+  width:38px;
+  height:38px;
+  border:1px solid var(--line);
+  background:#081321;
+  color:#7f90a5;
+  border-radius:13px;
+  font-size:21px;
+  line-height:1;
+  flex:0 0 auto;
+}
+.favBtn.on{
+  color:#f4c430;
+  border-color:#6d5b18;
+  background:#211c08;
+}
+.playerCardInner{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex:1;
+  min-width:0;
+}
+.favSummary{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:12px;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -353,7 +384,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V7</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V8</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -394,8 +425,10 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
       <button class="filterBtn" data-filter="A" onclick="setListoneFilter('A',this)">A</button>
       <button class="filterBtn" data-filter="FREE" onclick="setListoneFilter('FREE',this)">Disponibili</button>
       <button class="filterBtn" data-filter="TAKEN" onclick="setListoneFilter('TAKEN',this)">Acquistati</button>
+      <button class="filterBtn" data-filter="FAV" onclick="setListoneFilter('FAV',this)">⭐ Obiettivi</button>
     </div>
     <div id="listoneCount" class="listoneCount"></div>
+    <div id="favSummary" class="favSummary"></div>
   </div>
   <div id="listonePlayers" class="list"></div>
 </section>
@@ -491,8 +524,14 @@ let state=load();
 let PLAYER_ARCHIVE=loadPlayerArchive();
 let selectedArchivePlayer=null;
 let listoneFilter='ALL';
-function defaultState(){return {managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
-function load(){try{return JSON.parse(localStorage.getItem('astaFantaV1'))||defaultState()}catch(e){return defaultState()}}
+function defaultState(){return {favorites:[],managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem('astaFantaV1'))||defaultState();
+    if(!Array.isArray(s.favorites))s.favorites=[];
+    return s;
+  }catch(e){return defaultState()}
+}
 function persist(){localStorage.setItem('astaFantaV1',JSON.stringify(state))}
 
 function normalizeHeader(v){
@@ -661,6 +700,23 @@ function render(){
 }
 
 
+
+function isFavorite(name){
+  return Array.isArray(state.favorites) && state.favorites.includes(normalizePlayerText(name));
+}
+function toggleFavorite(name,event){
+  if(event)event.stopPropagation();
+  if(!Array.isArray(state.favorites))state.favorites=[];
+  const key=normalizePlayerText(name);
+  if(state.favorites.includes(key)){
+    state.favorites=state.favorites.filter(x=>x!==key);
+  }else{
+    state.favorites.push(key);
+  }
+  persist();
+  renderListone();
+}
+
 function setListoneFilter(filter,btn){
   listoneFilter=filter;
   document.querySelectorAll('.filterBtn').forEach(x=>x.classList.remove('active'));
@@ -684,17 +740,25 @@ function renderListone(){
     if(['P','D','C','A'].includes(listoneFilter) && p.role!==listoneFilter) return false;
     if(listoneFilter==='FREE' && bought) return false;
     if(listoneFilter==='TAKEN' && !bought) return false;
+    if(listoneFilter==='FAV' && !isFavorite(p.name)) return false;
     return true;
   });
   rows.sort((a,b)=>a.role.localeCompare(b.role)||b.fvm-a.fvm||a.name.localeCompare(b.name));
   document.getElementById('listoneCount').textContent=`${rows.length} giocatori visualizzati · ${PLAYER_ARCHIVE.filter(p=>!purchaseForArchivePlayer(p.name)).length} disponibili`;
+  const favTotal=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)).length;
+  const favFree=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name)).length;
+  const favEl=document.getElementById('favSummary');
+  if(favEl)favEl.textContent=`⭐ Obiettivi: ${favTotal} totali · ${favFree} ancora disponibili`;
   box.innerHTML=rows.length?rows.map(p=>{
     const bought=purchaseForArchivePlayer(p.name);
     const idx=PLAYER_ARCHIVE.indexOf(p);
     return `<div class="playerCard ${bought?'taken':''}" onclick="${bought?'openParticipant('+bought.buyer+')':'buyFromListone('+idx+')'}">
-      <div class="playerMain">
-        <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}</div>
-        <div class="playerInfo">${p.team} · QI ${p.qi}</div>
+      <div class="playerCardInner">
+        <button class="favBtn ${isFavorite(p.name)?'on':''}" onclick="toggleFavorite(decodeURIComponent('${encodeURIComponent(p.name)}'),event)" aria-label="Obiettivo">${isFavorite(p.name)?'★':'☆'}</button>
+        <div class="playerMain">
+          <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}</div>
+          <div class="playerInfo">${p.team} · QI ${p.qi}${p.qa!==undefined?' · QA '+p.qa:''}</div>
+        </div>
       </div>
       <div class="playerRight">
         <div class="playerFvm">FVM ${p.fvm}</div>
