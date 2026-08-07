@@ -3284,6 +3284,45 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
   color:#ffd166;
 }
 
+
+/* V40 - Fix nomi Costruisci Rosa AI */
+.aiSlotOption{
+  grid-template-columns:22px minmax(0,1fr) max-content !important;
+}
+.aiSlotOption > div:nth-child(2){
+  min-width:0;
+  display:block;
+}
+.aiSlotOptionName{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  color:var(--text) !important;
+  font-size:11px !important;
+  line-height:1.2;
+  font-weight:950 !important;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.aiSlotOptionMeta{
+  display:block;
+  white-space:normal;
+}
+.aiSlotOptionRight{
+  min-width:74px;
+  max-width:92px;
+}
+@media(max-width:390px){
+  .aiSlotOption{
+    grid-template-columns:22px minmax(105px,1fr) 76px !important;
+    gap:6px;
+    padding:7px 6px;
+  }
+  .aiSlotOptionRight{min-width:0;max-width:76px}
+  .aiSlotOptionName{font-size:10px !important}
+  .aiSlotOptionMeta{font-size:7px}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3293,7 +3332,7 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V39</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V40</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
