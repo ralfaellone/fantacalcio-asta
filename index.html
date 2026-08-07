@@ -64,7 +64,7 @@ button,input,select{font:inherit}
 .rolebar{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:11px 0}.role{border:1px solid var(--line);background:#0b1727;border-radius:16px;padding:10px 4px;text-align:center}.role b{font-size:17px}.role span{display:block;color:var(--muted);font-size:10px;margin-top:3px}
 .section{margin-top:16px}.section h2{font-size:17px;margin:0 0 9px}.primary{width:100%;border:0;border-radius:18px;background:var(--accent);color:#111;font-weight:900;padding:16px;font-size:18px}.secondary{width:100%;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--text);font-weight:800;padding:13px}.row{display:flex;gap:8px}.row>*{flex:1}
 .list{display:flex;flex-direction:column;gap:8px}.item{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;border-radius:17px;background:var(--card);border:1px solid var(--line)}.item .name{font-weight:800}.item .meta{color:var(--muted);font-size:12px;margin-top:3px}.price{font-weight:900;font-size:18px;text-align:right}.delete{border:0;background:transparent;color:var(--danger);font-size:20px;padding:4px 0 4px 10px}
-nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-inset-bottom) + 8px);background:rgba(7,16,29,.94);backdrop-filter:blur(16px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:5px;z-index:10}nav button{border:0;background:transparent;color:var(--muted);padding:8px 2px 5px;border-radius:14px;font-size:11px;font-weight:800}nav button .ico{font-size:20px;display:block;margin-bottom:3px}nav button.active{background:var(--card2);color:var(--text)}
+nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-inset-bottom) + 8px);background:rgba(7,16,29,.94);backdrop-filter:blur(16px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);gap:4px;z-index:10}nav button{border:0;background:transparent;color:var(--muted);padding:8px 2px 5px;border-radius:14px;font-size:10px;font-weight:800}nav button .ico{font-size:20px;display:block;margin-bottom:3px}nav button.active{background:var(--card2);color:var(--text)}
 .page{display:none}.page.active{display:block}.empty{color:var(--muted);text-align:center;padding:24px 12px;border:1px dashed var(--line);border-radius:18px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:flex-end;z-index:30}.modal.show{display:flex}.sheet{width:100%;background:#0d1828;border-radius:26px 26px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);border-top:1px solid var(--line);max-height:92vh;overflow:auto}.handle{width:42px;height:5px;border-radius:9px;background:#53657b;margin:0 auto 14px}.sheet h3{font-size:21px;margin:0 0 14px}.field{margin:11px 0}.field label{display:block;color:var(--muted);font-size:12px;font-weight:700;margin:0 0 6px 3px}.field input,.field select{width:100%;border-radius:15px;border:1px solid var(--line);background:#081321;color:var(--text);padding:14px 13px;outline:none}.field input:focus,.field select:focus{border-color:var(--accent)}.hint{font-size:12px;color:var(--muted);margin-top:8px}.danger{color:var(--danger)}
 .progress{height:8px;background:#07101d;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--accent);border-radius:99px}
@@ -527,7 +527,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V11</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V11.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -631,6 +631,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 <button onclick="tab('rosa',this)"><span class="ico">👕</span>Rosa</button>
 <button onclick="tab('listone',this)"><span class="ico">🔎</span>Giocatori</button>
 <button onclick="tab('players',this)"><span class="ico">👥</span>Partecipanti</button>
+<button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
 </nav>
 
 <div id="buyModal" class="modal" onclick="if(event.target===this)closeBuy()"><div class="sheet"><div class="handle"></div>
