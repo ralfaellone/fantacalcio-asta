@@ -1192,6 +1192,58 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   opacity:.45;
 }
 
+
+/* V19 - Controllo Asta */
+.auditCard{
+  margin-top:12px;
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:13px;
+}
+.auditHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.auditTitle{font-size:16px;font-weight:950}
+.auditStatus{
+  border-radius:10px;
+  padding:5px 8px;
+  font-size:10px;
+  font-weight:950;
+  border:1px solid var(--line);
+}
+.auditStatus.ok{color:var(--ok)}
+.auditStatus.warn{color:var(--accent)}
+.auditStatus.bad{color:var(--danger)}
+.auditList{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  margin-top:10px;
+}
+.auditItem{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:10px 11px;
+}
+.auditItem strong{
+  display:block;
+  font-size:12px;
+}
+.auditItem span{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.4;
+}
+.auditItem.bad{border-color:rgba(255,107,107,.4)}
+.auditItem.warn{border-color:rgba(244,196,48,.35)}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1201,7 +1253,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V18.3</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V19</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1237,6 +1289,13 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
     </div>
     <div id="nextMoveAdvice" class="nextMoveAdvice"></div>
     <div id="nextMovePlayers" class="nextMovePlayers"></div>
+  </div>
+  <div class="auditCard">
+    <div class="auditHead">
+      <div class="auditTitle">⚠️ CONTROLLO ASTA</div>
+      <div id="auditStatus" class="auditStatus ok">TUTTO OK</div>
+    </div>
+    <div id="auditList" class="auditList"></div>
   </div>
 
   <div class="liveGrid">
@@ -1805,6 +1864,7 @@ function resetPlayerArchive(){
   renderHistory();
   renderStatsImportInfo();
   renderNextMove();
+ renderAudit();
 }
 
 function spent(i){return state.purchases.filter(x=>x.buyer===i).reduce((s,x)=>s+x.price,0)}
@@ -2293,6 +2353,107 @@ function renderNextMove(){
       </div>
     </div>`;
   }).join('') : '<div class="empty">Nessun giocatore disponibile in questo reparto.</div>';
+}
+
+
+function auditAsta(){
+  const issues=[];
+
+  // 1) Duplicate players by normalized name.
+  const counts={};
+  state.purchases.forEach(x=>{
+    const k=normalizePlayerText(x.name);
+    counts[k]=(counts[k]||0)+1;
+  });
+  Object.entries(counts).forEach(([k,c])=>{
+    if(c>1){
+      const ex=state.purchases.find(x=>normalizePlayerText(x.name)===k);
+      issues.push({level:'bad',title:'Giocatore duplicato',text:`${ex?ex.name:k} compare ${c} volte negli acquisti.`});
+    }
+  });
+
+  // 2) Budget impossible to complete roster.
+  state.managers.forEach((name,i)=>{
+    const remaining=budget(i);
+    const missing=remainingRosterSlots(i);
+    if(remaining<missing){
+      issues.push({level:'bad',title:`Budget insufficiente · ${name}`,text:`Restano ${remaining} crediti ma mancano ${missing} giocatori: non è possibile completare la rosa a 1 credito ciascuno.`});
+    }
+  });
+
+  // 3) Role limits exceeded.
+  state.managers.forEach((name,i)=>{
+    ['P','D','C','A'].forEach(r=>{
+      const c=roleCount(i,r);
+      if(c>LIMITS[r]){
+        issues.push({level:'bad',title:`Limite reparto superato · ${name}`,text:`${r}: ${c}/${LIMITS[r]} giocatori.`});
+      }
+    });
+  });
+
+  // 4) My team: purchases above current strategic target.
+  const me=state.me;
+  const strat=strategyData(me);
+  strat.forEach(d=>{
+    if(d.missing>0 && d.roleSpent>d.plan*1.2){
+      issues.push({level:'warn',title:`${d.role} sopra budget`,text:`Hai speso ${d.roleSpent} crediti contro un piano indicativo di ${d.plan}. Nei prossimi acquisti cerca soprattutto valore.`});
+    }
+  });
+
+  // 5) My team: very low liquidity for open slots.
+  const av=budget(me);
+  const miss=remainingRosterSlots(me);
+  if(miss>0){
+    const avg=av/miss;
+    if(avg<3){
+      issues.push({level:'warn',title:'Liquidità molto bassa',text:`Hai ${av} crediti per ${miss} posti: media ${avg.toFixed(1)} crediti a giocatore.`});
+    }
+  }
+
+  // 6) Top objectives still free.
+  const freeFav=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name));
+  const highFav=freeFav.filter(p=>(goalMeta(p.name).priority||'medium')==='high');
+  if(highFav.length){
+    const top=highFav.slice(0,3).map(p=>p.name).join(', ');
+    issues.push({level:'warn',title:'Obiettivi ad alta priorità ancora liberi',text:`${top}${highFav.length>3?' e altri':''}.`});
+  }
+
+  // 7) Check whether any role is completed.
+  ['P','D','C','A'].forEach(r=>{
+    if(roleCount(me,r)===LIMITS[r]){
+      issues.push({level:'ok',title:`${roleName(r)} completati`,text:`Reparto completo: ${roleCount(me,r)}/${LIMITS[r]}.`});
+    }
+  });
+
+  return issues;
+}
+function renderAudit(){
+  const status=document.getElementById('auditStatus');
+  const box=document.getElementById('auditList');
+  if(!status||!box)return;
+
+  const all=auditAsta();
+  const bad=all.filter(x=>x.level==='bad');
+  const warn=all.filter(x=>x.level==='warn');
+  const priority=[...bad,...warn,...all.filter(x=>x.level==='ok')].slice(0,5);
+
+  if(bad.length){
+    status.textContent='PROBLEMA';
+    status.className='auditStatus bad';
+  }else if(warn.length){
+    status.textContent='ATTENZIONE';
+    status.className='auditStatus warn';
+  }else{
+    status.textContent='TUTTO OK';
+    status.className='auditStatus ok';
+  }
+
+  box.innerHTML=priority.length?priority.map(x=>`
+    <div class="auditItem ${x.level}">
+      <strong>${x.level==='bad'?'❌':x.level==='warn'?'⚠️':'✅'} ${esc(x.title)}</strong>
+      <span>${esc(x.text)}</span>
+    </div>`).join('')
+    : '<div class="auditItem"><strong>✅ Nessuna anomalia</strong><span>Budget, limiti e struttura rosa risultano coerenti.</span></div>';
 }
 
 function strategyData(buyerIndex=state.me){
