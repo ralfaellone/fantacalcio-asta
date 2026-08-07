@@ -3923,6 +3923,57 @@ body.rose-pro-open{
   .aiCore3Metric b{font-size:10px}
 }
 
+
+/* V49 - AI Core 3.2 Rival Intelligence */
+.rivalIntelHeroTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:8px;
+}
+.rivalIntelSummary{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px;
+  margin-top:9px;
+}
+.rivalIntelSummary div{
+  background:#0a1423;
+  border:1px solid rgba(180,120,255,.18);
+  border-radius:10px;
+  text-align:center;
+  padding:6px 3px;
+}
+.rivalIntelSummary span{
+  display:block;
+  font-size:6.5px;
+  color:var(--muted);
+}
+.rivalIntelSummary b{
+  display:block;
+  margin-top:2px;
+  font-size:11px;
+}
+.rivalIntelSignals{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.rivalIntelSignals span{
+  border:1px solid rgba(180,120,255,.22);
+  background:#151026;
+  color:#d7bdff;
+  border-radius:999px;
+  padding:4px 7px;
+  font-size:7px;
+  font-weight:850;
+}
+@media(max-width:390px){
+  .rivalIntelHeroTop{align-items:flex-start}
+  .rivalIntelSummary span{font-size:6px}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3932,7 +3983,7 @@ body.rose-pro-open{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V48</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V49</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5614,23 +5665,84 @@ function closeFormationPage(){
 function rivalInterestForPlayer(managerIndex,playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
   if(!p)return null;
+
   const cash=budget(managerIndex);
   const missing=Math.max(0,LIMITS[p.role]-roleCount(managerIndex,p.role));
   const totalMissing=remainingRosterSlots(managerIndex);
   const safe=safeMaxBid(managerIndex);
-  const roleNeed=missing/Math.max(1,LIMITS[p.role]);
-  const liquidity=clamp(cash/Math.max(1,INITIAL),0,1);
-  const safePower=clamp(safe/Math.max(1,INITIAL*.25),0,1);
-  const urgency=totalMissing>0?clamp(missing/Math.max(1,totalMissing),0,1):0;
 
-  let score=Math.round(clamp(roleNeed*42 + liquidity*26 + safePower*20 + urgency*12,0,99));
-  if(missing===0)score=0;
+  if(missing===0){
+    return {
+      managerIndex,cash,missing,totalMissing,safe,
+      score:0,level:'low',label:'BASSO',
+      affordable:false,playerNeed:0,qualityPull:0,scarcityPull:0,
+      estimatedMax:0,reason:'Reparto già completo.'
+    };
+  }
+
+  // Use the pre-Core model here to avoid recursion while still getting a
+  // personalized price ceiling for this rival.
+  const base=aiPlayerAnalysisBase(playerIndex,managerIndex);
+  const estimatedMax=base?Math.max(1,Number(base.maxRec)||1):Math.max(1,Math.round((Number(p.fvm)||1)*(INITIAL/1000)));
+  const ideal=base?Math.max(1,Number(base.ideal)||1):estimatedMax;
+
+  const roleNeed=missing/Math.max(1,LIMITS[p.role]);
+  const urgency=totalMissing>0?clamp(missing/Math.max(1,totalMissing),0,1):0;
+  const liquidity=clamp(cash/Math.max(1,INITIAL),0,1);
+  const bidPower=clamp(safe/Math.max(1,estimatedMax),0,1.35);
+
+  // Player-specific desirability percentile among currently free players in the same role.
+  const freeRole=PLAYER_ARCHIVE.filter(x=>x.role===p.role&&!purchaseForArchivePlayer(x.name)&&!isUnavailablePlayer(x.name));
+  const values=freeRole.map(playerMarketComposite).sort((a,b)=>a-b);
+  const target=playerMarketComposite(p);
+  const qualityPct=values.length?values.filter(v=>v<target).length/values.length:.5;
+
+  // Scarcity of genuinely similar players.
+  const comparable=freeRole.filter(x=>playerMarketComposite(x)>=target*.88).length;
+  const scarcity=clamp(1-comparable/Math.max(3,LIMITS[p.role]*3),0,1);
+
+  // Cheap fillers should not create artificial "high rival pressure" even if everyone needs the role.
+  const lowValue=(Number(p.fvm)||0)<=3 && (Number(p.qa)||Number(p.qi)||0)<=2;
+  const qualityPull=lowValue?0.10:clamp(.18+qualityPct*.82,0,1);
+  const scarcityPull=lowValue?0:scarcity;
+
+  // Can the rival realistically contest this player's expected closing zone?
+  const affordability=clamp((Math.min(cash,safe)-ideal)/Math.max(1,ideal),-.75,1);
+  const affordable=Math.min(cash,safe)>=Math.max(1,Math.round(ideal*.82));
+
+  let score=
+    roleNeed*19 +
+    urgency*13 +
+    liquidity*9 +
+    clamp(bidPower,0,1)*18 +
+    qualityPull*25 +
+    scarcityPull*16;
+
+  if(!affordable)score-=18;
+  if(lowValue)score*=.42;
+  if(qualityPct>=.90 && affordable)score+=7;
+  if(scarcity>=.75 && affordable)score+=6;
+
+  score=Math.round(clamp(score,0,99));
 
   let level='low', label='BASSO';
-  if(score>=70){level='high';label='ALTO';}
-  else if(score>=45){level='med';label='MEDIO';}
+  if(score>=72){level='high';label='ALTO';}
+  else if(score>=46){level='med';label='MEDIO';}
 
-  return {managerIndex,cash,missing,totalMissing,safe,score,level,label};
+  let reason='';
+  if(score>=72)reason='Rivale molto credibile: bisogno reale del ruolo, liquidità sufficiente e forte interesse per questa fascia di giocatore.';
+  else if(score>=46)reason='Può partecipare all’asta, ma la pressione dipende dal prezzo raggiunto e dalle alternative ancora disponibili.';
+  else if(!affordable)reason='Pressione bassa: il prezzo atteso è poco compatibile con la sua capacità di rilancio.';
+  else if(lowValue)reason='Pressione bassa: profilo economico e facilmente sostituibile, anche se il reparto è ancora incompleto.';
+  else reason='Pressione ridotta: priorità, qualità del profilo o scarsità non sono abbastanza elevate.';
+
+  return {
+    managerIndex,cash,missing,totalMissing,safe,score,level,label,
+    affordable,playerNeed:Math.round(roleNeed*100),
+    qualityPull:Math.round(qualityPull*100),
+    scarcityPull:Math.round(scarcityPull*100),
+    estimatedMax,ideal,qualityPct,comparable,reason
+  };
 }
 function rivalRadarRows(playerIndex){
   return state.managers
@@ -5642,17 +5754,39 @@ function renderRivalRadar(playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
   const body=document.getElementById('rivalRadarBody');
   if(!p||!body)return;
+
   const rows=rivalRadarRows(playerIndex);
-  const dangerous=rows.filter(x=>x.score>=70).length;
+  const dangerous=rows.filter(x=>x.score>=72).length;
+  const medium=rows.filter(x=>x.score>=46&&x.score<72).length;
   const active=rows.filter(x=>x.missing>0).length;
+  const overall=rows.length?Math.round(rows.slice(0,5).reduce((s,x)=>s+x.score,0)/Math.min(5,rows.length)):0;
+  const base=aiPlayerAnalysisBase(playerIndex,state.me);
+  const expected=base?`${base.low}-${base.high}`:'—';
+
+  let overallLabel='BASSA', overallClass='low';
+  if(overall>=72){overallLabel='ALTA';overallClass='high';}
+  else if(overall>=46){overallLabel='MEDIA';overallClass='med';}
 
   body.innerHTML=`
     <div class="rivalRadarHero">
-      <div style="font-size:18px;font-weight:950">${esc(p.name)}</div>
-      <div class="playerMetaLine">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm}</div>
-      <div class="rivalRadarRisk" style="margin-top:8px">
-        ${active} rivali devono ancora completare questo reparto · ${dangerous} hanno pressione d’acquisto alta.
-        Il punteggio stima chi ha più probabilità di rilanciare considerando posti mancanti, liquidità e Max sicura.
+      <div class="rivalIntelHeroTop">
+        <div>
+          <div style="font-size:18px;font-weight:950">${esc(p.name)}</div>
+          <div class="playerMetaLine">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm}</div>
+        </div>
+        <span class="rivalRiskBadge ${overallClass}">PRESSIONE ${overallLabel} · ${overall}/99</span>
+      </div>
+
+      <div class="rivalIntelSummary">
+        <div><span>RIVALI ATTIVI</span><b>${active}</b></div>
+        <div><span>PERICOLOSI</span><b>${dangerous}</b></div>
+        <div><span>MEDI</span><b>${medium}</b></div>
+        <div><span>RANGE BASE</span><b>${expected}</b></div>
+      </div>
+
+      <div class="rivalRadarRisk">
+        AI Core 3.2 valuta ogni avversario sul singolo giocatore: necessità del ruolo, budget, Max sicura,
+        fascia/FVM, scarsità di alternative comparabili e capacità reale di sostenere il prezzo previsto.
       </div>
     </div>
 
@@ -5661,23 +5795,25 @@ function renderRivalRadar(playerIndex){
         <div class="rivalRadarTop">
           <div>
             <div class="rivalRadarName">#${n+1} ${esc(state.managers[r.managerIndex])}</div>
-            <div class="playerMetaLine">${r.missing?`${r.missing} posti ${p.role} mancanti`:'reparto già completo'}</div>
+            <div class="playerMetaLine">${r.missing?`${r.missing} posti ${p.role} mancanti`:'reparto già completo'} · ${r.affordable?'può sostenere il prezzo':'prezzo difficile da sostenere'}</div>
           </div>
           <span class="rivalRiskBadge ${r.level}">${r.label} · ${r.score}/99</span>
         </div>
+
         <div class="rivalRadarMetrics">
           <div class="rivalRadarMetric"><span>CREDITI</span><b>${r.cash}</b></div>
           <div class="rivalRadarMetric"><span>MAX SICURA</span><b>${r.safe}</b></div>
+          <div class="rivalRadarMetric"><span>MAX STIMATA</span><b>${r.estimatedMax}</b></div>
           <div class="rivalRadarMetric"><span>MANCANTI ${p.role}</span><b>${r.missing}</b></div>
-          <div class="rivalRadarMetric"><span>ROSA DA FARE</span><b>${r.totalMissing}</b></div>
         </div>
-        <div class="rivalRadarRisk">
-          ${r.score>=70
-            ? '⚠️ Rivale pericoloso: ha bisogno del reparto e sufficiente liquidità per sostenere una lunga asta.'
-            : r.score>=45
-            ? '🟡 Può entrare nell’asta se il prezzo resta interessante.'
-            : '✅ Pressione ridotta: reparto poco urgente o disponibilità economica inferiore.'}
+
+        <div class="rivalIntelSignals">
+          <span>Bisogno ${r.playerNeed}/100</span>
+          <span>Attrattiva ${r.qualityPull}/100</span>
+          <span>Scarsità ${r.scarcityPull}/100</span>
         </div>
+
+        <div class="rivalRadarRisk">${r.reason}</div>
       </div>`).join('')}
   `;
 }
@@ -7491,7 +7627,26 @@ function aiCore3Confidence(p,base,buyerIndex=state.me){
   return Math.round(clamp(c,18,96));
 }
 
-function aiCore3RivalPressure(role,buyerIndex=state.me){
+function aiCore3RivalPressure(role,buyerIndex=state.me,player=null){
+  // Player-aware mode: used by AI Core 3.2.
+  if(player){
+    const playerIndex=PLAYER_ARCHIVE.indexOf(player);
+    const rivals=state.managers
+      .map((_,i)=>i===buyerIndex?null:rivalInterestForPlayer(i,playerIndex))
+      .filter(Boolean)
+      .sort((a,b)=>b.score-a.score);
+    const active=rivals.filter(x=>x.missing>0);
+    const top=rivals.slice(0,5);
+    const pressure=top.length?top.reduce((s,x)=>s+x.score,0)/top.length:0;
+    return {
+      score:Math.round(clamp(pressure,0,100)),
+      active:active.length,
+      strong:rivals.filter(x=>x.score>=72).length,
+      top
+    };
+  }
+
+  // Compatibility fallback for any role-only call.
   const rivals=state.managers.map((_,i)=>{
     if(i===buyerIndex)return null;
     const missing=Math.max(0,LIMITS[role]-roleCount(i,role));
@@ -7507,7 +7662,7 @@ function aiCore3RivalPressure(role,buyerIndex=state.me){
   }).filter(Boolean).sort((a,b)=>b.score-a.score);
   const top=rivals.slice(0,5);
   const pressure=top.length ? top.reduce((s,x)=>s+x.score,0)/top.length : 0;
-  return {score:Math.round(clamp(pressure*100,0,100)),active:rivals.length,top};
+  return {score:Math.round(clamp(pressure*100,0,100)),active:rivals.length,strong:0,top};
 }
 
 function aiCore3MarketBias(p){
@@ -7551,7 +7706,7 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   const p=base.p;
   const stage=aiCore3AuctionStage();
   const supply=aiCore3RoleSupply(p);
-  const rivals=aiCore3RivalPressure(p.role,buyerIndex);
+  const rivals=aiCore3RivalPressure(p.role,buyerIndex,p);
   const market=aiCore3MarketBias(p);
   const confidence=aiCore3Confidence(p,base,buyerIndex);
   const futureBudget=aiCore3FutureBudgetStress(p.role,buyerIndex);
@@ -7631,7 +7786,7 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   }
 
   const reasons=[...base.reasons];
-  reasons.unshift(`AI Core 3.0: confidenza ${confidence}% · fase ${stage.label.toLowerCase()} · pressione rivali ${rivals.score}/100 · scarsità ${Math.round(supply.scarcity*100)}/100.`);
+  reasons.unshift(`AI Core 3.2: confidenza ${confidence}% · fase ${stage.label.toLowerCase()} · pressione rivali ${rivals.score}/100 · scarsità ${Math.round(supply.scarcity*100)}/100.`);
   if(market.role.count){
     const delta=Math.round((market.role.factor-1)*100);
     reasons.unshift(`Mercato adattivo ${p.role}: ${market.role.count} acquisti osservati, correzione ${delta>=0?'+':''}${delta}% con apprendimento progressivo.`);
