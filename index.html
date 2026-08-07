@@ -154,6 +154,64 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   line-height:1;
 }
 
+
+.buyRolePicker{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+  margin-top:6px;
+}
+.buyRoleBtn{
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+  border-radius:14px;
+  padding:11px 4px;
+  font-weight:900;
+}
+.buyRoleBtn.active{
+  background:var(--accent);
+  color:#111;
+  border-color:var(--accent);
+}
+.buySummary{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin:10px 0 12px;
+}
+.buySummaryBox{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:15px;
+  padding:10px;
+}
+.buySummaryBox b{
+  display:block;
+  font-size:19px;
+  margin-top:3px;
+}
+.buyStatus{
+  border:1px solid var(--line);
+  background:#0b1727;
+  border-radius:15px;
+  padding:11px 12px;
+  margin:10px 0 12px;
+  font-size:13px;
+  font-weight:700;
+}
+.buyStatus.ok{
+  color:var(--ok);
+  border-color:rgba(57,217,138,.45);
+}
+.buyStatus.bad{
+  color:var(--danger);
+  border-color:rgba(255,107,107,.45);
+}
+.primary:disabled{
+  opacity:.45;
+}
+
 </style>
 </head>
 <body>
@@ -207,11 +265,36 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 <button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
 </nav>
 
-<div id="buyModal" class="modal" onclick="if(event.target===this)closeBuy()"><div class="sheet"><div class="handle"></div><h3>Registra acquisto</h3>
-  <div class="field"><label>Giocatore</label><input id="pname" placeholder="Es. Lautaro Martínez" autocomplete="off"></div>
-  <div class="row"><div class="field"><label>Ruolo</label><select id="prole"><option>P</option><option>D</option><option>C</option><option>A</option></select></div><div class="field"><label>Prezzo</label><input id="pprice" inputmode="numeric" type="number" min="1" placeholder="1"></div></div>
-  <div class="field"><label>Acquistato da</label><select id="pbuyer"></select></div>
-  <button class="primary" onclick="saveBuy()">SALVA ACQUISTO</button><div class="hint" id="buyHint"></div>
+<div id="buyModal" class="modal" onclick="if(event.target===this)closeBuy()"><div class="sheet"><div class="handle"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <h3 style="margin:0">Registra acquisto</h3>
+    <button class="closeX" onclick="closeBuy()">×</button>
+  </div>
+
+  <div class="field"><label>Giocatore</label><input id="pname" placeholder="Es. Lautaro Martínez" autocomplete="off" oninput="updateBuyPreview()"></div>
+
+  <div class="field">
+    <label>Ruolo</label>
+    <input id="prole" type="hidden" value="P">
+    <div class="buyRolePicker">
+      <button type="button" class="buyRoleBtn active" data-role="P" onclick="selectBuyRole('P')">P</button>
+      <button type="button" class="buyRoleBtn" data-role="D" onclick="selectBuyRole('D')">D</button>
+      <button type="button" class="buyRoleBtn" data-role="C" onclick="selectBuyRole('C')">C</button>
+      <button type="button" class="buyRoleBtn" data-role="A" onclick="selectBuyRole('A')">A</button>
+    </div>
+  </div>
+
+  <div class="field"><label>Prezzo</label><input id="pprice" inputmode="numeric" type="number" min="1" placeholder="1" oninput="updateBuyPreview()"></div>
+  <div class="field"><label>Acquistato da</label><select id="pbuyer" onchange="updateBuyPreview()"></select></div>
+
+  <div class="buySummary">
+    <div class="buySummaryBox"><span class="k">Crediti disponibili</span><b id="buyBudget">600</b></div>
+    <div class="buySummaryBox"><span class="k">Posti nel reparto</span><b id="buySlots">3</b></div>
+  </div>
+
+  <div id="buyStatus" class="buyStatus">Inserisci giocatore e prezzo.</div>
+  <button id="saveBuyBtn" class="primary" onclick="saveBuy()">SALVA ACQUISTO</button>
+  <div class="hint" id="buyHint"></div>
 </div></div>
 
 <div id="settingsModal" class="modal" onclick="if(event.target===this)closeSettings()"><div class="sheet"><div class="handle"></div><h3>Partecipanti</h3>
@@ -297,9 +380,78 @@ function closeParticipant(){
 function roleName(r){return {P:'Portieri',D:'Difensori',C:'Centrocampisti',A:'Attaccanti'}[r]}
 function itemHTML(x){return `<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="delete" onclick="del('${x.id}')">×</button></div></div>`}
 function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
-function openBuy(){let sel=document.getElementById('pbuyer');sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)} · ${budget(i)} cr</option>`).join('');document.getElementById('buyHint').textContent='';document.getElementById('buyModal').classList.add('show');setTimeout(()=>document.getElementById('pname').focus(),150)}
+function selectBuyRole(role){
+  document.getElementById('prole').value=role;
+  document.querySelectorAll('.buyRoleBtn').forEach(btn=>btn.classList.toggle('active',btn.dataset.role===role));
+  updateBuyPreview();
+}
+function updateBuyPreview(){
+  const buyer=parseInt(document.getElementById('pbuyer').value,10);
+  const role=document.getElementById('prole').value;
+  const price=parseInt(document.getElementById('pprice').value,10)||0;
+  const name=document.getElementById('pname').value.trim();
+  if(Number.isNaN(buyer)) return;
+
+  const available=budget(buyer);
+  const slots=Math.max(0,LIMITS[role]-roleCount(buyer,role));
+  document.getElementById('buyBudget').textContent=available;
+  document.getElementById('buySlots').textContent=slots;
+
+  const status=document.getElementById('buyStatus');
+  const save=document.getElementById('saveBuyBtn');
+  let ok=true;
+  let msg='Pronto per registrare l’acquisto.';
+
+  if(slots<=0){
+    ok=false;
+    msg=`${state.managers[buyer]} ha già completato il reparto ${roleName(role)}.`;
+  }else if(price>available){
+    ok=false;
+    msg=`Crediti insufficienti: disponibili ${available}, richiesti ${price}.`;
+  }else if(!name || price<1){
+    ok=false;
+    msg='Inserisci giocatore e prezzo.';
+  }else{
+    const after=available-price;
+    msg=`${name} → ${state.managers[buyer]} per ${price} cr · resteranno ${after} cr.`;
+  }
+
+  status.textContent=msg;
+  status.className='buyStatus '+(ok?'ok':(name||price?'bad':''));
+  save.disabled=!ok;
+}
+function openBuy(){
+  let sel=document.getElementById('pbuyer');
+  sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)} · ${budget(i)} cr</option>`).join('');
+  document.getElementById('pname').value='';
+  document.getElementById('pprice').value='';
+  document.getElementById('buyHint').textContent='';
+  selectBuyRole('P');
+  document.getElementById('buyModal').classList.add('show');
+  updateBuyPreview();
+  setTimeout(()=>document.getElementById('pname').focus(),150);
+}
 function closeBuy(){document.getElementById('buyModal').classList.remove('show')}
-function saveBuy(){const name=document.getElementById('pname').value.trim(),role=document.getElementById('prole').value,price=parseInt(document.getElementById('pprice').value,10),buyer=parseInt(document.getElementById('pbuyer').value,10);const hint=document.getElementById('buyHint');if(!name||!price||price<1){hint.textContent='Inserisci nome e prezzo.';hint.className='hint danger';return}if(price>budget(buyer)){hint.textContent='Crediti insufficienti.';hint.className='hint danger';return}if(roleCount(buyer,role)>=LIMITS[role]){hint.textContent=`${state.managers[buyer]} ha già completato il reparto ${roleName(role)}.`;hint.className='hint danger';return}state.purchases.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,role,price,buyer,ts:Date.now()});persist();document.getElementById('pname').value='';document.getElementById('pprice').value='';closeBuy();render()}
+function saveBuy(){
+  const name=document.getElementById('pname').value.trim();
+  const role=document.getElementById('prole').value;
+  const price=parseInt(document.getElementById('pprice').value,10);
+  const buyer=parseInt(document.getElementById('pbuyer').value,10);
+  const hint=document.getElementById('buyHint');
+
+  if(!name||!price||price<1){hint.textContent='Inserisci nome e prezzo.';hint.className='hint danger';updateBuyPreview();return}
+  if(price>budget(buyer)){hint.textContent='Crediti insufficienti.';hint.className='hint danger';updateBuyPreview();return}
+  if(roleCount(buyer,role)>=LIMITS[role]){hint.textContent=`${state.managers[buyer]} ha già completato il reparto ${roleName(role)}.`;hint.className='hint danger';updateBuyPreview();return}
+
+  const remaining=budget(buyer)-price;
+  const confirmed=confirm(`Confermi l'acquisto?\n\n${name}\nRuolo: ${role}\nSquadra: ${state.managers[buyer]}\nPrezzo: ${price} crediti\nCrediti dopo l'acquisto: ${remaining}`);
+  if(!confirmed)return;
+
+  state.purchases.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,role,price,buyer,ts:Date.now()});
+  persist();
+  closeBuy();
+  render();
+}
 function del(id){if(confirm('Eliminare questo acquisto?')){state.purchases=state.purchases.filter(x=>x.id!==id);persist();render()}}
 function openSettings(){const mine=document.getElementById('myManager');mine.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)}</option>`).join('');document.getElementById('managerInputs').innerHTML=state.managers.map((n,i)=>`<div class="field"><label>Partecipante ${i+1}</label><input id="m${i}" value="${esc(n)}"></div>`).join('');document.getElementById('settingsModal').classList.add('show')}
 function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
