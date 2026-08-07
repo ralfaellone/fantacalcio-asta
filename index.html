@@ -2541,6 +2541,73 @@ body.plan-page-open nav{display:none!important}
 body.plan-page-open .page{visibility:hidden!important;pointer-events:none!important}
 body.plan-page-open #planModal{visibility:visible!important;pointer-events:auto!important}
 
+
+/* V32 - Radar Rivali */
+.rivalRadarBtn{
+  width:100%;
+  margin-top:10px;
+  border:1px solid rgba(180,120,255,.5);
+  background:#18102a;
+  color:#d7bdff;
+  border-radius:15px;
+  padding:12px 14px;
+  font-weight:950;
+  font-size:13px;
+}
+#rivalRadarModal{
+  position:fixed; inset:0; display:none; background:var(--bg);
+  z-index:8200; overflow:hidden;
+}
+#rivalRadarModal.show{display:block}
+.rivalRadarShell{
+  position:absolute; inset:0; height:100dvh;
+  display:grid; grid-template-rows:auto minmax(0,1fr); background:var(--bg);
+}
+.rivalRadarHeader{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);border-bottom:1px solid var(--line);
+}
+.rivalRadarBack{
+  border:1px solid var(--line);background:#0b1727;color:var(--text);
+  border-radius:13px;padding:9px 11px;font-weight:900;
+}
+.rivalRadarTitle{font-size:18px;font-weight:950}
+.rivalRadarBody{
+  min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px 14px calc(env(safe-area-inset-bottom) + 28px);
+}
+.rivalRadarHero{
+  background:linear-gradient(145deg,#25183c,#0d1a2b);
+  border:1px solid rgba(180,120,255,.32);border-radius:16px;padding:12px;
+}
+.rivalRadarCard{
+  background:#0b1727;border:1px solid var(--line);
+  border-radius:16px;padding:11px;margin:8px 0;
+}
+.rivalRadarTop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rivalRadarName{font-size:16px;font-weight:950}
+.rivalRadarMetrics{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px}
+.rivalRadarMetric{
+  background:#081321;border:1px solid var(--line);border-radius:10px;
+  text-align:center;padding:6px 3px;
+}
+.rivalRadarMetric span{display:block;font-size:7px;color:var(--muted)}
+.rivalRadarMetric b{display:block;font-size:12px;margin-top:2px}
+.rivalRadarRisk{
+  font-size:10px;color:var(--muted);line-height:1.45;margin-top:8px;
+}
+.rivalRiskBadge{
+  border-radius:9px;padding:5px 7px;font-size:9px;font-weight:950;
+}
+.rivalRiskBadge.high{background:var(--danger);color:#fff}
+.rivalRiskBadge.med{background:var(--accent);color:#111}
+.rivalRiskBadge.low{background:#15304d;color:var(--text)}
+body.rival-radar-open{overflow:hidden!important;height:100dvh!important}
+body.rival-radar-open nav{display:none!important}
+body.rival-radar-open .page{visibility:hidden!important;pointer-events:none!important}
+body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-events:auto!important}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2550,7 +2617,7 @@ body.plan-page-open #planModal{visibility:visible!important;pointer-events:auto!
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V31</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V32</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2701,6 +2768,17 @@ body.plan-page-open #planModal{visibility:visible!important;pointer-events:auto!
 
 
 
+
+
+<div id="rivalRadarModal">
+  <div class="rivalRadarShell">
+    <div class="rivalRadarHeader">
+      <button class="rivalRadarBack" onclick="closeRivalRadar()">← Indietro</button>
+      <div class="rivalRadarTitle">👥 Radar Rivali</div>
+    </div>
+    <div id="rivalRadarBody" class="rivalRadarBody"></div>
+  </div>
+</div>
 
 <div id="planModal">
   <div class="planShell">
@@ -3559,6 +3637,103 @@ function renderListone(){
 
 
 
+
+
+function rivalInterestForPlayer(managerIndex,playerIndex){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p)return null;
+  const cash=budget(managerIndex);
+  const missing=Math.max(0,LIMITS[p.role]-roleCount(managerIndex,p.role));
+  const totalMissing=remainingRosterSlots(managerIndex);
+  const safe=safeMaxBid(managerIndex);
+  const roleNeed=missing/Math.max(1,LIMITS[p.role]);
+  const liquidity=clamp(cash/Math.max(1,INITIAL),0,1);
+  const safePower=clamp(safe/Math.max(1,INITIAL*.25),0,1);
+  const urgency=totalMissing>0?clamp(missing/Math.max(1,totalMissing),0,1):0;
+
+  let score=Math.round(clamp(roleNeed*42 + liquidity*26 + safePower*20 + urgency*12,0,99));
+  if(missing===0)score=0;
+
+  let level='low', label='BASSO';
+  if(score>=70){level='high';label='ALTO';}
+  else if(score>=45){level='med';label='MEDIO';}
+
+  return {managerIndex,cash,missing,totalMissing,safe,score,level,label};
+}
+function rivalRadarRows(playerIndex){
+  return state.managers
+    .map((name,i)=>i===state.me?null:rivalInterestForPlayer(i,playerIndex))
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score || b.cash-a.cash);
+}
+function renderRivalRadar(playerIndex){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  const body=document.getElementById('rivalRadarBody');
+  if(!p||!body)return;
+  const rows=rivalRadarRows(playerIndex);
+  const dangerous=rows.filter(x=>x.score>=70).length;
+  const active=rows.filter(x=>x.missing>0).length;
+
+  body.innerHTML=`
+    <div class="rivalRadarHero">
+      <div style="font-size:18px;font-weight:950">${esc(p.name)}</div>
+      <div class="playerMetaLine">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm}</div>
+      <div class="rivalRadarRisk" style="margin-top:8px">
+        ${active} rivali devono ancora completare questo reparto · ${dangerous} hanno pressione d’acquisto alta.
+        Il punteggio stima chi ha più probabilità di rilanciare considerando posti mancanti, liquidità e Max sicura.
+      </div>
+    </div>
+
+    ${rows.map((r,n)=>`
+      <div class="rivalRadarCard">
+        <div class="rivalRadarTop">
+          <div>
+            <div class="rivalRadarName">#${n+1} ${esc(state.managers[r.managerIndex])}</div>
+            <div class="playerMetaLine">${r.missing?`${r.missing} posti ${p.role} mancanti`:'reparto già completo'}</div>
+          </div>
+          <span class="rivalRiskBadge ${r.level}">${r.label} · ${r.score}/99</span>
+        </div>
+        <div class="rivalRadarMetrics">
+          <div class="rivalRadarMetric"><span>CREDITI</span><b>${r.cash}</b></div>
+          <div class="rivalRadarMetric"><span>MAX SICURA</span><b>${r.safe}</b></div>
+          <div class="rivalRadarMetric"><span>MANCANTI ${p.role}</span><b>${r.missing}</b></div>
+          <div class="rivalRadarMetric"><span>ROSA DA FARE</span><b>${r.totalMissing}</b></div>
+        </div>
+        <div class="rivalRadarRisk">
+          ${r.score>=70
+            ? '⚠️ Rivale pericoloso: ha bisogno del reparto e sufficiente liquidità per sostenere una lunga asta.'
+            : r.score>=45
+            ? '🟡 Può entrare nell’asta se il prezzo resta interessante.'
+            : '✅ Pressione ridotta: reparto poco urgente o disponibilità economica inferiore.'}
+        </div>
+      </div>`).join('')}
+  `;
+}
+function openRivalRadar(playerIndex){
+  renderRivalRadar(playerIndex);
+  document.getElementById('aiModal').classList.remove('show');
+  document.body.classList.remove('ai-page-open');
+  document.body.classList.add('rival-radar-open');
+  document.getElementById('rivalRadarModal').classList.add('show');
+  const b=document.getElementById('rivalRadarBody'); if(b)b.scrollTop=0;
+  document.getElementById('rivalRadarModal').dataset.playerIndex=playerIndex;
+}
+function closeRivalRadar(){
+  const modal=document.getElementById('rivalRadarModal');
+  const idx=parseInt(modal.dataset.playerIndex,10);
+  modal.classList.remove('show');
+  document.body.classList.remove('rival-radar-open');
+  if(Number.isFinite(idx)){
+    const a=aiPlayerAnalysis(idx,state.me);
+    if(a){
+      document.getElementById('aiPageTitle').textContent=`🤖 AI Asta · ${a.p.name}`;
+      document.getElementById('aiAnalysis').innerHTML=renderAIAnalysis(a);
+      document.body.classList.add('ai-page-open');
+      document.getElementById('aiModal').classList.add('show');
+      setTimeout(()=>evaluateLiveBid(idx),0);
+    }
+  }
+}
 
 function planRoleData(role){
   const initial=Number(state.initialBudget)||600;
@@ -5285,6 +5460,8 @@ function renderAIAnalysis(a){
       </div>
       <div id="liveBidVerdict"></div>
     </div>
+
+    <button class="rivalRadarBtn" onclick="openRivalRadar(${PLAYER_ARCHIVE.indexOf(p)})">👥 RADAR RIVALI SU QUESTO GIOCATORE</button>
 
     <div class="aiReason">
       <strong>Consiglio:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti. 
