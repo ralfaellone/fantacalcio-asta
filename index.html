@@ -400,6 +400,116 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   font-weight:800;
 }
 
+
+/* V10 - Dashboard Asta Live */
+.liveGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+.liveBox{
+  background:linear-gradient(180deg,var(--card2),var(--card));
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:12px;
+}
+.liveBox h3{
+  margin:0 0 8px;
+  font-size:14px;
+}
+.quickPlayer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:9px 0;
+  border-bottom:1px solid var(--line);
+}
+.quickPlayer:last-child{border-bottom:0}
+.quickName{
+  font-weight:850;
+  font-size:13px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.quickMeta{
+  color:var(--muted);
+  font-size:10px;
+  margin-top:3px;
+}
+.quickBuy{
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+  border-radius:10px;
+  padding:7px 9px;
+  font-weight:900;
+  flex:0 0 auto;
+}
+.rivalLine{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:8px 0;
+  border-bottom:1px solid var(--line);
+}
+.rivalLine:last-child{border-bottom:0}
+.rivalBudget{
+  font-weight:900;
+  font-size:17px;
+}
+.homeSearch{
+  position:relative;
+  margin-top:12px;
+}
+.homeSearch input{
+  width:100%;
+  border-radius:16px;
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+  padding:14px 13px;
+  outline:none;
+}
+.homeSearch input:focus{border-color:var(--accent)}
+.homeResults{
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% + 6px);
+  z-index:25;
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:0 18px 36px rgba(0,0,0,.38);
+  max-height:300px;
+  overflow:auto;
+  display:none;
+}
+.homeResults.show{display:block}
+.homeResult{
+  padding:11px 12px;
+  border-bottom:1px solid var(--line);
+}
+.homeResult:last-child{border-bottom:0}
+.liveTitleRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.smallLinkBtn{
+  border:0;
+  background:transparent;
+  color:var(--accent);
+  font-size:11px;
+  font-weight:900;
+  padding:3px 0;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -409,7 +519,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V9</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V10</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -422,7 +532,25 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
     <div class="role"><b id="cntC">0/8</b><span>CENTROCAMPISTI</span></div>
     <div class="role"><b id="cntA">0/6</b><span>ATTACCANTI</span></div>
   </div>
-  <button class="primary" onclick="openBuy()">＋ Registra acquisto</button>
+
+  <div class="homeSearch">
+    <input id="homePlayerSearch" placeholder="🔎 Cerca subito un giocatore..." autocomplete="off"
+      oninput="searchHomePlayers()" onfocus="searchHomePlayers()">
+    <div id="homePlayerResults" class="homeResults"></div>
+  </div>
+
+  <button class="primary" style="margin-top:10px" onclick="openBuy()">＋ Registra acquisto</button>
+
+  <div class="liveGrid">
+    <div class="liveBox">
+      <div class="liveTitleRow"><h3>⭐ Obiettivi</h3><button class="smallLinkBtn" onclick="goToListoneFav()">VEDI TUTTI</button></div>
+      <div id="homeFavorites"></div>
+    </div>
+    <div class="liveBox">
+      <div class="liveTitleRow"><h3>💰 Più crediti</h3><button class="smallLinkBtn" onclick="goToParticipants()">RIVALI</button></div>
+      <div id="homeRivals"></div>
+    </div>
+  </div>
   <div class="section"><h2>Ultimi acquisti</h2><div id="recent" class="list"></div></div>
 </section>
 
@@ -710,6 +838,7 @@ function resetPlayerArchive(){
   PLAYER_ARCHIVE=PLAYER_ARCHIVE_BUILTIN;
   renderArchiveInfo();
   renderListone();
+ renderHomeLive();
 }
 
 function spent(i){return state.purchases.filter(x=>x.buyer===i).reduce((s,x)=>s+x.price,0)}
@@ -717,6 +846,79 @@ function budget(i){return INITIAL-spent(i)}
 function roster(i){return state.purchases.filter(x=>x.buyer===i)}
 function roleCount(i,r){return roster(i).filter(x=>x.role===r).length}
 function tab(id,btn){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
+
+function homePlayerMatches(){
+  const input=document.getElementById('homePlayerSearch');
+  if(!input)return [];
+  const q=normalizePlayerText(input.value.trim());
+  if(!q)return [];
+  return PLAYER_ARCHIVE.filter(p=>normalizePlayerText(`${p.name} ${p.team}`).includes(q)).slice(0,10);
+}
+function searchHomePlayers(){
+  const box=document.getElementById('homePlayerResults');
+  if(!box)return;
+  const rows=homePlayerMatches();
+  const q=document.getElementById('homePlayerSearch').value.trim();
+  if(!q){box.classList.remove('show');box.innerHTML='';return}
+  box.innerHTML=rows.length?rows.map(p=>{
+    const bought=purchaseForArchivePlayer(p.name);
+    const idx=PLAYER_ARCHIVE.indexOf(p);
+    return `<div class="homeResult" onclick="${bought?'openParticipant('+bought.buyer+')':'buyFromHome('+idx+')'}">
+      <div class="playerSuggestionTop">
+        <div>
+          <div class="playerSuggestionName"><span class="tag">${p.role}</span>${esc(p.name)}</div>
+          <div class="playerMetaLine">${p.team} · QI ${p.qi} · FVM ${p.fvm}</div>
+        </div>
+        <div class="${bought?'statusTaken':'statusAvailable'}">${bought?'PRESO':'LIBERO'}</div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="homeResult"><div class="playerMetaLine">Nessun giocatore trovato.</div></div>';
+  box.classList.add('show');
+}
+function buyFromHome(index){
+  const box=document.getElementById('homePlayerResults');
+  if(box)box.classList.remove('show');
+  const input=document.getElementById('homePlayerSearch');
+  if(input)input.value='';
+  buyFromListone(index);
+}
+function renderHomeLive(){
+  const favBox=document.getElementById('homeFavorites');
+  if(favBox){
+    const favs=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name))
+      .sort((a,b)=>b.fvm-a.fvm).slice(0,5);
+    favBox.innerHTML=favs.length?favs.map(p=>{
+      const idx=PLAYER_ARCHIVE.indexOf(p);
+      return `<div class="quickPlayer">
+        <div style="min-width:0"><div class="quickName">${esc(p.name)}</div><div class="quickMeta">${p.role} · ${p.team} · FVM ${p.fvm}</div></div>
+        <button class="quickBuy" onclick="buyFromHome(${idx})">ASTA</button>
+      </div>`;
+    }).join(''):'<div class="playerMetaLine">Nessun obiettivo disponibile.</div>';
+  }
+
+  const rivalBox=document.getElementById('homeRivals');
+  if(rivalBox){
+    const rivals=state.managers.map((name,i)=>({name,i,b:budget(i),safe:safeMaxBid(i)}))
+      .sort((a,b)=>b.b-a.b).slice(0,5);
+    rivalBox.innerHTML=rivals.map(r=>`<div class="rivalLine" onclick="openParticipant(${r.i})">
+      <div style="min-width:0"><div class="quickName">${esc(r.name)}${r.i===state.me?' · TU':''}</div><div class="quickMeta">Max sicura ${r.safe}</div></div>
+      <div class="rivalBudget">${r.b}</div>
+    </div>`).join('');
+  }
+}
+function goToListoneFav(){
+  const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Giocatori'));
+  if(btn)tab('listone',btn);
+  setTimeout(()=>{
+    const f=[...document.querySelectorAll('.filterBtn')].find(b=>b.dataset.filter==='FAV');
+    if(f)setListoneFilter('FAV',f);
+  },0);
+}
+function goToParticipants(){
+  const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Partecipanti'));
+  if(btn)tab('players',btn);
+}
+
 function render(){
  const me=state.me; document.getElementById('myBudget').textContent=budget(me);document.getElementById('myCount').innerHTML=`${roster(me).length} <small>/ 25</small>`;document.getElementById('myNameLabel').textContent=state.managers[me];
  ['P','D','C','A'].forEach(r=>document.getElementById('cnt'+r).textContent=`${roleCount(me,r)}/${LIMITS[r]}`);
@@ -1039,6 +1241,12 @@ function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileR
 document.addEventListener('click',e=>{
   const wrap=e.target.closest('.playerSearchWrap');
   if(!wrap) closePlayerSuggestions();
+
+  const homeWrap=e.target.closest('.homeSearch');
+  if(!homeWrap){
+    const homeBox=document.getElementById('homePlayerResults');
+    if(homeBox)homeBox.classList.remove('show');
+  }
 });
 
 window.addEventListener('load',()=>{
