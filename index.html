@@ -3491,6 +3491,32 @@ nav button.active{
   nav button{font-size:8px!important}
 }
 
+
+/* V43 - Bottom navigation realmente fissa */
+nav{
+  position:fixed !important;
+  left:10px !important;
+  right:10px !important;
+  bottom:calc(env(safe-area-inset-bottom) + 8px) !important;
+  top:auto !important;
+  width:auto !important;
+  z-index:9000 !important;
+  transform:none !important;
+  margin:0 !important;
+}
+body{
+  padding-bottom:calc(92px + env(safe-area-inset-bottom)) !important;
+}
+.page{
+  padding-bottom:calc(105px + env(safe-area-inset-bottom)) !important;
+}
+body.formation-page-open nav,
+body.plan-page-open nav,
+body.buy-now-page-open nav,
+body.rival-radar-open nav{
+  display:none !important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3500,7 +3526,7 @@ nav button.active{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V42</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V43</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
