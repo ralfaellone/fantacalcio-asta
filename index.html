@@ -3323,6 +3323,174 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
   .aiSlotOptionMeta{font-size:7px}
 }
 
+
+/* V42 - Premium UI: tema, Dashboard e navigazione */
+:root{
+  --premium-gold:#f2c94c;
+  --premium-bg:#07111f;
+  --premium-panel:#0b1828;
+  --premium-panel2:#102238;
+  --premium-soft:#8fa4bd;
+}
+body{
+  background:
+    radial-gradient(circle at 50% -10%,rgba(39,84,125,.18),transparent 34%),
+    var(--premium-bg);
+}
+.page h2{
+  letter-spacing:-.25px;
+}
+.card,.section{
+  border-color:rgba(142,164,189,.16)!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.10);
+}
+.tag{
+  border-radius:999px!important;
+  letter-spacing:.15px;
+}
+button{
+  transition:transform .08s ease,filter .12s ease,border-color .12s ease;
+}
+button:active{transform:scale(.975)}
+/* premium bottom navigation */
+nav{
+  left:10px!important;
+  right:10px!important;
+  bottom:calc(env(safe-area-inset-bottom) + 8px)!important;
+  border:1px solid rgba(142,164,189,.18)!important;
+  border-radius:20px!important;
+  background:rgba(8,19,33,.96)!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.35)!important;
+  overflow:hidden;
+  backdrop-filter:blur(14px);
+}
+nav button{
+  border-radius:14px!important;
+  margin:5px 2px!important;
+  min-height:48px;
+  color:#8195ad!important;
+  font-weight:850!important;
+}
+nav button.active{
+  background:linear-gradient(180deg,rgba(242,201,76,.18),rgba(242,201,76,.07))!important;
+  color:var(--premium-gold)!important;
+  box-shadow:inset 0 0 0 1px rgba(242,201,76,.24);
+}
+/* Dashboard premium */
+.dashPremiumHero{
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(242,201,76,.25);
+  background:
+    radial-gradient(circle at 100% 0%,rgba(242,201,76,.15),transparent 36%),
+    linear-gradient(145deg,#122b45,#0a1727);
+  border-radius:20px;
+  padding:14px;
+  margin-bottom:9px;
+  box-shadow:0 14px 35px rgba(0,0,0,.20);
+}
+.dashPremiumEyebrow{
+  color:var(--premium-gold);
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:1.15px;
+}
+.dashPremiumMain{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:10px;
+  margin-top:5px;
+}
+.dashPremiumCredits{
+  font-size:38px;
+  line-height:.95;
+  font-weight:1000;
+  letter-spacing:-1.8px;
+}
+.dashPremiumCredits span{
+  display:block;
+  margin-top:7px;
+  font-size:8px;
+  letter-spacing:.25px;
+  color:var(--muted);
+  font-weight:800;
+}
+.dashPremiumRoster{
+  text-align:right;
+}
+.dashPremiumRoster b{
+  display:block;
+  font-size:21px;
+}
+.dashPremiumRoster span{
+  font-size:8px;
+  color:var(--muted);
+}
+.dashPremiumProgress{
+  height:7px;
+  border-radius:999px;
+  overflow:hidden;
+  background:#07111e;
+  margin-top:11px;
+}
+.dashPremiumProgress i{
+  display:block;height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#39d98a,#f2c94c);
+}
+.dashPremiumMetrics{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
+  margin-top:10px;
+}
+.dashPremiumMetric{
+  background:rgba(4,12,22,.48);
+  border:1px solid rgba(142,164,189,.13);
+  border-radius:11px;
+  padding:7px 5px;
+  text-align:center;
+}
+.dashPremiumMetric span{
+  display:block;font-size:6.5px;color:var(--muted);
+}
+.dashPremiumMetric b{
+  display:block;font-size:13px;margin-top:2px;
+}
+.dashAiHero{
+  border:1px solid rgba(57,217,138,.30)!important;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(57,217,138,.10),transparent 36%),
+    linear-gradient(145deg,#10273a,#0a1727)!important;
+  border-radius:18px!important;
+  padding:12px!important;
+}
+.dashAiHero .dashMove{
+  border:0!important;
+  background:transparent!important;
+  padding:0!important;
+}
+.dashSectionTitle{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:13px 2px 6px;
+}
+.dashSectionTitle b{font-size:12px}
+.dashSectionTitle span{font-size:8px;color:var(--muted)}
+/* stronger semantic colors */
+.tag.good{box-shadow:inset 0 0 0 1px rgba(57,217,138,.15)}
+.tag.bad{box-shadow:inset 0 0 0 1px rgba(255,107,107,.14)}
+/* role badges, used by existing role classes where present */
+.role.P,.roleP{background:#3a2410!important;color:#ffb35c!important}
+.role.D,.roleD{background:#0b2d20!important;color:#59dc92!important}
+.role.C,.roleC{background:#102d4c!important;color:#65b6ff!important}
+.role.A,.roleA{background:#3a171c!important;color:#ff737d!important}
+@media(max-width:390px){
+  .dashPremiumCredits{font-size:34px}
+  .dashPremiumHero{padding:12px}
+  nav button{font-size:8px!important}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3332,9 +3500,11 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V41</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V42</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
+  <div id="dashPremiumHero" class="dashPremiumHero"></div>
+
   <div class="section" style="margin-top:0">
     <h2>Dashboard</h2>
     <div class="hint">La situazione della tua asta in un colpo d’occhio.</div>
@@ -4276,7 +4446,33 @@ function goToHistory(){
     if(h)h.scrollIntoView({behavior:'smooth',block:'start'});
   },80);
 }
+
+function renderPremiumDashboardHero(){
+  const el=document.getElementById('dashPremiumHero');
+  if(!el)return;
+  const me=state.me;
+  const cash=budget(me);
+  const count=roster(me).length;
+  const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
+  const spentNow=spent(me);
+  const maxSafe=safeMaxBid(me);
+  const plan=typeof activeFormationPlan==='function'?activeFormationPlan(me):null;
+  el.innerHTML=`
+    <div class="dashPremiumEyebrow">PARMENSE · CENTRO DI CONTROLLO</div>
+    <div class="dashPremiumMain">
+      <div class="dashPremiumCredits">${cash}<span>CREDITI DISPONIBILI</span></div>
+      <div class="dashPremiumRoster"><b>${count}/${total}</b><span>ROSA COMPLETATA</span></div>
+    </div>
+    <div class="dashPremiumProgress"><i style="width:${Math.min(100,(count/Math.max(1,total))*100)}%"></i></div>
+    <div class="dashPremiumMetrics">
+      <div class="dashPremiumMetric"><span>SPESI</span><b>${spentNow}</b></div>
+      <div class="dashPremiumMetric"><span>MAX SICURA</span><b>${maxSafe}</b></div>
+      <div class="dashPremiumMetric"><span>PIANO AI</span><b>${plan?plan.name:'—'}</b></div>
+    </div>`;
+}
+
 function renderDashboardControl(){
+  renderPremiumDashboardHero();
   const me=state.me;
   const team=document.getElementById('dashboardTeamName');
   if(!team)return;
@@ -4310,7 +4506,7 @@ function renderDashboardControl(){
     const x=candidates[0];
 
     move.innerHTML=x?`
-      <div class="dashMove">
+      <div class="dashMove dashAiHero">
         <div style="margin-bottom:6px"><span class="ai2Chip">AI ASTA 2.0 · ${activeFormationPlan().name}</span></div>
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
           <div>
