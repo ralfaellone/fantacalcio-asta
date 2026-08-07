@@ -1201,7 +1201,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V18.2</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V18.3</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2287,7 +2287,7 @@ function renderNextMove(){
         </div>
       </div>
       <div class="nextMovePrice">
-        <span class="k">MIN-MAX</span>
+        <span class="k">RANGE CONSIGLIATO</span>
         <b>${a.low}-${a.high}</b>
         <div class="nextMoveMeta">non oltre ${a.maxRec}</div>
       </div>
@@ -2399,27 +2399,42 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   const pressure=clamp((rivalMedian-available)/INITIAL,-0.10,0.10);
   const pressureFactor=1 + pressure*0.6;
 
-  let ideal=base*scarcityFactor*needFactor*pressureFactor;
+  let rawIdeal=base*scarcityFactor*needFactor*pressureFactor;
 
   const gm=goalMeta(p.name);
-  if(Number(gm.target)>0) ideal=(ideal*0.7)+(Number(gm.target)*0.3);
-  if(gm.priority==='high') ideal*=1.05;
-  if(gm.priority==='low') ideal*=0.95;
+  if(Number(gm.target)>0) rawIdeal=(rawIdeal*0.7)+(Number(gm.target)*0.3);
+  if(gm.priority==='high') rawIdeal*=1.05;
+  if(gm.priority==='low') rawIdeal*=0.95;
 
-  ideal=Math.round(clamp(ideal,1,safe||available));
-  let low=Math.max(1,Math.round(ideal*0.88));
-  let high=Math.max(low,Math.round(ideal*1.10));
-  let maxRec=Math.round(ideal*1.16);
+  rawIdeal=Math.round(clamp(rawIdeal,1,safe||available));
 
+  // First calculate the absolute ceiling ("NON OLTRE").
+  let maxRec=Math.max(1,Math.round(rawIdeal*1.18));
   if(Number(gm.max)>0) maxRec=Math.min(maxRec,Number(gm.max));
   const strategicCap=strategyCapForRole(p.role,buyerIndex);
   if(strategicCap>0) maxRec=Math.min(maxRec,strategicCap);
-  maxRec=Math.min(maxRec,safe,available);
-  high=Math.min(high,maxRec);
+  maxRec=Math.max(1,Math.min(maxRec,safe,available));
 
-  // Prevent nonsense if safe budget is very low.
-  low=Math.min(low,maxRec);
-  ideal=Math.min(ideal,maxRec);
+  // Then rebuild a real auction range *inside* that ceiling.
+  // This avoids MIN=MAX when the dynamic budget cap is lower than the raw valuation.
+  let ideal;
+  if(maxRec<rawIdeal){
+    ideal=Math.max(1,Math.round(maxRec*0.86));
+  }else{
+    ideal=rawIdeal;
+  }
+
+  let low=Math.max(1,Math.round(ideal*0.84));
+  let high=Math.min(maxRec,Math.max(ideal,Math.round(ideal*1.10)));
+
+  // Keep a visible spread whenever the budget allows it.
+  if(maxRec>=3 && high<=low){
+    low=Math.max(1,maxRec-2);
+    high=maxRec-1;
+    ideal=Math.max(low,Math.min(high,Math.round((low+high)/2)));
+  }else if(maxRec>=2 && high===low){
+    low=Math.max(1,high-1);
+  }
 
   const histScore=statScoreForPlayer(p);
   const score=Math.round(clamp(
