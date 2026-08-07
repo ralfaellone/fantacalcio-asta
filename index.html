@@ -1558,6 +1558,20 @@ nav button{
   z-index:1;
 }
 
+
+/* V21 - AI che impara dal mercato reale */
+.marketLearn{
+  margin-top:8px;
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#081321;
+  font-size:10px;
+  color:var(--muted);
+  line-height:1.4;
+}
+.marketLearn b{color:var(--accent)}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1567,7 +1581,7 @@ nav button{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20.4.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V21</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1603,6 +1617,7 @@ nav button{
       <button class="nextMoveRoleBtn" data-moverole="A" onclick="setNextMoveRole('A',this)">A</button>
     </div>
     <div id="nextMoveAdvice" class="nextMoveAdvice"></div>
+    <div id="marketLearningInfo" class="marketLearn"></div>
     <div id="nextMovePlayers" class="nextMovePlayers"></div>
   </div>
   <div class="auditCard">
@@ -2695,6 +2710,20 @@ function renderNextMove(){
 
   adviceEl.textContent=advice;
 
+  const marketInfo=document.getElementById('marketLearningInfo');
+  if(marketInfo){
+    const ml=auctionMarketLearning(role);
+    if(ml.count){
+      const pct=Math.round((ml.factor-1)*100);
+      marketInfo.innerHTML=`🧠 <b>AI mercato reale:</b> ${ml.count} acquisti ${role} analizzati · correzione ${pct>=0?'+':''}${pct}% · confidenza ${Math.round(ml.confidence*100)}%.`;
+    }else{
+      const gl=globalAuctionLearning();
+      marketInfo.innerHTML=gl.count>=4
+        ? `🧠 <b>AI mercato reale:</b> nessun acquisto ${role}; sto usando con peso ridotto il trend di ${gl.count} acquisti complessivi.`
+        : `🧠 <b>AI mercato reale:</b> servono i primi acquisti per imparare i prezzi della vostra asta.`;
+    }
+  }
+
   const top=nextMoveCandidates(role);
   listEl.innerHTML=top.length ? top.map((x,i)=>{
     const a=x.price;
@@ -3136,6 +3165,45 @@ function renderStrategy(){
   }).join('');
 }
 
+
+function auctionMarketLearning(role){
+  const rows=state.purchases
+    .filter(x=>x.role===role && Number(x.price)>0)
+    .map(x=>{
+      const p=PLAYER_ARCHIVE.find(p=>normalizePlayerText(p.name)===normalizePlayerText(x.name));
+      if(!p)return null;
+      const qi=Math.max(1,Number(p.qa)||Number(p.qi)||1);
+      return {price:Number(x.price),qi,ratio:Number(x.price)/qi,name:x.name};
+    })
+    .filter(Boolean);
+
+  if(!rows.length)return {count:0,factor:1,confidence:0,medianRatio:1};
+
+  const ratios=rows.map(x=>x.ratio).sort((a,b)=>a-b);
+  const med=median(ratios);
+  // Trim extreme auction accidents once enough observations exist.
+  const usable=rows.length>=5
+    ? rows.filter(x=>x.ratio>=med*.55 && x.ratio<=med*1.65)
+    : rows;
+  const cleanRatios=usable.map(x=>x.ratio).sort((a,b)=>a-b);
+  const cleanMedian=cleanRatios.length?median(cleanRatios):med;
+
+  // Confidence grows progressively: first sales influence, but do not dominate.
+  const confidence=clamp(rows.length/10,0,1);
+  // Factor is relative to a neutral 12-team QI multiplier of ~1.35.
+  const observedFactor=clamp(cleanMedian/1.35,.72,1.55);
+  const factor=1+(observedFactor-1)*confidence;
+
+  return {count:rows.length,factor,confidence,medianRatio:cleanMedian};
+}
+function globalAuctionLearning(){
+  const all=['P','D','C','A'].map(auctionMarketLearning).filter(x=>x.count>0);
+  if(!all.length)return {count:0,factor:1};
+  const count=all.reduce((s,x)=>s+x.count,0);
+  const weighted=all.reduce((s,x)=>s+x.factor*x.count,0)/count;
+  return {count,factor:clamp(weighted,.82,1.30)};
+}
+
 function aiPlayerAnalysis(index,buyerIndex=state.me){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return null;
@@ -3219,6 +3287,16 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   else if(richRivals>=5)rawIdeal*=1.05;
   else if(richRivals>=3)rawIdeal*=1.025;
 
+  // Learn continuously from actual winning prices in THIS auction.
+  const roleMarket=auctionMarketLearning(p.role);
+  const globalMarket=globalAuctionLearning();
+  if(roleMarket.count){
+    rawIdeal*=roleMarket.factor;
+  }else if(globalMarket.count>=4){
+    // Before this role has sales, use only a softened global signal.
+    rawIdeal*=1+(globalMarket.factor-1)*.35;
+  }
+
   const gm=goalMeta(p.name);
   if(Number(gm.target)>0) rawIdeal=(rawIdeal*0.78)+(Number(gm.target)*0.22);
   if(gm.priority==='high') rawIdeal*=1.06;
@@ -3280,6 +3358,12 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   }
   reasons.push(`FVM ${p.fvm} e quotazione ${p.qa!==undefined?p.qa:p.qi}: il modello applica inflazione da asta a 12 partecipanti e scarsità reale del ruolo.`);
   reasons.push(`Profilo circa al ${Math.round(elitePct*100)}° percentile tra i ${rolePool.length} ${roleName(p.role).toLowerCase()} ancora liberi.`);
+  if(roleMarket.count){
+    const direction=roleMarket.factor>1.04?'più caro':roleMarket.factor<.96?'più economico':'in linea';
+    reasons.push(`Mercato reale ${p.role}: ${roleMarket.count} acquisti registrati, prezzi ${direction} rispetto al modello base (confidenza ${Math.round(roleMarket.confidence*100)}%).`);
+  }else if(globalMarket.count>=4){
+    reasons.push(`Nessun acquisto ${p.role} ancora disponibile: uso temporaneamente il trend generale di ${globalMarket.count} acquisti con peso ridotto.`);
+  }
 
   reasons.push(`Hai ${available} crediti, ${totalSlots} posti rosa e ${roleSlots} posti ${p.role} da coprire.`);
   if(gm.priority)reasons.push(`Priorità personale: ${priorityLabel(gm.priority)}.`);
