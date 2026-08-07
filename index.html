@@ -2028,6 +2028,165 @@ body.subpage-open #editBuyModal.show{
   font-weight:900;
 }
 
+
+/* V27 - Confronta giocatori */
+.compareToolbar{
+  display:flex;
+  gap:8px;
+  margin-top:9px;
+}
+.compareOpenBtn{
+  flex:1;
+  border:1px solid rgba(244,196,48,.5);
+  background:#171405;
+  color:var(--accent);
+  border-radius:13px;
+  padding:10px 12px;
+  font-weight:950;
+}
+.compareOpenBtn:disabled{
+  opacity:.45;
+}
+.comparePickBtn{
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--muted);
+  border-radius:10px;
+  padding:6px 8px;
+  font-size:9px;
+  font-weight:950;
+  margin-left:6px;
+}
+.comparePickBtn.on{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#111;
+}
+#compareModal{
+  position:fixed;
+  inset:0;
+  display:none;
+  background:var(--bg);
+  z-index:7600;
+  overflow:hidden;
+}
+#compareModal.show{display:block}
+.compareShell{
+  position:absolute;
+  inset:0;
+  height:100dvh;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  background:var(--bg);
+}
+.compareHeader{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);
+  border-bottom:1px solid var(--line);
+}
+.compareBack{
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:13px;
+  padding:9px 11px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.compareTitle{font-size:18px;font-weight:950}
+.compareBody{
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding:12px 14px calc(env(safe-area-inset-bottom) + 28px);
+}
+.compareGrid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.compareCard{
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:13px;
+}
+.compareCard.winner{
+  border-color:rgba(57,217,138,.55);
+  box-shadow:0 0 0 1px rgba(57,217,138,.15) inset;
+}
+.compareName{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:flex-start;
+}
+.compareName b{font-size:20px}
+.compareMetrics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+  margin-top:10px;
+}
+.compareMetric{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:11px;
+  text-align:center;
+  padding:7px 4px;
+}
+.compareMetric span{display:block;font-size:8px;color:var(--muted)}
+.compareMetric b{display:block;font-size:14px;margin-top:2px}
+.compareVerdict{
+  margin-top:12px;
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px;
+  line-height:1.45;
+}
+.compareVerdict h3{margin:0 0 7px}
+.compareAction{
+  margin-top:9px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+.compareAction button{
+  border-radius:12px;
+  padding:10px;
+  font-weight:950;
+}
+.compareAI{
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+}
+.compareAuction{
+  border:0;
+  background:var(--accent);
+  color:#111;
+}
+body.compare-page-open{
+  overflow:hidden !important;
+  height:100dvh !important;
+}
+body.compare-page-open nav{
+  display:none !important;
+}
+body.compare-page-open .page{
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+body.compare-page-open #compareModal{
+  visibility:visible !important;
+  pointer-events:auto !important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2037,7 +2196,7 @@ body.subpage-open #editBuyModal.show{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V25.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V27</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2125,6 +2284,9 @@ body.subpage-open #editBuyModal.show{
     </div>
     <div id="listoneCount" class="listoneCount"></div>
     <div id="favSummary" class="favSummary"></div>
+    <div class="compareToolbar">
+      <button id="compareOpenBtn" class="compareOpenBtn" onclick="openComparePage()" disabled>⚖️ CONFRONTA · 0/3</button>
+    </div>
   </div>
   <div id="listonePlayers" class="list"></div>
 </section>
@@ -2177,6 +2339,17 @@ body.subpage-open #editBuyModal.show{
 <button onclick="tab('players',this)"><span class="ico">👥</span>Partecipanti</button>
 <button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
 </nav>
+
+
+<div id="compareModal">
+  <div class="compareShell">
+    <div class="compareHeader">
+      <button class="compareBack" onclick="closeComparePage()">← Indietro</button>
+      <div class="compareTitle">⚖️ Confronta giocatori</div>
+    </div>
+    <div id="compareBody" class="compareBody"></div>
+  </div>
+</div>
 
 <div id="buyModal">
   <div class="fullAppPage">
@@ -2433,6 +2606,7 @@ let nextMoveSelectedRole='';
 let SIM_PLANS=loadSimPlans();
 let simPlanKey='A';
 let simAltOpenKey='';
+let COMPARE_PLAYERS=[];
 function defaultState(){return {favorites:[],favoriteMeta:{},initialBudget:600,managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[],releases:[],unavailablePlayers:[]}}
 function load(){
   try{
@@ -2935,6 +3109,7 @@ function purchaseForArchivePlayer(name){
 }
 function renderListone(){
   renderArchiveInfo();
+  updateCompareButton();
   const box=document.getElementById('listonePlayers');
   if(!box) return;
   const input=document.getElementById('listoneSearch');
@@ -2964,7 +3139,7 @@ function renderListone(){
       <div class="playerCardInner">
         <button class="favBtn ${isFavorite(p.name)?'on':''}" onclick="toggleFavorite(decodeURIComponent('${encodeURIComponent(p.name)}'),event)" aria-label="Obiettivo">${isFavorite(p.name)?'★':'☆'}</button>
         <div class="playerMain">
-          <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}${isFavorite(p.name)?`<button class="goalMetaBtn" onclick="openGoalEditor(decodeURIComponent('${encodeURIComponent(p.name)}'),event)">🎯</button>`:''}<button class="aiBtn" onclick="openAIForPlayer(${idx},event)">🤖 AI</button></div>
+          <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}${isFavorite(p.name)?`<button class="goalMetaBtn" onclick="openGoalEditor(decodeURIComponent('${encodeURIComponent(p.name)}'),event)">🎯</button>`:''}<button class="aiBtn" onclick="openAIForPlayer(${idx},event)">🤖 AI</button><button class="comparePickBtn ${COMPARE_PLAYERS.includes(idx)?'on':''}" onclick="toggleComparePlayer(${idx},event)">${COMPARE_PLAYERS.includes(idx)?'✓ CONFRONTA':'＋ CONFRONTA'}</button></div>
           <div class="playerInfo">${p.team} · QI ${p.qi}${p.qa!==undefined?' · QA '+p.qa:''}</div>
           ${statsFor(p.name)?`<div class="goalChips"><span class="goalChip">PV ${statsFor(p.name).pv}</span><span class="goalChip">MV ${Number(statsFor(p.name).mv).toFixed(2)}</span><span class="goalChip">FM ${Number(statsFor(p.name).fm).toFixed(2)}</span><span class="goalChip">⚽ ${statsFor(p.name).gol}</span><span class="goalChip">🅰 ${statsFor(p.name).ass}</span></div>`:''}
           ${goalMetaHTML(p.name)}
@@ -2976,6 +3151,130 @@ function renderListone(){
       </div>
     </div>`;
   }).join(''):'<div class="empty">Nessun giocatore trovato con questi filtri.</div>';
+}
+
+
+function updateCompareButton(){
+  const btn=document.getElementById('compareOpenBtn');
+  if(!btn)return;
+  btn.textContent=`⚖️ CONFRONTA · ${COMPARE_PLAYERS.length}/3`;
+  btn.disabled=COMPARE_PLAYERS.length<2;
+}
+function toggleComparePlayer(index,event){
+  if(event)event.stopPropagation();
+  const pos=COMPARE_PLAYERS.indexOf(index);
+  if(pos>=0){
+    COMPARE_PLAYERS.splice(pos,1);
+  }else{
+    if(COMPARE_PLAYERS.length>=3){
+      alert('Puoi confrontare massimo 3 giocatori alla volta.');
+      return;
+    }
+    COMPARE_PLAYERS.push(index);
+  }
+  renderListone();
+  updateCompareButton();
+}
+function comparePlayerData(index){
+  const p=PLAYER_ARCHIVE[index];
+  const ai=aiPlayerAnalysis(index,state.me);
+  const st=statsFor(p.name);
+  const valueScore=ai && ai.ideal>0
+    ? Math.round(clamp((ai.score*0.68)+((Number(p.fvm)||0)/Math.max(1,ai.ideal))*2.2,0,99))
+    : ai?.score||0;
+  return {index,p,ai,st,valueScore};
+}
+function compareVerdictText(rows){
+  const ranked=[...rows].sort((a,b)=>b.valueScore-a.valueScore || b.ai.score-a.ai.score);
+  const best=ranked[0], second=ranked[1];
+  const sameRole=rows.every(x=>x.p.role===rows[0].p.role);
+
+  let text=`<strong>Scelta AI: ${esc(best.p.name)}</strong>. `;
+  if(sameRole){
+    text+=`Tra questi profili è quello con il miglior equilibrio tra rendimento, prezzo e valore per il tuo budget. `;
+  }else{
+    text+=`È il profilo con il miglior valore complessivo, ma i giocatori hanno ruoli diversi: considera prima quale reparto devi completare. `;
+  }
+
+  if(second){
+    if(best.ai.maxRec < second.ai.maxRec){
+      text+=`${esc(best.p.name)} ha anche un tetto AI più basso (${best.ai.maxRec}) rispetto a ${esc(second.p.name)} (${second.ai.maxRec}). `;
+    }else if(best.ai.score-second.ai.score<=4){
+      text+=`Il confronto con ${esc(second.p.name)} è molto equilibrato: scegli quello che rimane più vicino al proprio prezzo ideale. `;
+    }
+  }
+
+  text+=`Regola pratica: prendi ${esc(best.p.name)} se resta entro ${best.ai.high} crediti; oltre ${best.ai.maxRec} passa a un'alternativa.`;
+  return text;
+}
+function renderComparePage(){
+  const box=document.getElementById('compareBody');
+  if(!box)return;
+
+  const rows=COMPARE_PLAYERS.map(comparePlayerData).filter(x=>x&&x.ai);
+  if(rows.length<2){
+    box.innerHTML='<div class="empty">Seleziona almeno 2 giocatori dal Listone.</div>';
+    return;
+  }
+
+  const best=[...rows].sort((a,b)=>b.valueScore-a.valueScore || b.ai.score-a.ai.score)[0];
+
+  box.innerHTML=`
+    <div class="compareVerdict">
+      <h3>🤖 Verdetto AI</h3>
+      ${compareVerdictText(rows)}
+    </div>
+
+    <div class="compareGrid" style="margin-top:12px">
+      ${rows.map(x=>`
+        <div class="compareCard ${x.index===best.index?'winner':''}">
+          <div class="compareName">
+            <div>
+              <b>${esc(x.p.name)}</b>
+              <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi}${x.p.qa!==undefined?' · QA '+x.p.qa:''}</div>
+            </div>
+            <span class="tag ${x.index===best.index?'good':''}">${x.index===best.index?'MIGLIORE':'AI '+x.ai.score+'/99'}</span>
+          </div>
+
+          <div class="compareMetrics">
+            <div class="compareMetric"><span>FVM</span><b>${x.p.fvm}</b></div>
+            <div class="compareMetric"><span>FM</span><b>${x.st?Number(x.st.fm).toFixed(2):'—'}</b></div>
+            <div class="compareMetric"><span>PV</span><b>${x.st?x.st.pv:'—'}</b></div>
+            <div class="compareMetric"><span>AI</span><b>${x.ai.score}</b></div>
+            <div class="compareMetric"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
+            <div class="compareMetric"><span>RANGE</span><b>${x.ai.low}-${x.ai.high}</b></div>
+            <div class="compareMetric"><span>MAX AI</span><b>${x.ai.maxRec}</b></div>
+            <div class="compareMetric"><span>VALORE</span><b>${x.valueScore}</b></div>
+            <div class="compareMetric"><span>GOL</span><b>${x.st?x.st.gol:'—'}</b></div>
+            <div class="compareMetric"><span>ASSIST</span><b>${x.st?x.st.ass:'—'}</b></div>
+            <div class="compareMetric"><span>AMM.</span><b>${x.st?x.st.amm:'—'}</b></div>
+            <div class="compareMetric"><span>ESP.</span><b>${x.st?x.st.esp:'—'}</b></div>
+          </div>
+
+          <div class="compareAction">
+            <button class="compareAI" onclick="closeComparePage();openAIForPlayer(${x.index})">🤖 AI COMPLETA</button>
+            <button class="compareAuction" onclick="closeComparePage();buyFromListone(${x.index})">ASTA</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function openComparePage(){
+  if(COMPARE_PLAYERS.length<2){
+    alert('Seleziona almeno 2 giocatori da confrontare.');
+    return;
+  }
+  renderComparePage();
+  document.body.classList.add('compare-page-open');
+  document.getElementById('compareModal').classList.add('show');
+  const body=document.getElementById('compareBody');
+  if(body)body.scrollTop=0;
+}
+function closeComparePage(){
+  document.getElementById('compareModal').classList.remove('show');
+  document.body.classList.remove('compare-page-open');
+  document.body.style.overflow='';
 }
 
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
@@ -4808,7 +5107,7 @@ render();
   function lockBottomNav(){
     const nav=document.querySelector('nav');
     if(!nav)return;
-    if(document.body.classList.contains('simulator-open') || document.body.classList.contains('ai-page-open') || document.body.classList.contains('subpage-open')){
+    if(document.body.classList.contains('simulator-open') || document.body.classList.contains('ai-page-open') || document.body.classList.contains('compare-page-open') || document.body.classList.contains('subpage-open')){
       nav.style.bottom='0px';
       return;
     }
