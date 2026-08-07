@@ -1567,7 +1567,7 @@ nav button{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20.4</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20.4.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -3194,17 +3194,17 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   if(p.role==='C' && elitePct>=.80)rolePremium=1.08;
 
   // Real statistics can move the valuation further.
-  const hist=statsFor(p.name);
+  const marketStats=statsFor(p.name);
   let statPremium=1.0;
-  if(hist && hist.pv){
-    if(hist.fm>=7.0)statPremium+=.12;
-    else if(hist.fm>=6.5)statPremium+=.07;
-    if(hist.pv>=32)statPremium+=.04;
-    if(hist.rigTaken>=2)statPremium+=.06;
-    if(hist.gol>=8)statPremium+=.06;
-    if(hist.ass>=6)statPremium+=.04;
-    if(hist.amm>=8)statPremium-=.03;
-    if(hist.esp>=2)statPremium-=.04;
+  if(marketStats && marketStats.pv){
+    if(marketStats.fm>=7.0)statPremium+=.12;
+    else if(marketStats.fm>=6.5)statPremium+=.07;
+    if(marketStats.pv>=32)statPremium+=.04;
+    if(marketStats.rigTaken>=2)statPremium+=.06;
+    if(marketStats.gol>=8)statPremium+=.06;
+    if(marketStats.ass>=6)statPremium+=.04;
+    if(marketStats.amm>=8)statPremium-=.03;
+    if(marketStats.esp>=2)statPremium-=.04;
   }
 
   // At auction start, QI itself creates a realistic market floor.
