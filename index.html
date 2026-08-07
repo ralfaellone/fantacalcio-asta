@@ -3036,6 +3036,99 @@ body.asta-live-open{overflow:hidden!important}
  .astaBidQuick{grid-template-columns:repeat(3,1fr)}
 }
 
+
+/* V37 - AI Asta 2.0 + Piani Rosa/Formazioni */
+.formationBtn{
+  width:100%;
+  border:1px solid rgba(57,217,138,.45);
+  background:#09251c;
+  color:var(--ok);
+  border-radius:13px;
+  padding:10px 8px;
+  font-weight:950;
+}
+#formationModal{
+  position:fixed;inset:0;display:none;background:var(--bg);
+  z-index:8300;overflow:hidden;
+}
+#formationModal.show{display:block}
+.formationShell{
+  position:absolute;inset:0;height:100dvh;
+  display:grid;grid-template-rows:auto minmax(0,1fr);background:var(--bg);
+}
+.formationHeader{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);border-bottom:1px solid var(--line);
+}
+.formationBack{
+  border:1px solid var(--line);background:#0b1727;color:var(--text);
+  border-radius:13px;padding:9px 11px;font-weight:900;
+}
+.formationTitle{font-size:18px;font-weight:950}
+.formationBody{
+  min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px 14px calc(env(safe-area-inset-bottom) + 28px);
+}
+.formationHero{
+  background:linear-gradient(145deg,#153524,#0d1a2b);
+  border:1px solid rgba(57,217,138,.35);border-radius:17px;padding:12px;
+}
+.formationCard{
+  background:#0b1727;border:1px solid var(--line);
+  border-radius:16px;padding:11px;margin:9px 0;
+}
+.formationCard.best{
+  border-color:rgba(57,217,138,.62);
+  box-shadow:0 0 0 1px rgba(57,217,138,.1) inset;
+}
+.formationCardTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.formationName{font-size:19px;font-weight:950}
+.formationStyle{font-size:9px;color:var(--muted);margin-top:2px}
+.formationScore{border-radius:9px;padding:5px 7px;background:#15304d;font-size:9px;font-weight:950}
+.formationCard.best .formationScore{background:var(--ok);color:#07101d}
+.formationRoles{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px}
+.formationRole{
+  background:#081321;border:1px solid var(--line);border-radius:10px;
+  padding:6px 3px;text-align:center;
+}
+.formationRole span{display:block;font-size:7px;color:var(--muted)}
+.formationRole b{display:block;font-size:12px;margin-top:2px}
+.formationBudget{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:6px}
+.formationBudgetBox{
+  border:1px solid var(--line);border-radius:9px;padding:5px 2px;text-align:center;
+}
+.formationBudgetBox span{display:block;font-size:6.5px;color:var(--muted)}
+.formationBudgetBox b{display:block;font-size:11px;margin-top:1px}
+.formationWhy{font-size:10px;color:var(--muted);line-height:1.45;margin-top:8px}
+.formationTargets{margin-top:9px}
+.formationTarget{
+  display:flex;justify-content:space-between;gap:8px;align-items:center;
+  background:#081321;border:1px solid var(--line);border-radius:11px;
+  padding:8px 9px;margin:5px 0;
+}
+.formationTargetName{font-size:11px;font-weight:900}
+.formationTargetMeta{font-size:8px;color:var(--muted);margin-top:2px}
+.formationTargetActions{display:flex;gap:4px}
+.formationTargetActions button{
+  border:1px solid var(--line);background:#0b1727;color:var(--text);
+  border-radius:8px;padding:6px;font-size:8px;font-weight:900;
+}
+.ai2Chip{
+  display:inline-block;
+  border:1px solid rgba(57,217,138,.35);
+  color:var(--ok);
+  background:#09251c;
+  border-radius:8px;
+  padding:3px 6px;
+  font-size:8px;
+  font-weight:900;
+}
+body.formation-page-open{overflow:hidden!important;height:100dvh!important}
+body.formation-page-open nav{display:none!important}
+body.formation-page-open .page{visibility:hidden!important;pointer-events:none!important}
+body.formation-page-open #formationModal{visibility:visible!important;pointer-events:auto!important}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3045,7 +3138,7 @@ body.asta-live-open{overflow:hidden!important}
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V36</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V37</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
@@ -3082,6 +3175,8 @@ body.asta-live-open{overflow:hidden!important}
       <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
       <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
       <button onclick="openPlanPage()">📊<span>Piano asta</span></button>
+      <button onclick="openFormationPage()">🧩<span>Piani rosa AI</span></button>
+      <button onclick="openFormationPage()">🧩<span>Piani rosa AI</span></button>
     </div>
   </div>
 
@@ -3256,6 +3351,17 @@ body.asta-live-open{overflow:hidden!important}
 
 
 
+
+
+<div id="formationModal">
+  <div class="formationShell">
+    <div class="formationHeader">
+      <button class="formationBack" onclick="closeFormationPage()">← Indietro</button>
+      <div class="formationTitle">🧩 Piani Rosa AI</div>
+    </div>
+    <div id="formationBody" class="formationBody"></div>
+  </div>
+</div>
 
 <div id="rivalRadarModal">
   <div class="rivalRadarShell">
@@ -4009,6 +4115,7 @@ function renderDashboardControl(){
 
     move.innerHTML=x?`
       <div class="dashMove">
+        <div style="margin-bottom:6px"><span class="ai2Chip">AI ASTA 2.0 · ${activeFormationPlan().name}</span></div>
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
           <div>
             <div class="dashMoveName">${esc(x.p.name)}</div>
@@ -4109,7 +4216,7 @@ function renderAstaLiveSelected(){
   decision.innerHTML=`
     <div class="astaDecision">
       <div class="astaDecisionHead">
-        <div><div class="astaDecisionTitle">🤖 Assistente rilanci LIVE</div><div class="astaDecisionText">Inserisci il prezzo attuale dell’asta. L’AI confronta il rilancio con il valore del giocatore, il tuo budget e il tetto consigliato.</div></div>
+        <div><div class="astaDecisionTitle">🤖 Assistente rilanci LIVE 2.0</div><div class="astaDecisionText">Piano attivo: ${activeFormationPlan().name}. L’AI confronta prezzo, budget, mercato, rivali e compatibilità con la rosa che stai costruendo.</div></div>
         <span class="tag good">${a.score}/99</span>
       </div>
       <div class="astaAiGrid">
@@ -4426,6 +4533,72 @@ function renderListone(){
 
 
 
+
+function renderFormationPage(){
+  const body=document.getElementById('formationBody');
+  if(!body)return;
+  const plans=rankedFormationPlans(state.me);
+  const best=plans[0];
+  const cash=budget(state.me);
+  const slots=remainingRosterSlots(state.me);
+
+  body.innerHTML=`
+    <div class="formationHero">
+      <div style="font-size:18px;font-weight:950">AI Asta 2.0 · Piano consigliato: ${best.name}</div>
+      <div class="playerMetaLine">${best.style} · compatibilità ${best.score}/99</div>
+      <div class="formationWhy">L'AI sceglie il piano in base a giocatori già presi, budget speso per reparto, crediti rimasti, modificatore e mercato ancora disponibile. Hai ${cash} crediti e ${slots} posti da completare.</div>
+    </div>
+
+    ${plans.map((plan,n)=>{
+      const targets=formationTargets(plan);
+      return `<div class="formationCard ${n===0?'best':''}">
+        <div class="formationCardTop">
+          <div>
+            <div class="formationName">${plan.name} ${n===0?'<span class="ai2Chip">CONSIGLIATA</span>':''}</div>
+            <div class="formationStyle">${plan.style}</div>
+          </div>
+          <div class="formationScore">${plan.score}/99</div>
+        </div>
+
+        <div class="formationRoles">
+          ${['P','D','C','A'].map(r=>`<div class="formationRole"><span>${r} TITOLARI</span><b>${plan.xi[r]}</b></div>`).join('')}
+        </div>
+
+        <div class="formationBudget">
+          ${['P','D','C','A'].map(r=>`<div class="formationBudgetBox"><span>BUDGET ${r}</span><b>${Math.round(INITIAL*plan.budget[r])}</b></div>`).join('')}
+        </div>
+
+        <div class="formationWhy">${formationPlanWhy(plan)}</div>
+
+        ${targets.length?`<div class="formationTargets">
+          <div style="font-size:9px;font-weight:900;margin-bottom:5px">Acquisti che ti indirizzano verso questo piano</div>
+          ${targets.map(x=>`<div class="formationTarget">
+            <div>
+              <div class="formationTargetName">${esc(x.p.name)} <span class="tag">${x.role}</span></div>
+              <div class="formationTargetMeta">AI2 ${x.dir}/99 · ideale ${x.ai.ideal} · non oltre ${x.ai.maxRec}</div>
+            </div>
+            <div class="formationTargetActions">
+              <button onclick="closeFormationPage();openAIForPlayer(${x.index})">AI</button>
+              <button onclick="closeFormationPage();buyFromListone(${x.index})">ASTA</button>
+            </div>
+          </div>`).join('')}
+        </div>`:''}
+      </div>`;
+    }).join('')}
+  `;
+}
+function openFormationPage(){
+  renderFormationPage();
+  document.body.classList.add('formation-page-open');
+  document.getElementById('formationModal').classList.add('show');
+  const b=document.getElementById('formationBody');if(b)b.scrollTop=0;
+}
+function closeFormationPage(){
+  document.getElementById('formationModal').classList.remove('show');
+  document.body.classList.remove('formation-page-open');
+  document.body.style.overflow='';
+}
+
 function rivalInterestForPlayer(managerIndex,playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
   if(!p)return null;
@@ -4734,6 +4907,112 @@ function closeOpportunityPage(){
 
 let BUY_NOW_ROLE='ALL';
 
+
+const FORMATION_PLANS=[
+  {id:'343',name:'3-4-3',style:'Attacco pesante',xi:{P:1,D:3,C:4,A:3},budget:{P:.08,D:.16,C:.28,A:.48}},
+  {id:'433',name:'4-3-3',style:'Modificatore + attacco',xi:{P:1,D:4,C:3,A:3},budget:{P:.09,D:.22,C:.25,A:.44}},
+  {id:'352',name:'3-5-2',style:'Centrocampo dominante',xi:{P:1,D:3,C:5,A:2},budget:{P:.08,D:.16,C:.38,A:.38}},
+  {id:'442',name:'4-4-2',style:'Equilibrata / modificatore',xi:{P:1,D:4,C:4,A:2},budget:{P:.09,D:.23,C:.32,A:.36}}
+];
+
+function roleOwnedQuality(role,buyerIndex=state.me){
+  const buys=state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===role);
+  if(!buys.length)return 0;
+  const vals=buys.map(x=>{
+    const p=PLAYER_ARCHIVE.find(p=>normalizePlayerText(p.name)===normalizePlayerText(x.name));
+    if(!p)return 35;
+    const st=statsFor(p.name);
+    return clamp((Number(p.fvm)||0)*.85+(Number(p.qa)||Number(p.qi)||0)*2.2+(st?Math.max(0,Number(st.fm||0)-5.5)*8:0),0,100);
+  });
+  vals.sort((a,b)=>b-a);
+  return vals.reduce((s,v,i)=>s+v*(1/(i+1)),0)/vals.reduce((s,_,i)=>s+1/(i+1),0);
+}
+function formationPlanScore(plan,buyerIndex=state.me){
+  const cash=budget(buyerIndex);
+  const totalMissing=remainingRosterSlots(buyerIndex);
+  let score=50;
+  ['P','D','C','A'].forEach(role=>{
+    const owned=roleCount(buyerIndex,role);
+    const q=roleOwnedQuality(role,buyerIndex);
+    const xiNeed=plan.xi[role];
+    const lineupReady=Math.min(1,owned/Math.max(1,xiNeed));
+    score+=lineupReady*7 + (q/100)*5;
+    if(role==='D' && xiNeed===4)score+=4; // app configured with modifier
+  });
+  const roleSpendFit=['P','D','C','A'].reduce((acc,role)=>{
+    const spentRole=state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===role).reduce((s,x)=>s+Number(x.price||0),0);
+    const target=INITIAL*plan.budget[role];
+    return acc + clamp(1-Math.abs(spentRole-target)/Math.max(1,target),0,1);
+  },0)/4;
+  score+=roleSpendFit*12;
+  if(totalMissing>0 && cash/totalMissing<5 && plan.id==='343')score-=5;
+  return Math.round(clamp(score,0,99));
+}
+function rankedFormationPlans(buyerIndex=state.me){
+  return FORMATION_PLANS.map(plan=>({...plan,score:formationPlanScore(plan,buyerIndex)}))
+    .sort((a,b)=>b.score-a.score);
+}
+function activeFormationPlan(buyerIndex=state.me){
+  return rankedFormationPlans(buyerIndex)[0];
+}
+function formationRoleFit(role,buyerIndex=state.me){
+  const plan=activeFormationPlan(buyerIndex);
+  const owned=roleCount(buyerIndex,role);
+  const desired=plan.xi[role];
+  const lineupGap=Math.max(0,desired-owned);
+  const rosterGap=Math.max(0,LIMITS[role]-owned);
+  const budgetGap=Math.max(0,Math.round(INITIAL*plan.budget[role])-
+    state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===role).reduce((s,x)=>s+Number(x.price||0),0));
+  return Math.round(clamp((lineupGap/Math.max(1,desired))*62+(rosterGap/Math.max(1,LIMITS[role]))*18+(budgetGap/Math.max(1,INITIAL*plan.budget[role]))*20,0,100));
+}
+function ai2DirectionalScore(index,buyerIndex=state.me){
+  const p=PLAYER_ARCHIVE[index];
+  const ai=aiPlayerAnalysis(index,buyerIndex);
+  if(!p||!ai)return 0;
+  const fit=rosterFitScore(p,ai,buyerIndex);
+  const afford=affordabilityScore(ai,buyerIndex);
+  const urgency=roleUrgencyScore(p.role,buyerIndex);
+  const formation=formationRoleFit(p.role,buyerIndex);
+  const market=auctionMarketLearning(p.role);
+  const rivals=rivalRoleDemand(p.role,buyerIndex);
+  const rivalPressure=clamp(rivals.strong*7+rivals.active*2,0,100);
+  const marketConfidence=Math.round((market.confidence||0)*100);
+  return Math.round(clamp(
+    ai.score*.34 + fit*.19 + afford*.14 + urgency*.10 +
+    formation*.13 + rivalPressure*.05 + marketConfidence*.05
+  ,0,99));
+}
+function formationTargets(plan){
+  const roleOrder=['P','D','C','A'];
+  const targets=[];
+  roleOrder.forEach(role=>{
+    const owned=roleCount(state.me,role);
+    const desired=plan.xi[role];
+    const need=Math.max(0,desired-owned);
+    if(!need)return;
+    const rows=PLAYER_ARCHIVE
+      .map((p,index)=>({p,index}))
+      .filter(x=>x.p.role===role&&!purchaseForArchivePlayer(x.p.name)&&!isUnavailablePlayer(x.p.name))
+      .map(x=>({index:x.index,p:x.p,ai:aiPlayerAnalysis(x.index,state.me),dir:ai2DirectionalScore(x.index,state.me)}))
+      .filter(x=>x.ai)
+      .sort((a,b)=>b.dir-a.dir||b.ai.score-a.ai.score)
+      .slice(0,Math.min(2,need+1));
+    rows.forEach(x=>targets.push({...x,role}));
+  });
+  return targets.slice(0,8);
+}
+function formationPlanWhy(plan){
+  const bits=[];
+  if(plan.xi.D===4)bits.push('sfrutta meglio il modificatore difesa');
+  if(plan.xi.A===3)bits.push('mantiene tre slot offensivi titolari');
+  if(plan.xi.C===5)bits.push('valorizza una rosa forte a centrocampo');
+  if(plan.id==='442')bits.push('riduce il rischio e distribuisce meglio il budget');
+  const open=['P','D','C','A'].filter(r=>roleCount(state.me,r)<plan.xi[r]);
+  if(open.length)bits.push(`priorità attuali: ${open.join(', ')}`);
+  else bits.push('undici base già coperto: ora serve profondità');
+  return bits.join(' · ');
+}
+
 function buyNowCandidate(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p || purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))return null;
@@ -4745,9 +5024,9 @@ function buyNowCandidate(index){
   const fit=rosterFitScore(p,ai,state.me);
   const afford=affordabilityScore(ai,state.me);
   const urgency=roleUrgencyScore(p.role,state.me);
-  const statBonus=st ? clamp((Number(st.fm||0)-5.5)*13 + Math.min(18,Number(st.pv||0)*.65),0,28) : 8;
-  const score=Math.round(clamp(ai.score*.39 + fit*.27 + afford*.18 + urgency*.10 + statBonus*.06,0,99));
-  return {index,p,ai,st,fit,afford,urgency,score};
+  const formation=formationRoleFit(p.role,state.me);
+  const score=ai2DirectionalScore(index,state.me);
+  return {index,p,ai,st,fit,afford,urgency,formation,score};
 }
 function buyNowCandidates(){
   return PLAYER_ARCHIVE
@@ -4764,6 +5043,7 @@ function buyNowReason(x){
   if(x.fit>=75)bits.push('ottimo fit con la rosa');
   if(x.afford>=80)bits.push('prezzo molto sostenibile');
   else if(x.afford>=55)bits.push('prezzo compatibile col budget');
+  if(x.formation>=70)bits.push(`molto adatto al piano ${activeFormationPlan().name}`);
   if(x.ai.score>=82)bits.push('profilo AI di fascia alta');
   if(x.st && Number(x.st.fm)>=6.5)bits.push('buon rendimento statistico');
   return (bits.length?bits:['buon equilibrio tra qualità, necessità e costo']).slice(0,3).join(' · ');
@@ -4808,7 +5088,7 @@ function renderBuyNowPage(){
           <div class="buyNowMetric"><span>FIT ROSA</span><b>${x.fit}</b></div>
           <div class="buyNowMetric"><span>BUDGET</span><b>${x.afford}</b></div>
           <div class="buyNowMetric"><span>PRIORITÀ</span><b>${x.urgency}</b></div>
-          <div class="buyNowMetric"><span>AI</span><b>${x.ai.score}</b></div>
+          <div class="buyNowMetric"><span>PIANO</span><b>${x.formation}</b></div>
         </div>
         <div class="buyNowWhy">${buyNowReason(x)}</div>
         <div class="buyNowActions">
