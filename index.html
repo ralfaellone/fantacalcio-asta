@@ -1244,6 +1244,200 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 .auditItem.bad{border-color:rgba(255,107,107,.4)}
 .auditItem.warn{border-color:rgba(244,196,48,.35)}
 
+
+/* V20 - Simulatore pre-asta */
+.simLaunch{
+  width:100%;
+  margin-top:10px;
+  border:1px solid rgba(57,217,138,.45);
+  background:linear-gradient(145deg,#0d2a20,#0d1828);
+  color:var(--text);
+  border-radius:18px;
+  padding:14px;
+  font-weight:950;
+  font-size:15px;
+}
+#simModal{
+  position:fixed;
+  inset:0;
+  display:none;
+  background:var(--bg);
+  z-index:150;
+}
+#simModal.show{display:block}
+.simShell{
+  height:100dvh;
+  width:100%;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  background:var(--bg);
+}
+.simHeader{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);
+  border-bottom:1px solid var(--line);
+}
+.simBack{
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:13px;
+  padding:9px 11px;
+  font-weight:900;
+}
+.simTitle{font-size:17px;font-weight:950}
+.simBody{
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:12px 14px calc(env(safe-area-inset-bottom) + 20px);
+}
+.simTabs{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+}
+.simTab{
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--muted);
+  border-radius:12px;
+  padding:10px 5px;
+  font-weight:950;
+}
+.simTab.active{background:var(--accent);color:#111;border-color:var(--accent)}
+.simSummary{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin-top:10px;
+}
+.simMetric{
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:9px 6px;
+  text-align:center;
+}
+.simMetric span{display:block;color:var(--muted);font-size:9px}
+.simMetric b{display:block;font-size:18px;margin-top:2px}
+.simRoles{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+  margin-top:8px;
+}
+.simRole{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:7px 4px;
+  text-align:center;
+  font-size:10px;
+  color:var(--muted);
+}
+.simRole b{display:block;color:var(--text);font-size:14px}
+.simSearchWrap{position:relative;margin-top:12px}
+.simSearch{
+  width:100%;
+  border-radius:15px;
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+  padding:13px;
+}
+.simResults{
+  position:absolute;
+  left:0;right:0;top:calc(100% + 6px);
+  z-index:155;
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:14px;
+  max-height:300px;
+  overflow:auto;
+  display:none;
+}
+.simResults.show{display:block}
+.simResult{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  padding:10px 11px;
+  border-bottom:1px solid var(--line);
+}
+.simResult:last-child{border-bottom:0}
+.simResultName{font-weight:900}
+.simResultMeta{font-size:10px;color:var(--muted);margin-top:3px}
+.simAdd{
+  border:0;
+  background:var(--accent);
+  color:#111;
+  border-radius:10px;
+  padding:7px 9px;
+  font-weight:950;
+}
+.simSectionTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:15px 2px 8px;
+  font-size:15px;
+  font-weight:950;
+}
+.simPlayer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:10px 11px;
+  margin:6px 0;
+}
+.simPlayerMain{min-width:0;flex:1}
+.simPlayerName{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.simPlayerMeta{font-size:10px;color:var(--muted);margin-top:3px}
+.simPriceInput{
+  width:70px;
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+  border-radius:10px;
+  padding:8px 6px;
+  text-align:center;
+  font-weight:900;
+}
+.simAltBtn,.simDelBtn{
+  border:0;
+  background:transparent;
+  font-weight:900;
+  padding:6px;
+}
+.simAltBtn{color:var(--accent)}
+.simDelBtn{color:var(--danger)}
+.simWarning{
+  margin-top:10px;
+  border:1px solid var(--line);
+  background:#0b1727;
+  border-radius:13px;
+  padding:10px 11px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.45;
+}
+.simWarning.bad{border-color:rgba(255,107,107,.45);color:var(--danger)}
+.altCard{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:10px;
+  margin:7px 0;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1253,7 +1447,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V19</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1276,6 +1470,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <button class="primary" style="margin-top:10px" onclick="openBuy()">＋ Registra acquisto</button>
   <button class="advisorLaunch" onclick="openAdvisor()">🤖 CHI PRENDO? · Consigliere Rosa</button>
   <button class="strategyLaunch" onclick="openStrategy()">🧠 STRATEGIA BUDGET AI</button>
+  <button class="simLaunch" onclick="openSimulator()">🧪 SIMULATORE PRE-ASTA</button>
   <div class="nextMoveCard">
     <div class="nextMoveHead">
       <div class="nextMoveTitle">🤖 PROSSIMA MOSSA</div>
@@ -1439,6 +1634,50 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 
 
 
+
+<div id="simModal">
+  <div class="simShell">
+    <div class="simHeader">
+      <button class="simBack" onclick="closeSimulator()">← Indietro</button>
+      <div class="simTitle">🧪 Simulatore pre-asta</div>
+    </div>
+    <div class="simBody">
+      <div class="simTabs">
+        <button class="simTab active" data-plan="A" onclick="setSimPlan('A',this)">Piano A</button>
+        <button class="simTab" data-plan="B" onclick="setSimPlan('B',this)">Piano B</button>
+        <button class="simTab" data-plan="C" onclick="setSimPlan('C',this)">Piano C</button>
+      </div>
+
+      <div class="simSummary">
+        <div class="simMetric"><span>COSTO STIMATO</span><b id="simCost">0</b></div>
+        <div class="simMetric"><span>BUDGET RESTANTE</span><b id="simRemain">600</b></div>
+        <div class="simMetric"><span>GIOCATORI</span><b id="simCount">0/25</b></div>
+      </div>
+
+      <div id="simRoles" class="simRoles"></div>
+      <div id="simWarning" class="simWarning"></div>
+
+      <div class="simSearchWrap">
+        <input id="simSearch" class="simSearch" placeholder="🔎 Aggiungi giocatore al piano..." autocomplete="off" oninput="searchSimPlayers()" onfocus="searchSimPlayers()">
+        <div id="simResults" class="simResults"></div>
+      </div>
+
+      <div id="simRoster"></div>
+    </div>
+  </div>
+</div>
+
+<div id="simAltModal" class="modal" onclick="if(event.target===this)closeSimAlternatives()">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h3 style="margin:0">Alternative più economiche</h3>
+      <button class="closeX" onclick="closeSimAlternatives()">×</button>
+    </div>
+    <div id="simAltList" style="margin-top:12px"></div>
+  </div>
+</div>
+
 <div id="strategyModal" class="modal" onclick="if(event.target===this)closeStrategy()">
   <div class="sheet">
     <div class="handle"></div>
@@ -1588,6 +1827,8 @@ let listoneFilter='ALL';
 let PLAYER_STATS=loadPlayerStats();
 let advisorRole='';
 let nextMoveSelectedRole='';
+let SIM_PLANS=loadSimPlans();
+let simPlanKey='A';
 function defaultState(){return {favorites:[],favoriteMeta:{},managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
 function load(){
   try{
@@ -2355,6 +2596,191 @@ function renderNextMove(){
   }).join('') : '<div class="empty">Nessun giocatore disponibile in questo reparto.</div>';
 }
 
+
+
+function defaultSimPlans(){return {A:[],B:[],C:[]}}
+function loadSimPlans(){
+  try{
+    const p=JSON.parse(localStorage.getItem('astaFantaSimV1'));
+    if(p&&typeof p==='object')return {A:Array.isArray(p.A)?p.A:[],B:Array.isArray(p.B)?p.B:[],C:Array.isArray(p.C)?p.C:[]};
+  }catch(e){}
+  return defaultSimPlans();
+}
+function persistSimPlans(){localStorage.setItem('astaFantaSimV1',JSON.stringify(SIM_PLANS))}
+function currentSimPlan(){return SIM_PLANS[simPlanKey]||[]}
+function simRoleCount(role){return currentSimPlan().filter(x=>x.role===role).length}
+function simCost(){return currentSimPlan().reduce((s,x)=>s+(Number(x.price)||0),0)}
+function simHasPlayer(name){return currentSimPlan().some(x=>normalizePlayerText(x.name)===normalizePlayerText(name))}
+function setSimPlan(key,btn){
+  simPlanKey=key;
+  document.querySelectorAll('.simTab').forEach(x=>x.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderSimulator();
+}
+function openSimulator(){
+  document.getElementById('simModal').classList.add('show');
+  document.body.style.overflow='hidden';
+  renderSimulator();
+}
+function closeSimulator(){
+  document.getElementById('simModal').classList.remove('show');
+  document.body.style.overflow='';
+}
+function simEstimatedPrice(index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p)return 1;
+  const gm=goalMeta(p.name);
+  if(Number(gm.target)>0)return Number(gm.target);
+  const a=aiPlayerAnalysis(index,state.me);
+  return Math.max(1,a?a.ideal:Math.round((Number(p.fvm)||1)*INITIAL/1000));
+}
+function searchSimPlayers(){
+  const input=document.getElementById('simSearch');
+  const box=document.getElementById('simResults');
+  if(!input||!box)return;
+  const q=normalizePlayerText(input.value.trim());
+  if(!q){box.classList.remove('show');box.innerHTML='';return}
+
+  const rows=PLAYER_ARCHIVE.filter(p=>{
+    if(simHasPlayer(p.name))return false;
+    const txt=normalizePlayerText(`${p.name} ${p.team}`);
+    return txt.includes(q);
+  }).slice(0,12);
+
+  box.innerHTML=rows.length?rows.map(p=>{
+    const idx=PLAYER_ARCHIVE.indexOf(p);
+    const est=simEstimatedPrice(idx);
+    return `<div class="simResult">
+      <div><div class="simResultName"><span class="tag">${p.role}</span>${esc(p.name)}</div><div class="simResultMeta">${p.team} · FVM ${p.fvm} · stima ${est} cr</div></div>
+      <button class="simAdd" onclick="addSimPlayer(${idx})">＋</button>
+    </div>`;
+  }).join(''):'<div class="simResult"><div class="simResultMeta">Nessun giocatore trovato.</div></div>';
+  box.classList.add('show');
+}
+function addSimPlayer(index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p||simHasPlayer(p.name))return;
+  if(simRoleCount(p.role)>=LIMITS[p.role]){
+    alert(`Hai già ${LIMITS[p.role]} ${roleName(p.role).toLowerCase()} nel piano.`);
+    return;
+  }
+  if(currentSimPlan().length>=25){
+    alert('Il piano contiene già 25 giocatori.');
+    return;
+  }
+  currentSimPlan().push({
+    key:normalizePlayerText(p.name),
+    name:p.name,
+    role:p.role,
+    team:p.team,
+    price:simEstimatedPrice(index)
+  });
+  persistSimPlans();
+  document.getElementById('simSearch').value='';
+  document.getElementById('simResults').classList.remove('show');
+  renderSimulator();
+}
+function removeSimPlayer(key){
+  SIM_PLANS[simPlanKey]=currentSimPlan().filter(x=>x.key!==key);
+  persistSimPlans();
+  renderSimulator();
+}
+function updateSimPrice(key,value){
+  const x=currentSimPlan().find(x=>x.key===key);
+  if(!x)return;
+  x.price=Math.max(1,parseInt(value,10)||1);
+  persistSimPlans();
+  renderSimSummary();
+}
+function renderSimSummary(){
+  const cost=simCost();
+  const remain=INITIAL-cost;
+  const cnt=currentSimPlan().length;
+  document.getElementById('simCost').textContent=cost;
+  document.getElementById('simRemain').textContent=remain;
+  document.getElementById('simCount').textContent=`${cnt}/25`;
+  document.getElementById('simRoles').innerHTML=['P','D','C','A'].map(r=>`<div class="simRole"><b>${simRoleCount(r)}/${LIMITS[r]}</b>${r}</div>`).join('');
+
+  const w=document.getElementById('simWarning');
+  const missing=25-cnt;
+  if(cost>INITIAL){
+    w.className='simWarning bad';
+    w.textContent=`Piano fuori budget di ${cost-INITIAL} crediti. Devi ridurre almeno questa cifra.`;
+  }else if(remain<missing){
+    w.className='simWarning bad';
+    w.textContent=`Restano ${remain} crediti ma mancano ${missing} giocatori: il piano non è completabile a 1 credito per giocatore.`;
+  }else if(cnt===25){
+    w.className='simWarning';
+    w.textContent=`Piano completo. Margine finale: ${remain} crediti.`;
+  }else{
+    w.className='simWarning';
+    w.textContent=`Piano sostenibile: ${remain} crediti residui per ${missing} posti ancora da riempire.`;
+  }
+}
+function renderSimulator(){
+  renderSimSummary();
+  const plan=currentSimPlan();
+  const box=document.getElementById('simRoster');
+  box.innerHTML=['P','D','C','A'].map(role=>{
+    const rows=plan.filter(x=>x.role===role);
+    if(!rows.length)return '';
+    return `<div class="simSectionTitle"><span>${roleName(role)}</span><span class="tag">${rows.length}/${LIMITS[role]} · ${rows.reduce((s,x)=>s+(Number(x.price)||0),0)} cr</span></div>`+
+      rows.map(x=>{
+        const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===x.key);
+        return `<div class="simPlayer">
+          <div class="simPlayerMain">
+            <div class="simPlayerName">${esc(x.name)}</div>
+            <div class="simPlayerMeta">${esc(x.team)}${idx>=0?' · FVM '+PLAYER_ARCHIVE[idx].fvm:''}</div>
+            <button class="simAltBtn" onclick="openSimAlternatives('${x.key}')">Alternative</button>
+          </div>
+          <input class="simPriceInput" type="number" min="1" value="${x.price}" onchange="updateSimPrice('${x.key}',this.value)">
+          <button class="simDelBtn" onclick="removeSimPlayer('${x.key}')">×</button>
+        </div>`;
+      }).join('');
+  }).join('') || '<div class="empty" style="margin-top:14px">Piano vuoto. Cerca un giocatore e premi ＋.</div>';
+}
+function simAlternativesFor(key){
+  const chosen=currentSimPlan().find(x=>x.key===key);
+  if(!chosen)return [];
+  const chosenIdx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===key);
+  const chosenPrice=Number(chosen.price)||999;
+  return PLAYER_ARCHIVE
+    .filter(p=>p.role===chosen.role&&!simHasPlayer(p.name))
+    .map(p=>{
+      const idx=PLAYER_ARCHIVE.indexOf(p);
+      const est=simEstimatedPrice(idx);
+      const adv=advisorScore(p,idx);
+      return {p,idx,est,score:adv.score};
+    })
+    .filter(x=>x.est<chosenPrice)
+    .sort((a,b)=>b.score-a.score || a.est-b.est)
+    .slice(0,5);
+}
+function openSimAlternatives(key){
+  const chosen=currentSimPlan().find(x=>x.key===key);
+  if(!chosen)return;
+  const rows=simAlternativesFor(key);
+  document.getElementById('simAltList').innerHTML=
+    `<div class="statsState">Alternative a <strong>${esc(chosen.name)}</strong> (${chosen.price} cr) nello stesso ruolo.</div>`+
+    (rows.length?rows.map(x=>`<div class="altCard">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+        <div><div class="name">${esc(x.p.name)}</div><div class="meta">${x.p.team} · FVM ${x.p.fvm} · AI ${Math.round(x.score)}/99</div></div>
+        <div style="text-align:right"><div class="price">${x.est}</div><button class="simAdd" onclick="replaceSimPlayer('${key}',${x.idx})">SOSTITUISCI</button></div>
+      </div>
+    </div>`).join(''):'<div class="empty">Nessuna alternativa più economica trovata.</div>');
+  document.getElementById('simAltModal').classList.add('show');
+}
+function closeSimAlternatives(){document.getElementById('simAltModal').classList.remove('show')}
+function replaceSimPlayer(oldKey,index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p)return;
+  const pos=currentSimPlan().findIndex(x=>x.key===oldKey);
+  if(pos<0)return;
+  currentSimPlan()[pos]={key:normalizePlayerText(p.name),name:p.name,role:p.role,team:p.team,price:simEstimatedPrice(index)};
+  persistSimPlans();
+  closeSimAlternatives();
+  renderSimulator();
+}
 
 function auditAsta(){
   const issues=[];
@@ -3152,6 +3578,12 @@ document.addEventListener('click',e=>{
   if(!homeWrap){
     const homeBox=document.getElementById('homePlayerResults');
     if(homeBox)homeBox.classList.remove('show');
+  }
+
+  const simWrap=e.target.closest('.simSearchWrap');
+  if(!simWrap){
+    const simBox=document.getElementById('simResults');
+    if(simBox)simBox.classList.remove('show');
   }
 });
 
