@@ -2608,6 +2608,50 @@ body.rival-radar-open nav{display:none!important}
 body.rival-radar-open .page{visibility:hidden!important;pointer-events:none!important}
 body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-events:auto!important}
 
+
+/* V33.3 - Dashboard centrale di controllo */
+.dashKpis{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:11px;
+}
+.dashKpi{
+  background:#081321;border:1px solid var(--line);border-radius:11px;
+  padding:8px 3px;text-align:center;min-width:0;
+}
+.dashKpi span{display:block;font-size:7px;color:var(--muted);white-space:nowrap}
+.dashKpi b{display:block;font-size:15px;margin-top:2px}
+.dashRoles{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:7px}
+.dashRole{
+  background:#081321;border:1px solid var(--line);border-radius:10px;
+  padding:7px 4px;text-align:center;
+}
+.dashRole span{font-size:8px;color:var(--muted)}
+.dashRole b{display:block;font-size:13px;margin-top:1px}
+.dashMove{
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);border-radius:16px;padding:12px;
+}
+.dashMoveName{font-size:18px;font-weight:950}
+.dashMoveWhy{font-size:10px;color:var(--muted);line-height:1.45;margin-top:6px}
+.dashMoveMetrics{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:9px}
+.dashMoveMetric{background:#081321;border:1px solid var(--line);border-radius:10px;text-align:center;padding:6px 3px}
+.dashMoveMetric span{display:block;font-size:7px;color:var(--muted)}
+.dashMoveMetric b{display:block;font-size:12px;margin-top:2px}
+.dashMoveActions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
+.dashMoveActions button{border-radius:11px;padding:9px 5px;font-size:9px;font-weight:950}
+.dashActions{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.dashActions button{
+  border:1px solid var(--line);background:#0b1727;color:var(--text);
+  border-radius:14px;padding:12px 7px;font-size:20px;font-weight:950;
+}
+.dashActions button span{display:block;font-size:10px;margin-top:4px}
+.dashTextBtn{border:0;background:transparent;color:var(--accent);font-size:9px;font-weight:950;padding:5px}
+.dashRecent{
+  background:#0b1727;border:1px solid var(--line);border-radius:13px;
+  padding:9px 10px;margin:6px 0;display:flex;justify-content:space-between;gap:8px;align-items:center;
+}
+.dashRecentName{font-size:12px;font-weight:900}
+.dashRecentMeta{font-size:9px;color:var(--muted);margin-top:2px}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2617,75 +2661,52 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V33.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V33.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
-    <h2 style="margin-bottom:4px">Dashboard</h2>
-    <div class="hint">Situazione generale della tua asta e accesso rapido agli strumenti AI.</div>
+    <h2>Dashboard</h2>
+    <div class="hint">La situazione della tua asta in un colpo d’occhio.</div>
   </div>
 
-  <div class="grid2">
-    <div class="card"><div class="k">Crediti rimasti</div><div class="v" id="myBudget">600</div></div>
-    <div class="card"><div class="k">Giocatori presi</div><div class="v" id="myCount">0 <small>/ 25</small></div></div>
-  </div>
-  <div class="rolebar">
-    <div class="role"><b id="cntP">0/3</b><span>PORTIERI</span></div>
-    <div class="role"><b id="cntD">0/8</b><span>DIFENSORI</span></div>
-    <div class="role"><b id="cntC">0/8</b><span>CENTROCAMPISTI</span></div>
-    <div class="role"><b id="cntA">0/6</b><span>ATTACCANTI</span></div>
-  </div>
-
-  <div class="homeSearch">
-    <input id="homePlayerSearch" placeholder="🔎 Cerca subito un giocatore..." autocomplete="off"
-      oninput="searchHomePlayers()" onfocus="searchHomePlayers()">
-    <div id="homePlayerResults" class="homeResults"></div>
-  </div>
-
-  <button class="primary" style="margin-top:10px" onclick="openBuy()">＋ Registra acquisto</button>
-  <button class="advisorLaunch" onclick="openAdvisor()">🤖 CHI PRENDO? · Consigliere Rosa</button>
-  <button class="strategyLaunch" onclick="openStrategy()">🧠 STRATEGIA BUDGET AI</button>
-  <button class="simLaunch" onclick="openSimulator()">🧪 SIMULATORE PRE-ASTA</button>
-  <div class="nextMoveCard">
-    <div class="nextMoveHead">
-      <div class="nextMoveTitle">🤖 PROSSIMA MOSSA</div>
-      <div id="nextMoveRole" class="nextMoveAction"></div>
+  <div class="card" style="margin-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div>
+        <div class="k">La mia squadra</div>
+        <div class="v" id="dashboardTeamName" style="font-size:21px">—</div>
+      </div>
+      <span class="tag good">LIVE</span>
     </div>
-    <div class="nextMoveRoleBar">
-      <button class="nextMoveRoleBtn" data-moverole="P" onclick="setNextMoveRole('P',this)">P</button>
-      <button class="nextMoveRoleBtn" data-moverole="D" onclick="setNextMoveRole('D',this)">D</button>
-      <button class="nextMoveRoleBtn" data-moverole="C" onclick="setNextMoveRole('C',this)">C</button>
-      <button class="nextMoveRoleBtn" data-moverole="A" onclick="setNextMoveRole('A',this)">A</button>
+    <div class="dashKpis">
+      <div class="dashKpi"><span>CREDITI</span><b id="dashBudget">—</b></div>
+      <div class="dashKpi"><span>SPESO</span><b id="dashSpent">—</b></div>
+      <div class="dashKpi"><span>ROSA</span><b id="dashRoster">—</b></div>
+      <div class="dashKpi"><span>MAX SICURA</span><b id="dashSafe">—</b></div>
     </div>
-    <div id="nextMoveAdvice" class="nextMoveAdvice"></div>
-    <div id="marketLearningInfo" class="marketLearn"></div>
-    <div id="nextMovePlayers" class="nextMovePlayers"></div>
-  </div>
-  <div class="auditCard">
-    <div class="auditHead">
-      <div class="auditTitle">⚠️ CONTROLLO ASTA</div>
-      <div id="auditStatus" class="auditStatus ok">TUTTO OK</div>
-    </div>
-    <div id="auditList" class="auditList"></div>
+    <div id="dashRoles" class="dashRoles"></div>
   </div>
 
-  <div class="liveGrid">
-    <div class="liveBox">
-      <div class="liveTitleRow"><h3>⭐ Obiettivi</h3><button class="smallLinkBtn" onclick="goToListoneFav()">VEDI TUTTI</button></div>
-      <div id="homeFavorites"></div>
-    </div>
-    <div class="liveBox">
-      <div class="liveTitleRow"><h3>💰 Più crediti</h3><button class="smallLinkBtn" onclick="goToParticipants()">RIVALI</button></div>
-      <div id="homeRivals"></div>
+  <div class="section" style="margin-top:14px">
+    <h2>🤖 Prossima mossa AI</h2>
+    <div id="dashboardNextMove"></div>
+  </div>
+
+  <div class="section" style="margin-top:14px">
+    <h2>Azioni rapide</h2>
+    <div class="dashActions">
+      <button onclick="openBuy()">🔨<span>Registra acquisto</span></button>
+      <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
+      <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
+      <button onclick="openPlanPage()">📊<span>Piano asta</span></button>
     </div>
   </div>
-  <div class="section"><h2>Ultimi acquisti</h2><div id="recent" class="list"></div></div>
 
-  <div class="section" style="margin-top:12px">
-    <div class="grid2">
-      <button class="secondary" onclick="openBuy()">🔨 Registra acquisto</button>
-      <button class="secondary" onclick="goToListone()">🔎 Apri giocatori</button>
+  <div class="section" style="margin-top:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2 style="margin:0">Ultimi acquisti</h2>
+      <button class="dashTextBtn" onclick="goToHistory()">VEDI TUTTI</button>
     </div>
+    <div id="dashboardRecent" style="margin-top:8px"></div>
   </div>
 </section>
 
@@ -3509,6 +3530,85 @@ function goToParticipants(){
 }
 
 
+
+function goToHistory(){
+  const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Altro'));
+  if(btn)tab('more',btn);
+  setTimeout(()=>{
+    const h=document.getElementById('historyList');
+    if(h)h.scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
+}
+function renderDashboardControl(){
+  const me=state.me;
+  const team=document.getElementById('dashboardTeamName');
+  if(!team)return;
+
+  const cash=budget(me);
+  const s=spent(me);
+  const r=roster(me);
+  const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
+  const safe=safeMaxBid(me);
+
+  team.textContent=state.managers[me]||'—';
+  const set=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val};
+  set('dashBudget',cash);
+  set('dashSpent',s);
+  set('dashRoster',`${r.length}/${total}`);
+  set('dashSafe',safe);
+
+  const roles=document.getElementById('dashRoles');
+  if(roles)roles.innerHTML=['P','D','C','A'].map(role=>`
+    <div class="dashRole">
+      <span>${roleName(role)}</span>
+      <b>${roleCount(me,role)}/${LIMITS[role]}</b>
+    </div>`).join('');
+
+  const move=document.getElementById('dashboardNextMove');
+  if(move){
+    const candidates=PLAYER_ARCHIVE
+      .map((p,index)=>buyNowCandidate(index))
+      .filter(Boolean)
+      .sort((a,b)=>b.score-a.score || b.fit-a.fit || b.ai.score-a.ai.score);
+    const x=candidates[0];
+
+    move.innerHTML=x?`
+      <div class="dashMove">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+          <div>
+            <div class="dashMoveName">${esc(x.p.name)}</div>
+            <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+          </div>
+          <span class="tag good">${x.score}/99</span>
+        </div>
+        <div class="dashMoveWhy">${buyNowReason(x)}</div>
+        <div class="dashMoveMetrics">
+          <div class="dashMoveMetric"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
+          <div class="dashMoveMetric"><span>RANGE</span><b>${x.ai.low}-${x.ai.high}</b></div>
+          <div class="dashMoveMetric"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+        </div>
+        <div class="dashMoveActions">
+          <button class="secondary" onclick="openAIForPlayer(${x.index})">🤖 ANALIZZA</button>
+          <button class="primary" style="position:static" onclick="buyFromListone(${x.index})">ASTA</button>
+        </div>
+      </div>`
+      :`<div class="empty">Nessun consiglio disponibile: la rosa potrebbe essere completa.</div>`;
+  }
+
+  const recent=document.getElementById('dashboardRecent');
+  if(recent){
+    const rows=[...state.purchases].slice(-4).reverse();
+    recent.innerHTML=rows.length?rows.map(x=>`
+      <div class="dashRecent">
+        <div>
+          <div class="dashRecentName">${esc(x.name)}</div>
+          <div class="dashRecentMeta">${x.role} · ${esc(state.managers[x.buyer]||'')}</div>
+        </div>
+        <b>${x.price} cr</b>
+      </div>`).join(''):`<div class="empty">Nessun acquisto registrato.</div>`;
+  }
+}
+
 function renderAuctionPage(){
   const live=document.getElementById('auctionLiveSummary');
   const recent=document.getElementById('auctionRecentPurchases');
@@ -3547,7 +3647,7 @@ function renderAuctionPage(){
 }
 
 function render(){
-  setTimeout(renderAuctionPage,0);
+  setTimeout(()=>{renderAuctionPage();renderDashboardControl();},0);
  const me=state.me;
  const leaguePill=document.getElementById('leagueBudgetPill'); if(leaguePill)leaguePill.textContent=INITIAL;
  const myBudgetEl=document.getElementById('myBudget'); if(myBudgetEl)myBudgetEl.textContent=budget(me);
@@ -3565,10 +3665,8 @@ function render(){
    managersEl.innerHTML=state.managers.map((n,i)=>({n,i})).sort((a,b)=>(a.i===me?-1:b.i===me?1:a.i-b.i)).map(({n,i})=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">LA MIA ROSA</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div><div class="meta" style="margin-top:4px">Max offerta sicura: ${safeMaxBid(i)} cr</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
  }
  renderListone();
- renderHomeLive();
  renderHistory();
  renderStatsImportInfo();
- renderNextMove();
 }
 
 
