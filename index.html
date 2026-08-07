@@ -1482,6 +1482,44 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   padding:12px 14px calc(env(safe-area-inset-bottom) + 20px);
 }
 
+
+/* V20.2 - Alternative inline sotto il giocatore */
+.simInlineAlt{
+  margin:0 0 10px 12px;
+  padding:9px;
+  border-left:2px solid var(--accent);
+  background:#07101d;
+  border-radius:0 12px 12px 0;
+}
+.simInlineAltTitle{
+  font-size:11px;
+  font-weight:950;
+  color:var(--accent);
+  margin-bottom:7px;
+}
+.simInlineAltRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  border-top:1px solid var(--line);
+  padding:8px 0;
+}
+.simInlineAltRow:first-of-type{border-top:0}
+.simInlineAltName{font-weight:900;font-size:12px}
+.simInlineAltMeta{font-size:9px;color:var(--muted);margin-top:2px}
+.simInlineAltPrice{text-align:right;font-weight:950;color:var(--accent)}
+.simInlineReplace{
+  margin-top:3px;
+  border:0;
+  background:var(--accent);
+  color:#111;
+  border-radius:8px;
+  padding:5px 7px;
+  font-size:9px;
+  font-weight:950;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1491,7 +1529,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20.2</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1872,6 +1910,7 @@ let advisorRole='';
 let nextMoveSelectedRole='';
 let SIM_PLANS=loadSimPlans();
 let simPlanKey='A';
+let simAltOpenKey='';
 function defaultState(){return {favorites:[],favoriteMeta:{},managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
 function load(){
   try{
@@ -2656,6 +2695,7 @@ function simCost(){return currentSimPlan().reduce((s,x)=>s+(Number(x.price)||0),
 function simHasPlayer(name){return currentSimPlan().some(x=>normalizePlayerText(x.name)===normalizePlayerText(name))}
 function setSimPlan(key,btn){
   simPlanKey=key;
+  simAltOpenKey='';
   document.querySelectorAll('.simTab').forEach(x=>x.classList.remove('active'));
   if(btn)btn.classList.add('active');
   renderSimulator();
@@ -2724,6 +2764,7 @@ function addSimPlayer(index){
   renderSimulator();
 }
 function removeSimPlayer(key){
+  if(simAltOpenKey===key)simAltOpenKey='';
   SIM_PLANS[simPlanKey]=currentSimPlan().filter(x=>x.key!==key);
   persistSimPlans();
   renderSimulator();
@@ -2770,15 +2811,16 @@ function renderSimulator(){
     return `<div class="simSectionTitle"><span>${roleName(role)}</span><span class="tag">${rows.length}/${LIMITS[role]} · ${rows.reduce((s,x)=>s+(Number(x.price)||0),0)} cr</span></div>`+
       rows.map(x=>{
         const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===x.key);
+        const inlineAlt=simAltOpenKey===x.key?renderSimInlineAlternatives(x.key):'';
         return `<div class="simPlayer">
           <div class="simPlayerMain">
             <div class="simPlayerName">${esc(x.name)}</div>
             <div class="simPlayerMeta">${esc(x.team)}${idx>=0?' · FVM '+PLAYER_ARCHIVE[idx].fvm:''}</div>
-            <button class="simAltBtn" onclick="openSimAlternatives('${x.key}')">Alternative</button>
+            <button class="simAltBtn" onclick="toggleSimAlternatives('${x.key}')">${simAltOpenKey===x.key?'Chiudi alternative':'Alternative'}</button>
           </div>
           <input class="simPriceInput" type="number" min="1" value="${x.price}" onchange="updateSimPrice('${x.key}',this.value)">
           <button class="simDelBtn" onclick="removeSimPlayer('${x.key}')">×</button>
-        </div>`;
+        </div>${inlineAlt}`;
       }).join('');
   }).join('') || '<div class="empty" style="margin-top:14px">Piano vuoto. Cerca un giocatore e premi ＋.</div>';
 }
@@ -2799,6 +2841,58 @@ function simAlternativesFor(key){
     .sort((a,b)=>b.score-a.score || a.est-b.est)
     .slice(0,5);
 }
+
+function toggleSimAlternatives(key){
+  simAltOpenKey=simAltOpenKey===key?'':key;
+  renderSimulator();
+  if(simAltOpenKey){
+    setTimeout(()=>{
+      const el=document.getElementById('sim-inline-'+CSS.escape(key));
+      if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },30);
+  }
+}
+function renderSimInlineAlternatives(key){
+  const chosen=currentSimPlan().find(x=>x.key===key);
+  if(!chosen)return '';
+  const rows=simAlternativesFor(key);
+  if(!rows.length){
+    return `<div id="sim-inline-${esc(key)}" class="simInlineAlt">
+      <div class="simInlineAltTitle">Alternative a ${esc(chosen.name)}</div>
+      <div class="simPlayerMeta">Nessuna alternativa più economica trovata per questo ruolo.</div>
+    </div>`;
+  }
+  return `<div id="sim-inline-${esc(key)}" class="simInlineAlt">
+    <div class="simInlineAltTitle">Alternative più economiche a ${esc(chosen.name)} · max ${chosen.price-1} cr</div>
+    ${rows.map((a,i)=>`<div class="simInlineAltRow">
+      <div style="min-width:0;flex:1">
+        <div class="simInlineAltName">${i+1}. ${esc(a.p.name)}</div>
+        <div class="simInlineAltMeta">${esc(a.p.team)} · FVM ${a.p.fvm} · AI ${Math.round(a.score)}/99</div>
+      </div>
+      <div>
+        <div class="simInlineAltPrice">${a.est} cr</div>
+        <button class="simInlineReplace" onclick="replaceSimPlayerInline('${key}',${a.idx})">SOSTITUISCI</button>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+function replaceSimPlayerInline(oldKey,index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p)return;
+  const pos=currentSimPlan().findIndex(x=>x.key===oldKey);
+  if(pos<0)return;
+  currentSimPlan()[pos]={
+    key:normalizePlayerText(p.name),
+    name:p.name,
+    role:p.role,
+    team:p.team,
+    price:simEstimatedPrice(index)
+  };
+  simAltOpenKey='';
+  persistSimPlans();
+  renderSimulator();
+}
+
 function openSimAlternatives(key){
   const chosen=currentSimPlan().find(x=>x.key===key);
   if(!chosen)return;
