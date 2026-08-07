@@ -1142,6 +1142,31 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 .strategyMetric b{display:block;font-size:16px;margin-top:2px}
 .strategyAlert{margin-top:10px;padding:10px 11px;border:1px solid var(--line);border-radius:13px;background:#0b1727;font-size:11px;color:var(--muted);line-height:1.45}
 
+
+/* V18 - Prossima Mossa AI */
+.nextMoveCard{
+  margin-top:12px;
+  background:linear-gradient(145deg,#1a2840,#0d1828);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:13px;
+}
+.nextMoveHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.nextMoveTitle{font-size:16px;font-weight:950}
+.nextMoveAction{color:var(--accent);font-size:11px;font-weight:900}
+.nextMoveAdvice{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.45}
+.nextMovePlayers{display:grid;grid-template-columns:1fr;gap:7px;margin-top:10px}
+.nextMovePlayer{display:flex;align-items:center;justify-content:space-between;gap:9px;background:#081321;border:1px solid var(--line);border-radius:14px;padding:10px}
+.nextMoveMain{min-width:0;flex:1}
+.nextMoveName{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nextMoveMeta{color:var(--muted);font-size:10px;margin-top:3px}
+.nextMovePrice{text-align:right;flex:0 0 auto}
+.nextMovePrice b{display:block;font-size:16px;color:var(--accent)}
+.nextMoveButtons{display:flex;gap:5px;margin-top:6px}
+.nextMoveButtons button{border-radius:10px;padding:6px 8px;font-size:10px;font-weight:900}
+.moveDetailBtn{border:1px solid var(--line);background:#0b1727;color:var(--text)}
+.moveBuyBtn{border:0;background:var(--accent);color:#111}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1151,7 +1176,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V17</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V18</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1174,6 +1199,14 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <button class="primary" style="margin-top:10px" onclick="openBuy()">＋ Registra acquisto</button>
   <button class="advisorLaunch" onclick="openAdvisor()">🤖 CHI PRENDO? · Consigliere Rosa</button>
   <button class="strategyLaunch" onclick="openStrategy()">🧠 STRATEGIA BUDGET AI</button>
+  <div class="nextMoveCard">
+    <div class="nextMoveHead">
+      <div class="nextMoveTitle">🤖 PROSSIMA MOSSA</div>
+      <div id="nextMoveRole" class="nextMoveAction"></div>
+    </div>
+    <div id="nextMoveAdvice" class="nextMoveAdvice"></div>
+    <div id="nextMovePlayers" class="nextMovePlayers"></div>
+  </div>
 
   <div class="liveGrid">
     <div class="liveBox">
@@ -1739,6 +1772,7 @@ function resetPlayerArchive(){
  renderHomeLive();
  renderHistory();
  renderStatsImportInfo();
+ renderNextMove();
 }
 
 function spent(i){return state.purchases.filter(x=>x.buyer===i).reduce((s,x)=>s+x.price,0)}
@@ -2129,6 +2163,80 @@ function renderAdvisor(){
 
 
 const ROLE_BUDGET_SHARE={P:.06,D:.20,C:.29,A:.45};
+
+
+function nextMoveRoleChoice(){
+  const data=strategyData(state.me)
+    .filter(d=>d.missing>0)
+    .map(d=>{
+      const free=PLAYER_ARCHIVE.filter(p=>p.role===d.role&&!purchaseForArchivePlayer(p.name));
+      const topFvm=free.length?Math.max(...free.map(p=>Number(p.fvm)||0)):0;
+      const urgency=(d.missing/LIMITS[d.role])*55;
+      const budgetNeed=d.recommendedRemaining>0?clamp(d.recommendedRemaining/Math.max(1,budget(state.me)),0,1)*20:0;
+      const marketQuality=clamp(topFvm/220,0,1)*25;
+      return {...d,moveScore:urgency+budgetNeed+marketQuality};
+    })
+    .sort((a,b)=>b.moveScore-a.moveScore);
+  return data[0]||null;
+}
+function nextMoveCandidates(role){
+  if(!role)return [];
+  return PLAYER_ARCHIVE
+    .filter(p=>p.role===role&&!purchaseForArchivePlayer(p.name))
+    .map(p=>{
+      const index=PLAYER_ARCHIVE.indexOf(p);
+      const adv=advisorScore(p,index);
+      return {p,index,...adv};
+    })
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,3);
+}
+function renderNextMove(){
+  const roleEl=document.getElementById('nextMoveRole');
+  const adviceEl=document.getElementById('nextMoveAdvice');
+  const listEl=document.getElementById('nextMovePlayers');
+  if(!roleEl||!adviceEl||!listEl)return;
+
+  const move=nextMoveRoleChoice();
+  if(!move){
+    roleEl.textContent='ROSA COMPLETA';
+    adviceEl.textContent='Hai completato tutti i reparti.';
+    listEl.innerHTML='';
+    return;
+  }
+
+  const cap=strategyCapForRole(move.role,state.me);
+  roleEl.textContent=`ORA: ${move.role}`;
+
+  let advice=`Hai ancora ${move.missing} ${roleName(move.role).toLowerCase()} da prendere. `;
+  advice+=`Per il prossimo acquisto starei intorno a ${move.nextComfort} crediti`;
+  if(cap>move.nextComfort)advice+=`, con tetto dinamico circa ${cap}`;
+  advice+=`. `;
+  if(move.status==='Sopra budget')advice+='Sei già sopra il piano del reparto: cerca soprattutto valore.';
+  else if(move.status==='Budget disponibile')advice+='Hai margine per alzare il livello del reparto.';
+  else advice+='Mantieni equilibrio con gli altri reparti.';
+  adviceEl.textContent=advice;
+
+  const top=nextMoveCandidates(move.role);
+  listEl.innerHTML=top.map((x,i)=>{
+    const a=x.price;
+    return `<div class="nextMovePlayer">
+      <div class="nextMoveMain">
+        <div class="nextMoveName">#${i+1} ${esc(x.p.name)}</div>
+        <div class="nextMoveMeta">${x.p.team} · FVM ${x.p.fvm} · AI ${Math.round(x.score)}/99</div>
+        <div class="nextMoveButtons">
+          <button class="moveDetailBtn" onclick="openPlayerDetail(${x.index})">SCHEDA</button>
+          <button class="moveBuyBtn" onclick="buyFromListone(${x.index})">ASTA</button>
+        </div>
+      </div>
+      <div class="nextMovePrice">
+        <span class="k">MIN-MAX</span>
+        <b>${a.low}-${a.high}</b>
+        <div class="nextMoveMeta">non oltre ${a.maxRec}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 function strategyData(buyerIndex=state.me){
   const available=budget(buyerIndex);
@@ -2652,7 +2760,13 @@ function updateBuyPreview(){
   }else{
     const after=available-price;
     const safeText=price>safe?' · ⚠️ oltre la max sicura':'';
-    msg=`${name} → ${state.managers[buyer]} per ${price} cr · resteranno ${after} cr${safeText}.`;
+    const pidx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(name));
+    let aiText='';
+    if(pidx>=0){
+      const aiNow=aiPlayerAnalysis(pidx,buyer);
+      if(aiNow && price>aiNow.maxRec)aiText=` · ⚠️ ${price-aiNow.maxRec} cr sopra MAX AI (${aiNow.maxRec})`;
+    }
+    msg=`${name} → ${state.managers[buyer]} per ${price} cr · resteranno ${after} cr${safeText}${aiText}.`;
   }
 
   status.textContent=msg;
@@ -2689,7 +2803,14 @@ function saveBuy(){
 
   const remaining=budget(buyer)-price;
   const safe=safeMaxBid(buyer);
-  const warning=price>safe?`\n\n⚠️ Il prezzo supera la max sicura di ${safe} crediti.`:'';
+  let warning=price>safe?`\n\n⚠️ Il prezzo supera la max sicura di ${safe} crediti.`:'';
+  const pidx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(name));
+  if(pidx>=0){
+    const aiNow=aiPlayerAnalysis(pidx,buyer);
+    if(aiNow && price>aiNow.maxRec){
+      warning+=`\n\n🤖 ATTENZIONE AI: stai pagando ${price-aiNow.maxRec} crediti oltre il MAX AI di ${aiNow.maxRec}.`;
+    }
+  }
   const confirmed=confirm(`Confermi l'acquisto?\n\n${name}\nRuolo: ${role}\nSquadra: ${state.managers[buyer]}\nPrezzo: ${price} crediti\nCrediti dopo l'acquisto: ${remaining}${warning}`);
   if(!confirmed)return;
 
