@@ -2977,6 +2977,65 @@ body.rose-pro-open{overflow:hidden!important}
   }
 }
 
+
+/* V36 - Asta Live */
+#rosa.active{
+  position:fixed;left:14px;right:14px;
+  top:calc(env(safe-area-inset-top) + 76px);
+  bottom:calc(env(safe-area-inset-bottom) + 76px);
+  display:grid!important;grid-template-rows:auto minmax(0,1fr);
+  overflow:hidden;background:var(--bg);z-index:4;
+}
+.astaLiveTop{background:var(--bg);padding-bottom:9px;border-bottom:1px solid var(--line);z-index:4}
+.astaLiveTitleRow{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.astaLiveTitleRow h2{margin:0;font-size:20px}
+.astaLiveSub{font-size:9px;color:var(--muted);margin-top:2px}
+.astaLiveKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+.astaLiveKpi{background:#081321;border:1px solid var(--line);border-radius:10px;padding:6px 3px;text-align:center}
+.astaLiveKpi span{display:block;font-size:7px;color:var(--muted)}
+.astaLiveKpi b{display:block;font-size:13px;margin-top:2px}
+.astaLiveSearchWrap{position:relative;margin-top:8px}
+.astaLiveSearch{width:100%;border:1px solid var(--line);background:#081321;color:var(--text);border-radius:13px;padding:11px 12px;outline:none}
+.astaLiveSearch:focus{border-color:var(--accent)}
+.astaLiveSuggestions{position:absolute;left:0;right:0;top:calc(100% + 5px);z-index:80;background:#0b1727;border:1px solid var(--line);border-radius:13px;box-shadow:0 16px 35px rgba(0,0,0,.4);max-height:230px;overflow:auto;display:none}
+.astaLiveSuggestions.show{display:block}
+.astaLiveSuggestion{padding:9px 10px;border-bottom:1px solid var(--line)}
+.astaLiveSuggestion:last-child{border-bottom:0}
+.astaLiveSuggestion b{font-size:11px}
+.astaLiveSuggestion span{display:block;font-size:8px;color:var(--muted);margin-top:2px}
+.astaLiveSelected{margin-top:7px}
+.astaSelectedCard{display:flex;justify-content:space-between;gap:8px;align-items:center;background:linear-gradient(145deg,#172a44,#0d1a2b);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.astaSelectedName{font-size:13px;font-weight:950}
+.astaSelectedMeta{font-size:8px;color:var(--muted);margin-top:2px}
+.astaClear{border:1px solid var(--line);background:#081321;color:var(--text);border-radius:9px;padding:6px 8px}
+.astaLiveScroll{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:9px 0 20px}
+.astaDecision{background:linear-gradient(145deg,#172a44,#0d1a2b);border:1px solid var(--line);border-radius:16px;padding:11px}
+.astaDecisionHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.astaDecisionTitle{font-size:16px;font-weight:950}
+.astaDecisionText{font-size:9px;color:var(--muted);line-height:1.45;margin-top:5px}
+.astaPriceInput{width:100%;margin-top:9px;border:1px solid var(--line);background:#081321;color:var(--text);border-radius:12px;padding:10px 11px;text-align:center;font-size:20px;font-weight:950;outline:none}
+.astaPriceInput:focus{border-color:var(--accent)}
+.astaBidQuick{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:6px}
+.astaBidQuick button{border:1px solid var(--line);background:#081321;color:var(--text);border-radius:8px;padding:6px 2px;font-size:8px;font-weight:900}
+.astaAiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+.astaAiMetric{background:#081321;border:1px solid var(--line);border-radius:9px;text-align:center;padding:6px 2px}
+.astaAiMetric span{display:block;font-size:6.5px;color:var(--muted)}
+.astaAiMetric b{display:block;font-size:11px;margin-top:2px}
+.astaVerdict{margin-top:8px;border:1px solid var(--line);background:#081321;border-radius:11px;padding:8px 9px;font-size:10px;font-weight:900;line-height:1.4}
+.astaVerdict.good{color:var(--ok);border-color:rgba(57,217,138,.4)}
+.astaVerdict.warn{color:#ffd166;border-color:rgba(255,209,102,.4)}
+.astaVerdict.bad{color:var(--danger);border-color:rgba(255,107,107,.4)}
+.astaLiveDecisionActions{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px}
+.astaLiveDecisionActions button{padding:9px 5px;border-radius:10px;font-size:9px;font-weight:950}
+.astaLiveActions{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.astaLiveActions button{border:1px solid var(--line);background:#0b1727;color:var(--text);border-radius:13px;padding:10px 5px;font-size:17px;font-weight:950}
+.astaLiveActions button span{display:block;font-size:8px;margin-top:3px}
+body.asta-live-open{overflow:hidden!important}
+@media(max-width:390px){
+ #rosa.active{top:calc(env(safe-area-inset-top) + 70px);bottom:calc(env(safe-area-inset-bottom) + 72px)}
+ .astaBidQuick{grid-template-columns:repeat(3,1fr)}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2986,7 +3045,7 @@ body.rose-pro-open{overflow:hidden!important}
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V35</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V36</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
@@ -3036,35 +3095,43 @@ body.rose-pro-open{overflow:hidden!important}
 </section>
 
 <section id="rosa" class="page">
-  <div class="section" style="margin-top:0">
-    <h2>Asta</h2>
-    <div class="hint">Centro operativo per registrare gli acquisti e decidere rapidamente la prossima mossa.</div>
-  </div>
-
-  <div class="card" style="margin-top:12px">
-    <div class="k">Registra un acquisto</div>
-    <div class="hint" style="margin-top:5px">Inserisci giocatore, prezzo e partecipante che lo ha acquistato.</div>
-    <button class="primary" style="position:static;margin-top:10px;width:100%" onclick="openBuy()">＋ REGISTRA ACQUISTO</button>
-  </div>
-
-  <div class="section" style="margin-top:14px">
-    <h2>Comandi rapidi</h2>
-    <div class="grid2">
-      <button class="secondary" onclick="goToListone()">🔎 Giocatori</button>
-      <button class="secondary" onclick="openBuyNowPage()">🤖 Chi compro adesso?</button>
-      <button class="secondary" onclick="openOpportunityPage()">💎 Occasioni d’asta</button>
-      <button class="secondary" onclick="openPlanPage()">📊 Piano asta</button>
+  <div class="astaLiveTop">
+    <div class="astaLiveTitleRow">
+      <div>
+        <h2>🔨 Asta Live</h2>
+        <div class="astaLiveSub">Giocatore chiamato, prezzo live e decisione AI immediata.</div>
+      </div>
+      <span class="tag good">LIVE</span>
     </div>
+
+    <div id="astaLiveKpis" class="astaLiveKpis"></div>
+
+    <div class="astaLiveSearchWrap">
+      <input id="astaLiveSearch" class="astaLiveSearch" placeholder="🔎 Cerca il giocatore chiamato..." autocomplete="off"
+        oninput="renderAstaLiveSuggestions()" onfocus="renderAstaLiveSuggestions()">
+      <div id="astaLiveSuggestions" class="astaLiveSuggestions"></div>
+    </div>
+
+    <div id="astaLiveSelected" class="astaLiveSelected"></div>
   </div>
 
-  <div class="section" style="margin-top:14px">
-    <h2>Situazione live</h2>
-    <div id="auctionLiveSummary"></div>
-  </div>
+  <div class="astaLiveScroll">
+    <div id="astaLiveDecision"></div>
 
-  <div class="section" style="margin-top:14px">
-    <h2>Ultimi acquisti</h2>
-    <div id="auctionRecentPurchases"></div>
+    <div class="section">
+      <h2>Comandi rapidi</h2>
+      <div class="astaLiveActions">
+        <button onclick="openBuy()">＋<span>Registra acquisto</span></button>
+        <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
+        <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
+        <button onclick="openPlanPage()">📊<span>Piano asta</span></button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Ultimi acquisti</h2>
+      <div id="auctionRecentPurchases"></div>
+    </div>
   </div>
 </section>
 
@@ -3805,6 +3872,7 @@ function tab(id,btn){
   btn.classList.add('active');
   document.body.classList.toggle('players-pro-open',id==='listone');
   document.body.classList.toggle('rose-pro-open',id==='players');
+  document.body.classList.toggle('asta-live-open',id==='rosa');
   render();
 }
 
@@ -3976,38 +4044,131 @@ function renderDashboardControl(){
   }
 }
 
+
+let ASTA_LIVE_PLAYER=-1;
+
+function renderAstaLive(){
+  const kpis=document.getElementById('astaLiveKpis');
+  if(!kpis)return;
+  const me=state.me, cash=budget(me), slots=remainingRosterSlots(me);
+  kpis.innerHTML=`
+    <div class="astaLiveKpi"><span>CREDITI</span><b>${cash}</b></div>
+    <div class="astaLiveKpi"><span>ROSA</span><b>${roster(me).length}/25</b></div>
+    <div class="astaLiveKpi"><span>POSTI</span><b>${slots}</b></div>
+    <div class="astaLiveKpi"><span>MAX SICURA</span><b>${safeMaxBid(me)}</b></div>`;
+  renderAstaLiveSelected();
+}
+function renderAstaLiveSuggestions(){
+  const input=document.getElementById('astaLiveSearch');
+  const box=document.getElementById('astaLiveSuggestions');
+  if(!input||!box)return;
+  const q=normalizePlayerText(input.value);
+  if(q.length<2){box.classList.remove('show');box.innerHTML='';return;}
+  const rows=PLAYER_ARCHIVE.map((p,index)=>({p,index}))
+    .filter(x=>!purchaseForArchivePlayer(x.p.name) && !isUnavailablePlayer(x.p.name))
+    .filter(x=>normalizePlayerText(x.p.name+' '+x.p.team).includes(q))
+    .slice(0,10);
+  box.innerHTML=rows.length?rows.map(x=>`
+    <div class="astaLiveSuggestion" onclick="selectAstaLivePlayer(${x.index})">
+      <b>${esc(x.p.name)}</b>
+      <span>${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</span>
+    </div>`).join(''):`<div class="empty" style="padding:12px">Nessun giocatore libero.</div>`;
+  box.classList.add('show');
+}
+function selectAstaLivePlayer(index){
+  ASTA_LIVE_PLAYER=index;
+  const input=document.getElementById('astaLiveSearch');
+  if(input)input.value='';
+  const sug=document.getElementById('astaLiveSuggestions');
+  if(sug)sug.classList.remove('show');
+  renderAstaLiveSelected();
+}
+function clearAstaLivePlayer(){
+  ASTA_LIVE_PLAYER=-1;
+  renderAstaLiveSelected();
+  const input=document.getElementById('astaLiveSearch');
+  if(input)input.focus();
+}
+function renderAstaLiveSelected(){
+  const selected=document.getElementById('astaLiveSelected');
+  const decision=document.getElementById('astaLiveDecision');
+  if(!selected||!decision)return;
+  const p=PLAYER_ARCHIVE[ASTA_LIVE_PLAYER];
+  if(!p){
+    selected.innerHTML='';
+    decision.innerHTML='<div class="empty">Cerca il giocatore chiamato per attivare l’assistente Asta Live.</div>';
+    return;
+  }
+  const a=aiPlayerAnalysis(ASTA_LIVE_PLAYER,state.me);
+  if(!a){selected.innerHTML='';decision.innerHTML='<div class="empty">Analisi non disponibile.</div>';return;}
+  selected.innerHTML=`
+    <div class="astaSelectedCard">
+      <div><div class="astaSelectedName">${esc(p.name)}</div><div class="astaSelectedMeta">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm}</div></div>
+      <button class="astaClear" onclick="clearAstaLivePlayer()">✕</button>
+    </div>`;
+  decision.innerHTML=`
+    <div class="astaDecision">
+      <div class="astaDecisionHead">
+        <div><div class="astaDecisionTitle">🤖 Assistente rilanci LIVE</div><div class="astaDecisionText">Inserisci il prezzo attuale dell’asta. L’AI confronta il rilancio con il valore del giocatore, il tuo budget e il tetto consigliato.</div></div>
+        <span class="tag good">${a.score}/99</span>
+      </div>
+      <div class="astaAiGrid">
+        <div class="astaAiMetric"><span>IDEALE</span><b>${a.ideal}</b></div>
+        <div class="astaAiMetric"><span>RANGE</span><b>${a.low}-${a.high}</b></div>
+        <div class="astaAiMetric"><span>NON OLTRE</span><b>${a.maxRec}</b></div>
+        <div class="astaAiMetric"><span>MAX SICURA</span><b>${safeMaxBid(state.me)}</b></div>
+      </div>
+      <input id="astaLivePrice" class="astaPriceInput" type="number" min="1" inputmode="numeric" placeholder="Prezzo attuale" oninput="evaluateAstaLiveBid()">
+      <div class="astaBidQuick">
+        ${[1,2,3,5,10].map(v=>`<button onclick="addAstaLiveBid(${v})">+${v}</button>`).join('')}
+        <button onclick="setAstaLiveMax()">MAX</button>
+      </div>
+      <div id="astaLiveVerdict" class="astaVerdict">Inserisci il prezzo attuale per sapere se rilanciare.</div>
+      <div class="astaLiveDecisionActions">
+        <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">ANALISI COMPLETA</button>
+        <button class="primary" style="position:static" onclick="buyFromListone(${ASTA_LIVE_PLAYER})">ACQUISTA</button>
+      </div>
+    </div>`;
+}
+function addAstaLiveBid(v){
+  const el=document.getElementById('astaLivePrice');if(!el)return;
+  el.value=Math.max(0,Number(el.value||0))+v;evaluateAstaLiveBid();
+}
+function setAstaLiveMax(){
+  const a=aiPlayerAnalysis(ASTA_LIVE_PLAYER,state.me),el=document.getElementById('astaLivePrice');
+  if(a&&el){el.value=a.maxRec;evaluateAstaLiveBid();}
+}
+function evaluateAstaLiveBid(){
+  const a=aiPlayerAnalysis(ASTA_LIVE_PLAYER,state.me);
+  const el=document.getElementById('astaLivePrice'),out=document.getElementById('astaLiveVerdict');
+  if(!a||!el||!out)return;
+  const price=Number(el.value||0);
+  if(!price){out.className='astaVerdict';out.textContent='Inserisci il prezzo attuale per sapere se rilanciare.';return;}
+  const safe=safeMaxBid(state.me);
+  if(price>a.maxRec || price>safe){
+    out.className='astaVerdict bad';
+    out.textContent=`🛑 STOP. A ${price} crediti sei oltre il tetto consigliato${price>safe?' e/o la tua Max sicura':''}. Non inseguire l’asta.`;
+  }else if(price>a.high){
+    out.className='astaVerdict warn';
+    out.textContent=`⚠️ ZONA LIMITE. Puoi rilanciare solo se è un obiettivo prioritario. Tetto assoluto AI: ${Math.min(a.maxRec,safe)}.`;
+  }else if(price>=a.low){
+    out.className='astaVerdict good';
+    out.textContent=`✅ PREZZO CORRETTO. Sei nel range AI ${a.low}-${a.high}. Puoi continuare con disciplina.`;
+  }else{
+    out.className='astaVerdict good';
+    out.textContent=`💎 OTTIMO PREZZO. A ${price} crediti sei sotto il range AI: c’è ancora margine per rilanciare.`;
+  }
+}
+
 function renderAuctionPage(){
-  const live=document.getElementById('auctionLiveSummary');
+  renderAstaLive();
   const recent=document.getElementById('auctionRecentPurchases');
-  if(!live||!recent)return;
-
-  const me=state.me;
-  const cash=budget(me);
-  const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
-  const mine=roster(me);
-  const slots=Math.max(0,total-mine.length);
-  const safe=safeMaxBid(me);
-
-  live.innerHTML=`
-    <div class="grid3">
-      <div class="mini"><span>CREDITI</span><b>${cash}</b></div>
-      <div class="mini"><span>ROSA</span><b>${mine.length}/${total}</b></div>
-      <div class="mini"><span>MAX SICURA</span><b>${safe}</b></div>
-    </div>
-    <div class="grid4" style="margin-top:7px">
-      ${['P','D','C','A'].map(r=>`<div class="mini"><span>${r}</span><b>${roleCount(me,r)}/${LIMITS[r]}</b></div>`).join('')}
-    </div>
-    <div class="hint" style="margin-top:8px">${slots?`${slots} posti ancora da coprire.`:'Rosa completa.'}</div>
-  `;
-
+  if(!recent)return;
   const rows=[...state.purchases].slice(-5).reverse();
   recent.innerHTML=rows.length?rows.map(x=>`
-    <div class="card" style="padding:10px;margin:7px 0">
+    <div class="card" style="padding:9px 10px;margin:6px 0">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
-        <div>
-          <b>${esc(x.name)}</b>
-          <div class="hint">${x.role} · ${esc(state.managers[x.buyer]||'')}</div>
-        </div>
+        <div><b>${esc(x.name)}</b><div class="hint">${x.role} · ${esc(state.managers[x.buyer]||'')}</div></div>
         <b>${x.price} cr</b>
       </div>
     </div>`).join(''):`<div class="empty">Nessun acquisto registrato.</div>`;
