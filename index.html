@@ -610,15 +610,21 @@ function importOfficialListone(event){
       let best=[];
 
       for(const sheetName of workbook.SheetNames){
-        const rows=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{defval:''});
+        if(String(sheetName).toLowerCase()==='ceduti') continue;
+        const ws=workbook.Sheets[sheetName];
+
+        // Il file ufficiale Fantacalcio.it ha il titolo alla riga 1
+        // e le vere intestazioni (Id, R, RM, Nome, Squadra, Qt.A, Qt.I, FVM...) alla riga 2.
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:'',range:1});
+
         try{
           const mapped=mapOfficialRows(rows);
           if(mapped.length>best.length)best=mapped;
         }catch(err){}
       }
 
-      if(best.length<200){
-        throw new Error(`Ho riconosciuto solo ${best.length} giocatori. Seleziona il Listone Classic ufficiale scaricato da Fantacalcio.it.`);
+      if(best.length<400){
+        throw new Error(`Ho riconosciuto solo ${best.length} giocatori. Il Listone ufficiale 2026/27 dovrebbe contenerne circa 495 (esclusi i ceduti).`);
       }
 
       savePlayerArchive(best);
