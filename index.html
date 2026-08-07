@@ -2652,6 +2652,174 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
 .dashRecentName{font-size:12px;font-weight:900}
 .dashRecentMeta{font-size:9px;color:var(--muted);margin-top:2px}
 
+
+/* V34 - Giocatori Pro */
+#listone.active{
+  position:fixed;
+  left:14px;
+  right:14px;
+  top:calc(env(safe-area-inset-top) + 76px);
+  bottom:calc(env(safe-area-inset-bottom) + 76px);
+  display:grid !important;
+  grid-template-rows:auto minmax(0,1fr);
+  overflow:hidden;
+  background:var(--bg);
+  z-index:4;
+}
+.playersProTop{
+  background:var(--bg);
+  padding:0 0 8px;
+  border-bottom:1px solid var(--line);
+  z-index:3;
+}
+.playersProTitleRow{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:7px;
+}
+.playersProTitleRow h2{
+  margin:0;
+  font-size:20px;
+}
+.playersTools{position:relative}
+.playersTools summary{
+  list-style:none;
+  width:36px;
+  height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--line);
+  background:#0b1727;
+  border-radius:12px;
+  cursor:pointer;
+}
+.playersTools summary::-webkit-details-marker{display:none}
+.playersToolsPanel{
+  position:absolute;
+  right:0;
+  top:42px;
+  width:min(310px,86vw);
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:#0b1727;
+  box-shadow:0 16px 40px rgba(0,0,0,.38);
+  z-index:40;
+}
+.playersToolsPanel .archiveInfo{margin-top:8px}
+.playersToolsPanel .archiveBtn{width:100%;margin:4px 0}
+#listone .listoneSearch{
+  padding:11px 12px;
+  border-radius:13px;
+}
+#listone .listoneFilters{
+  gap:5px;
+  padding:7px 0 2px;
+}
+#listone .filterBtn{
+  border-radius:10px;
+  padding:7px 9px;
+  font-size:10px;
+}
+.playersAiBar{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px;
+  margin-top:7px;
+}
+.playersAiBar button{
+  min-width:0;
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:11px;
+  padding:7px 3px;
+  font-size:14px;
+  font-weight:900;
+}
+.playersAiBar button span{
+  display:block;
+  margin-top:2px;
+  font-size:7px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.playersAiBar button:disabled{opacity:.42}
+.playersFavSummary{
+  margin:5px 1px 0 !important;
+  font-size:9px !important;
+}
+.playersProList{
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding:8px 0 18px;
+}
+#listone .playerCard{
+  padding:9px 10px;
+  border-radius:14px;
+  gap:7px;
+}
+#listone .playerCardInner{
+  gap:6px;
+  align-items:flex-start;
+}
+#listone .favBtn{
+  width:31px;
+  height:31px;
+  border-radius:10px;
+  font-size:17px;
+}
+#listone .playerName{
+  font-size:12px;
+  line-height:1.35;
+  gap:4px !important;
+}
+#listone .playerInfo{
+  font-size:9px;
+  margin-top:2px;
+}
+#listone .playerFvm{
+  font-size:13px;
+}
+#listone .statusAvailable,
+#listone .statusTaken{
+  font-size:8px;
+}
+#listone .aiBtn,
+#listone .goalMetaBtn,
+#listone .comparePickBtn{
+  padding:4px 6px !important;
+  min-height:25px;
+  border-radius:8px !important;
+  font-size:8px !important;
+}
+#listone .goalChips{
+  margin-top:4px;
+  gap:3px;
+}
+#listone .goalChip{
+  font-size:7px;
+  padding:3px 5px;
+}
+#listone .playerRight{
+  max-width:100px;
+}
+@media(max-width:390px){
+  #listone.active{
+    top:calc(env(safe-area-inset-top) + 70px);
+    bottom:calc(env(safe-area-inset-bottom) + 72px);
+  }
+  .playersAiBar button span{font-size:6.5px}
+}
+
+
+body.players-pro-open{overflow:hidden!important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2661,7 +2829,7 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V33.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V34</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
@@ -2744,37 +2912,50 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
 </section>
 
 <section id="listone" class="page">
-  <div class="listoneToolbar">
-    <h2 style="margin:0 0 9px">Giocatori</h2>
-    <input id="listoneSearch" class="listoneSearch" placeholder="🔎 Cerca giocatore o squadra..." autocomplete="off" oninput="renderListone()">
-    <div class="archiveActions">
-      <button class="archiveBtn" onclick="document.getElementById('listoneFile').click()">⬆️ Aggiorna Listone</button>
-      <button class="archiveBtn" onclick="openOfficialListone()">🌐 Fantacalcio.it</button>
+  <div class="playersProTop">
+    <div class="playersProTitleRow">
+      <div>
+        <h2>Giocatori</h2>
+        <div id="listoneCount" class="listoneCount"></div>
+      </div>
+      <details class="playersTools">
+        <summary>⚙️</summary>
+        <div class="playersToolsPanel">
+          <button class="archiveBtn" onclick="document.getElementById('listoneFile').click()">⬆️ Aggiorna Listone</button>
+          <button class="archiveBtn" onclick="openOfficialListone()">🌐 Fantacalcio.it</button>
+          <div id="archiveInfo" class="archiveInfo"></div>
+        </div>
+      </details>
     </div>
+
+    <input id="listoneSearch" class="listoneSearch" placeholder="🔎 Cerca giocatore o squadra..." autocomplete="off" oninput="renderListone()">
+
     <input id="listoneFile" type="file"
       accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       style="display:none" onchange="importOfficialListone(event)">
-    <div id="archiveInfo" class="archiveInfo"></div>
-    <div class="listoneFilters">
+
+    <div class="listoneFilters playersRoleFilters">
       <button class="filterBtn active" data-filter="ALL" onclick="setListoneFilter('ALL',this)">Tutti</button>
       <button class="filterBtn" data-filter="P" onclick="setListoneFilter('P',this)">P</button>
       <button class="filterBtn" data-filter="D" onclick="setListoneFilter('D',this)">D</button>
       <button class="filterBtn" data-filter="C" onclick="setListoneFilter('C',this)">C</button>
       <button class="filterBtn" data-filter="A" onclick="setListoneFilter('A',this)">A</button>
-      <button class="filterBtn" data-filter="FREE" onclick="setListoneFilter('FREE',this)">Disponibili</button>
-      <button class="filterBtn" data-filter="TAKEN" onclick="setListoneFilter('TAKEN',this)">Acquistati</button>
-      <button class="filterBtn" data-filter="FAV" onclick="setListoneFilter('FAV',this)">⭐ Obiettivi</button>
+      <button class="filterBtn" data-filter="FREE" onclick="setListoneFilter('FREE',this)">Liberi</button>
+      <button class="filterBtn" data-filter="TAKEN" onclick="setListoneFilter('TAKEN',this)">Presi</button>
+      <button class="filterBtn" data-filter="FAV" onclick="setListoneFilter('FAV',this)">⭐</button>
     </div>
-    <div id="listoneCount" class="listoneCount"></div>
-    <div id="favSummary" class="favSummary"></div>
-    <div class="compareToolbar">
-      <button id="compareOpenBtn" class="compareOpenBtn" onclick="openComparePage()" disabled>⚖️ CONFRONTA · 0/3</button>
+
+    <div class="playersAiBar">
+      <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
+      <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
+      <button onclick="openPlanPage()">📊<span>Piano</span></button>
+      <button id="compareOpenBtn" onclick="openComparePage()" disabled>⚖️<span id="compareMiniText">Confronta 0/3</span></button>
     </div>
-    <button class="buyNowBtn" onclick="openBuyNowPage()">🤖 CHI COMPRO ADESSO?</button>
-    <button class="opportunityBtn" onclick="openOpportunityPage()">💎 OCCASIONI D’ASTA</button>
-    <button class="planBtn" onclick="openPlanPage()">📊 PIANO ASTA DINAMICO</button>
+
+    <div id="favSummary" class="favSummary playersFavSummary"></div>
   </div>
-  <div id="listonePlayers" class="list"></div>
+
+  <div id="listonePlayers" class="list playersProList"></div>
 </section>
 
 <section id="players" class="page">
@@ -3439,7 +3620,14 @@ function spent(i){
 function budget(i){return INITIAL-spent(i)}
 function roster(i){return state.purchases.filter(x=>x.buyer===i)}
 function roleCount(i,r){return roster(i).filter(x=>x.role===r).length}
-function tab(id,btn){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
+function tab(id,btn){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');
+  document.body.classList.toggle('players-pro-open',id==='listone');
+  render();
+}
 
 function homePlayerMatches(){
   const input=document.getElementById('homePlayerSearch');
@@ -4349,7 +4537,9 @@ function addAlternativeToCompare(index){
 function updateCompareButton(){
   const btn=document.getElementById('compareOpenBtn');
   if(!btn)return;
-  btn.textContent=`⚖️ CONFRONTA · ${COMPARE_PLAYERS.length}/3`;
+  const txt=document.getElementById('compareMiniText');
+  if(txt)txt.textContent=`Confronta ${COMPARE_PLAYERS.length}/3`;
+  else btn.textContent=`⚖️ CONFRONTA · ${COMPARE_PLAYERS.length}/3`;
   btn.disabled=COMPARE_PLAYERS.length<2;
 }
 function toggleComparePlayer(index,event){
