@@ -1122,6 +1122,26 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   .playerDetailName{font-size:21px}
 }
 
+
+/* V17 - Strategia Budget AI */
+.strategyLaunch{
+  width:100%;margin-top:9px;border:1px solid var(--line);
+  background:linear-gradient(145deg,#10223a,#0b1727);color:var(--text);
+  border-radius:18px;padding:14px;font-weight:950;font-size:15px;
+}
+.strategyCard{background:linear-gradient(145deg,#172a44,#0d1a2b);border:1px solid var(--line);border-radius:18px;padding:13px;margin:9px 0}
+.strategyTop{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.strategyRole{font-size:19px;font-weight:950}
+.strategyMoney{font-size:18px;font-weight:950;color:var(--accent)}
+.strategyBar{height:9px;background:#07101d;border-radius:99px;overflow:hidden;margin:9px 0 7px}
+.strategyBar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.strategyMeta{font-size:11px;color:var(--muted);line-height:1.45}
+.strategyGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}
+.strategyMetric{background:#081321;border:1px solid var(--line);border-radius:12px;padding:8px 5px;text-align:center}
+.strategyMetric span{display:block;font-size:9px;color:var(--muted)}
+.strategyMetric b{display:block;font-size:16px;margin-top:2px}
+.strategyAlert{margin-top:10px;padding:10px 11px;border:1px solid var(--line);border-radius:13px;background:#0b1727;font-size:11px;color:var(--muted);line-height:1.45}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1131,7 +1151,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V16</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V17</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1153,6 +1173,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 
   <button class="primary" style="margin-top:10px" onclick="openBuy()">＋ Registra acquisto</button>
   <button class="advisorLaunch" onclick="openAdvisor()">🤖 CHI PRENDO? · Consigliere Rosa</button>
+  <button class="strategyLaunch" onclick="openStrategy()">🧠 STRATEGIA BUDGET AI</button>
 
   <div class="liveGrid">
     <div class="liveBox">
@@ -1293,6 +1314,19 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 
 
 
+
+
+<div id="strategyModal" class="modal" onclick="if(event.target===this)closeStrategy()">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <h3 style="margin:0">🧠 Strategia Budget AI</h3>
+      <button class="closeX" onclick="closeStrategy()">×</button>
+    </div>
+    <div id="strategySummary" class="statsState" style="margin-top:12px"></div>
+    <div id="strategyList"></div>
+  </div>
+</div>
 
 <div id="playerDetailModal">
   <div class="playerDetailShell">
@@ -2093,6 +2127,83 @@ function renderAdvisor(){
   }).join(''):'<div class="empty">Nessun giocatore disponibile in questo ruolo.</div>';
 }
 
+
+const ROLE_BUDGET_SHARE={P:.06,D:.20,C:.29,A:.45};
+
+function strategyData(buyerIndex=state.me){
+  const available=budget(buyerIndex);
+  const totalSpent=spent(buyerIndex);
+  const totalMissing=remainingRosterSlots(buyerIndex);
+  const reserveMinimum=Math.max(0,totalMissing); // almeno 1 credito per posto
+  return ['P','D','C','A'].map(role=>{
+    const buys=state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===role);
+    const roleSpent=buys.reduce((s,x)=>s+x.price,0);
+    const filled=buys.length;
+    const missing=Math.max(0,LIMITS[role]-filled);
+    const plan=Math.round(INITIAL*ROLE_BUDGET_SHARE[role]);
+
+    const otherMissing=['P','D','C','A'].filter(r=>r!==role)
+      .reduce((s,r)=>s+Math.max(0,LIMITS[r]-roleCount(buyerIndex,r)),0);
+    const hardMax=Math.max(0,available-otherMissing);
+
+    // Dynamic remaining target: original plan minus spent, with a proportional
+    // share of unallocated/overspent budget redistributed among open roles.
+    const baseRemaining=Math.max(0,plan-roleSpent);
+    const openRoles=['P','D','C','A'].filter(r=>Math.max(0,LIMITS[r]-roleCount(buyerIndex,r))>0);
+    const plannedRemaining=openRoles.reduce((s,r)=>s+Math.max(0,Math.round(INITIAL*ROLE_BUDGET_SHARE[r])-state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===r).reduce((a,b)=>a+b.price,0)),0);
+    const freeExtra=Math.max(0,available-plannedRemaining);
+    const weightDen=openRoles.reduce((s,r)=>s+ROLE_BUDGET_SHARE[r],0)||1;
+    const extraShare=missing>0?Math.round(freeExtra*(ROLE_BUDGET_SHARE[role]/weightDen)):0;
+    const recommendedRemaining=missing>0?Math.min(available,baseRemaining+extraShare):0;
+    const nextComfort=missing>0?Math.max(1,Math.floor(recommendedRemaining/missing)):0;
+
+    const pct=plan?Math.round(roleSpent/plan*100):0;
+    let status='In linea';
+    if(missing===0)status='Reparto completo';
+    else if(roleSpent>plan*1.15)status='Sopra budget';
+    else if(roleSpent<plan*.55&&filled>=Math.ceil(LIMITS[role]/2))status='Budget disponibile';
+
+    return {role,plan,roleSpent,filled,missing,available,hardMax,recommendedRemaining,nextComfort,pct,status};
+  });
+}
+function strategyCapForRole(role,buyerIndex=state.me){
+  const d=strategyData(buyerIndex).find(x=>x.role===role);
+  if(!d||d.missing<=0)return 0;
+  // Allow a premium for a top target, but protect all remaining slots.
+  return Math.max(1,Math.min(d.hardMax,Math.round(d.nextComfort*1.65)));
+}
+function openStrategy(){
+  renderStrategy();
+  document.getElementById('strategyModal').classList.add('show');
+}
+function closeStrategy(){document.getElementById('strategyModal').classList.remove('show')}
+function renderStrategy(){
+  const data=strategyData(state.me);
+  const av=budget(state.me), sp=spent(state.me), miss=remainingRosterSlots(state.me);
+  const sum=document.getElementById('strategySummary');
+  sum.innerHTML=`<strong style="color:var(--text)">${esc(state.managers[state.me])}</strong><br>
+    Crediti rimasti <strong>${av}</strong> · Spesi <strong>${sp}</strong> · Posti mancanti <strong>${miss}</strong>.
+    Il piano iniziale orientativo è P 6% · D 20% · C 29% · A 45%, poi viene ricalcolato in base agli acquisti reali.`;
+
+  document.getElementById('strategyList').innerHTML=data.map(d=>{
+    const bar=Math.min(100,d.pct);
+    const msg=d.missing===0
+      ? `Hai completato il reparto con ${d.roleSpent} crediti.`
+      : `Per i ${d.missing} posti rimasti suggerisco di riservare circa ${d.recommendedRemaining} crediti. Sul prossimo ${roleName(d.role).toLowerCase()} una spesa confortevole è circa ${d.nextComfort}; per un top non supererei circa ${strategyCapForRole(d.role)} salvo scelta strategica.`;
+    return `<div class="strategyCard">
+      <div class="strategyTop"><div class="strategyRole">${d.role} · ${roleName(d.role)}</div><div class="strategyMoney">${d.roleSpent}/${d.plan}</div></div>
+      <div class="strategyBar"><i style="width:${bar}%"></i></div>
+      <div class="strategyMeta">${d.status} · ${d.filled}/${LIMITS[d.role]} acquistati</div>
+      <div class="strategyGrid">
+        <div class="strategyMetric"><span>SPESO</span><b>${d.roleSpent}</b></div>
+        <div class="strategyMetric"><span>DA RISERVARE</span><b>${d.recommendedRemaining}</b></div>
+        <div class="strategyMetric"><span>PROSSIMO</span><b>${d.nextComfort}</b></div>
+      </div>
+      <div class="strategyAlert">${msg}</div>
+    </div>`;
+  }).join('');
+}
+
 function aiPlayerAnalysis(index,buyerIndex=state.me){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return null;
@@ -2136,6 +2247,8 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   let maxRec=Math.round(ideal*1.16);
 
   if(Number(gm.max)>0) maxRec=Math.min(maxRec,Number(gm.max));
+  const strategicCap=strategyCapForRole(p.role,buyerIndex);
+  if(strategicCap>0) maxRec=Math.min(maxRec,strategicCap);
   maxRec=Math.min(maxRec,safe,available);
   high=Math.min(high,maxRec);
 
@@ -2164,6 +2277,8 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   if(gm.priority)reasons.push(`Priorità personale: ${priorityLabel(gm.priority)}.`);
   if(Number(gm.target)>0)reasons.push(`Il tuo target di ${gm.target} crediti è stato incluso nel calcolo.`);
   if(Number(gm.max)>0)reasons.push(`Il tuo limite personale di ${gm.max} crediti viene rispettato.`);
+  const strategyCap=strategyCapForRole(p.role,buyerIndex);
+  if(strategyCap>0)reasons.push(`Strategia reparto ${p.role}: tetto dinamico consigliato circa ${strategyCap} crediti in questa fase dell'asta.`);
   reasons.push(`La tua max sicura attuale è ${safe} crediti.`);
 
   let verdict='Equilibrato';
