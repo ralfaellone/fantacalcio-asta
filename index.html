@@ -1567,7 +1567,7 @@ nav button{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20.3</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V20.4</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -3166,37 +3166,97 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   const pressure=clamp((rivalMedian-available)/INITIAL,-0.10,0.10);
   const pressureFactor=1 + pressure*0.6;
 
-  let rawIdeal=base*scarcityFactor*needFactor*pressureFactor;
+  // ---- MODELLO ESPERTO ASTA A 12 ----
+  // QI/QA non sono un prezzo d'asta: in una lega a 12 i profili forti subiscono
+  // inflazione perché ci sono più concorrenti e meno alternative per manager.
+  const qi=Math.max(1,Number(p.qi)||1);
+  const qa=Math.max(qi,Number(p.qa)||qi);
+  const fvm=Math.max(0,Number(p.fvm)||0);
+
+  // Rank within role by FVM + current quotation.
+  const rolePool=PLAYER_ARCHIVE.filter(x=>x.role===p.role&&!purchaseForArchivePlayer(x.name));
+  const roleValues=rolePool.map(x=>(Number(x.fvm)||0)*0.7+(Number(x.qa)||Number(x.qi)||0)*3).sort((a,b)=>a-b);
+  const composite=fvm*0.7+qa*3;
+  const belowRole=roleValues.filter(v=>v<composite).length;
+  const elitePct=roleValues.length?belowRole/roleValues.length:.5;
+
+  // 12-team auction inflation. Stronger for scarce top tiers.
+  let leagueInflation=1.22;
+  if(elitePct>=.90)leagueInflation=1.70;
+  else if(elitePct>=.80)leagueInflation=1.52;
+  else if(elitePct>=.65)leagueInflation=1.38;
+  else if(elitePct>=.45)leagueInflation=1.28;
+
+  // Goalkeepers and strikers are especially sensitive to scarcity in 12-team leagues.
+  let rolePremium=1.0;
+  if(p.role==='P' && elitePct>=.70)rolePremium=1.18;
+  if(p.role==='A' && elitePct>=.75)rolePremium=1.15;
+  if(p.role==='C' && elitePct>=.80)rolePremium=1.08;
+
+  // Real statistics can move the valuation further.
+  const hist=statsFor(p.name);
+  let statPremium=1.0;
+  if(hist && hist.pv){
+    if(hist.fm>=7.0)statPremium+=.12;
+    else if(hist.fm>=6.5)statPremium+=.07;
+    if(hist.pv>=32)statPremium+=.04;
+    if(hist.rigTaken>=2)statPremium+=.06;
+    if(hist.gol>=8)statPremium+=.06;
+    if(hist.ass>=6)statPremium+=.04;
+    if(hist.amm>=8)statPremium-=.03;
+    if(hist.esp>=2)statPremium-=.04;
+  }
+
+  // At auction start, QI itself creates a realistic market floor.
+  // The FVM baseline and QI-based baseline compete; we take the stronger signal.
+  const fvmBaseline=base*scarcityFactor*needFactor*pressureFactor;
+  const qiBaseline=qa*leagueInflation*rolePremium*statPremium;
+  let rawIdeal=Math.max(fvmBaseline,qiBaseline);
+
+  // Rival liquidity increases the realistic closing price.
+  const richRivals=rivalBudgets.filter(v=>v>=available*.75).length;
+  if(richRivals>=8)rawIdeal*=1.08;
+  else if(richRivals>=5)rawIdeal*=1.05;
+  else if(richRivals>=3)rawIdeal*=1.025;
 
   const gm=goalMeta(p.name);
-  if(Number(gm.target)>0) rawIdeal=(rawIdeal*0.7)+(Number(gm.target)*0.3);
-  if(gm.priority==='high') rawIdeal*=1.05;
-  if(gm.priority==='low') rawIdeal*=0.95;
+  if(Number(gm.target)>0) rawIdeal=(rawIdeal*0.78)+(Number(gm.target)*0.22);
+  if(gm.priority==='high') rawIdeal*=1.06;
+  if(gm.priority==='low') rawIdeal*=0.96;
 
   rawIdeal=Math.round(clamp(rawIdeal,1,safe||available));
 
-  // First calculate the absolute ceiling ("NON OLTRE").
-  let maxRec=Math.max(1,Math.round(rawIdeal*1.18));
+  // A 12-team market range should never sit materially below the current quotation
+  // for an elite profile unless the user's own budget makes it unavoidable.
+  let marketFloor=Math.round(qa*(elitePct>=.80?1.20:elitePct>=.60?1.08:.95));
+  marketFloor=Math.min(marketFloor,safe,available);
+
+  // Absolute "NON OLTRE": wider for elite/scarce profiles.
+  let ceilingMultiplier=elitePct>=.90?1.28:elitePct>=.75?1.23:1.18;
+  let maxRec=Math.max(1,Math.round(rawIdeal*ceilingMultiplier));
+
   if(Number(gm.max)>0) maxRec=Math.min(maxRec,Number(gm.max));
+
+  // Strategic cap is softened for elite players: the model may allow spending
+  // above the average-per-slot figure if the player is genuinely top tier.
   const strategicCap=strategyCapForRole(p.role,buyerIndex);
-  if(strategicCap>0) maxRec=Math.min(maxRec,strategicCap);
+  if(strategicCap>0){
+    const eliteAllowance=elitePct>=.90?1.65:elitePct>=.75?1.40:1.18;
+    maxRec=Math.min(maxRec,Math.round(strategicCap*eliteAllowance));
+  }
   maxRec=Math.max(1,Math.min(maxRec,safe,available));
 
-  // Then rebuild a real auction range *inside* that ceiling.
-  // This avoids MIN=MAX when the dynamic budget cap is lower than the raw valuation.
-  let ideal;
-  if(maxRec<rawIdeal){
-    ideal=Math.max(1,Math.round(maxRec*0.86));
-  }else{
-    ideal=rawIdeal;
-  }
+  let ideal=Math.min(rawIdeal,maxRec);
+  ideal=Math.max(Math.min(marketFloor,maxRec),ideal);
 
-  let low=Math.max(1,Math.round(ideal*0.84));
-  let high=Math.min(maxRec,Math.max(ideal,Math.round(ideal*1.10)));
+  // Real auction range: lower bound is a plausible opening/competitive price,
+  // upper bound is the zone where the manager should start considering stopping.
+  let low=Math.max(1,Math.round(ideal*(elitePct>=.80?.84:.80)));
+  low=Math.max(Math.min(marketFloor,maxRec),low);
+  let high=Math.min(maxRec,Math.max(ideal+1,Math.round(ideal*(elitePct>=.80?1.16:1.12))));
 
-  // Keep a visible spread whenever the budget allows it.
-  if(maxRec>=3 && high<=low){
-    low=Math.max(1,maxRec-2);
+  if(maxRec>=4 && high<=low){
+    low=Math.max(1,maxRec-3);
     high=maxRec-1;
     ideal=Math.max(low,Math.min(high,Math.round((low+high)/2)));
   }else if(maxRec>=2 && high===low){
@@ -3218,8 +3278,9 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   if(hist){
     reasons.push(`Storico: ${hist.pv} partite a voto, MV ${hist.mv.toFixed(2)}, FM ${hist.fm.toFixed(2)}, ${hist.gol} gol, ${hist.ass} assist, ${hist.amm} ammonizioni, ${hist.esp} espulsioni${hist.rigTaken?`, rigori ${hist.rigScored}/${hist.rigTaken}`:''}.`);
   }
-  reasons.push(`FVM ${p.fvm} rapportato a un budget iniziale di ${INITIAL} crediti.`);
-  reasons.push(`È circa nel ${Math.round(scarcityPct*100)}° percentile tra i ${sameRoleFree.length} ${roleName(p.role).toLowerCase()} ancora disponibili.`);
+  reasons.push(`FVM ${p.fvm} e quotazione ${p.qa!==undefined?p.qa:p.qi}: il modello applica inflazione da asta a 12 partecipanti e scarsità reale del ruolo.`);
+  reasons.push(`Profilo circa al ${Math.round(elitePct*100)}° percentile tra i ${rolePool.length} ${roleName(p.role).toLowerCase()} ancora liberi.`);
+
   reasons.push(`Hai ${available} crediti, ${totalSlots} posti rosa e ${roleSlots} posti ${p.role} da coprire.`);
   if(gm.priority)reasons.push(`Priorità personale: ${priorityLabel(gm.priority)}.`);
   if(Number(gm.target)>0)reasons.push(`Il tuo target di ${gm.target} crediti è stato incluso nel calcolo.`);
@@ -3228,10 +3289,11 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   if(strategyCap>0)reasons.push(`Strategia reparto ${p.role}: tetto dinamico consigliato circa ${strategyCap} crediti in questa fase dell'asta.`);
   reasons.push(`La tua max sicura attuale è ${safe} crediti.`);
 
-  let verdict='Equilibrato';
-  if(score>=78)verdict='Obiettivo forte';
+  let verdict='Fascia media';
+  if(elitePct>=.90 && score>=72)verdict='TOP DI REPARTO';
+  else if(score>=78)verdict='Obiettivo forte';
   else if(score>=64)verdict='Interessante';
-  else if(score<45)verdict='Da prendere solo a prezzo';
+  else if(score<45)verdict='Solo a prezzo';
 
   return {p,buyerIndex,available,safe,roleSlots,totalSlots,scarcityPct,ideal,low,high,maxRec,score,reasons,verdict};
 }
