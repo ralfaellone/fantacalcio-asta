@@ -2820,6 +2820,163 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
 
 
 body.players-pro-open{overflow:hidden!important}
+
+/* V35 - Rose Pro */
+#players.active{
+  position:fixed;
+  left:14px;
+  right:14px;
+  top:calc(env(safe-area-inset-top) + 76px);
+  bottom:calc(env(safe-area-inset-bottom) + 76px);
+  display:grid !important;
+  grid-template-rows:auto minmax(0,1fr);
+  overflow:hidden;
+  background:var(--bg);
+  z-index:4;
+}
+.roseProTop{
+  background:var(--bg);
+  padding:0 0 8px;
+  border-bottom:1px solid var(--line);
+  z-index:3;
+}
+.roseProTitleRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+.roseProTitleRow h2{margin:0;font-size:20px}
+.roseSettingsBtn{
+  width:36px;height:36px;border:1px solid var(--line);
+  background:#0b1727;color:var(--text);border-radius:12px;font-size:17px;
+}
+.roseSearch{
+  width:100%;
+  margin-top:7px;
+  border-radius:13px;
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+  padding:11px 12px;
+  outline:none;
+}
+.roseSearch:focus{border-color:var(--accent)}
+.roseFilters{
+  display:flex;
+  gap:5px;
+  overflow-x:auto;
+  padding:7px 0 2px;
+  scrollbar-width:none;
+}
+.roseFilters::-webkit-scrollbar{display:none}
+.roseFilter{
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--muted);
+  border-radius:10px;
+  padding:7px 9px;
+  font-size:10px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.roseFilter.active{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#111;
+}
+.roseCount{font-size:10px;color:var(--muted);margin-top:2px}
+.roseLeagueSummary{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px;
+  margin-top:7px;
+}
+.roseSummaryBox{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:6px 3px;
+  text-align:center;
+}
+.roseSummaryBox span{display:block;font-size:7px;color:var(--muted)}
+.roseSummaryBox b{display:block;font-size:12px;margin-top:2px}
+.roseProList{
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding:8px 0 18px;
+}
+.roseCard{
+  background:linear-gradient(180deg,var(--card2),var(--card));
+  border:1px solid var(--line);
+  border-radius:15px;
+  padding:10px 11px;
+  margin:7px 0;
+}
+.roseCard.mine{
+  border-color:rgba(57,217,138,.5);
+  box-shadow:0 0 0 1px rgba(57,217,138,.08) inset;
+}
+.roseCardTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+}
+.roseCardName{
+  min-width:0;
+  font-size:13px;
+  font-weight:950;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.roseBudget{
+  font-size:17px;
+  font-weight:950;
+  flex:0 0 auto;
+}
+.roseMeta{
+  color:var(--muted);
+  font-size:9px;
+  margin-top:3px;
+}
+.roseRoleGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:4px;
+  margin-top:7px;
+}
+.roseRoleMini{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:8px;
+  text-align:center;
+  padding:5px 2px;
+}
+.roseRoleMini span{display:block;font-size:7px;color:var(--muted)}
+.roseRoleMini b{display:block;font-size:11px;margin-top:1px}
+.roseOpenBtn{
+  margin-top:8px;
+  width:100%;
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:10px;
+  padding:8px;
+  font-size:9px;
+  font-weight:950;
+}
+body.rose-pro-open{overflow:hidden!important}
+@media(max-width:390px){
+  #players.active{
+    top:calc(env(safe-area-inset-top) + 70px);
+    bottom:calc(env(safe-area-inset-bottom) + 72px);
+  }
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2829,7 +2986,7 @@ body.players-pro-open{overflow:hidden!important}
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V34</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V35</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
@@ -2959,7 +3116,27 @@ body.players-pro-open{overflow:hidden!important}
 </section>
 
 <section id="players" class="page">
-  <div class="section" style="margin-top:0"><h2>Rose</h2><div id="managers" class="list"></div></div>
+  <div class="roseProTop">
+    <div class="roseProTitleRow">
+      <div>
+        <h2>Rose</h2>
+        <div id="roseCount" class="roseCount"></div>
+      </div>
+      <button class="roseSettingsBtn" onclick="openSettings()">⚙️</button>
+    </div>
+
+    <input id="roseSearch" class="roseSearch" placeholder="🔎 Cerca squadra..." autocomplete="off" oninput="renderRosesPage()">
+
+    <div class="roseFilters">
+      <button class="roseFilter active" data-filter="ALL" onclick="setRoseFilter('ALL',this)">Tutte</button>
+      <button class="roseFilter" data-filter="OPEN" onclick="setRoseFilter('OPEN',this)">Da completare</button>
+      <button class="roseFilter" data-filter="FULL" onclick="setRoseFilter('FULL',this)">Complete</button>
+    </div>
+
+    <div id="roseLeagueSummary" class="roseLeagueSummary"></div>
+  </div>
+
+  <div id="managers" class="roseProList"></div>
 </section>
 
 <section id="more" class="page">
@@ -3330,6 +3507,7 @@ let SIM_PLANS=loadSimPlans();
 let simPlanKey='A';
 let simAltOpenKey='';
 let COMPARE_PLAYERS=[];
+let ROSE_FILTER='ALL';
 function defaultState(){return {favorites:[],favoriteMeta:{},initialBudget:600,managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[],releases:[],unavailablePlayers:[]}}
 function load(){
   try{
@@ -3626,6 +3804,7 @@ function tab(id,btn){
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
   btn.classList.add('active');
   document.body.classList.toggle('players-pro-open',id==='listone');
+  document.body.classList.toggle('rose-pro-open',id==='players');
   render();
 }
 
@@ -3834,6 +4013,76 @@ function renderAuctionPage(){
     </div>`).join(''):`<div class="empty">Nessun acquisto registrato.</div>`;
 }
 
+
+function setRoseFilter(filter,btn){
+  ROSE_FILTER=filter;
+  document.querySelectorAll('.roseFilter').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderRosesPage();
+}
+function renderRosesPage(){
+  const box=document.getElementById('managers');
+  if(!box)return;
+
+  const q=normalizePlayerText(document.getElementById('roseSearch')?.value||'');
+  const totalSlots=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
+  const rows=state.managers
+    .map((name,i)=>({
+      name,i,
+      spent:spent(i),
+      budget:budget(i),
+      count:roster(i).length,
+      safe:safeMaxBid(i)
+    }))
+    .filter(x=>{
+      if(q && !normalizePlayerText(x.name).includes(q))return false;
+      if(ROSE_FILTER==='OPEN' && x.count>=totalSlots)return false;
+      if(ROSE_FILTER==='FULL' && x.count<totalSlots)return false;
+      return true;
+    })
+    .sort((a,b)=>(a.i===state.me?-1:b.i===state.me?1:a.i-b.i));
+
+  const countEl=document.getElementById('roseCount');
+  if(countEl)countEl.textContent=`${rows.length} rose visualizzate`;
+
+  const league=document.getElementById('roseLeagueSummary');
+  if(league){
+    const all=state.managers.map((_,i)=>({spent:spent(i),budget:budget(i),count:roster(i).length}));
+    const totalSpent=all.reduce((s,x)=>s+x.spent,0);
+    const avgBudget=Math.round(all.reduce((s,x)=>s+x.budget,0)/Math.max(1,all.length));
+    const full=all.filter(x=>x.count>=totalSlots).length;
+    const players=all.reduce((s,x)=>s+x.count,0);
+    league.innerHTML=`
+      <div class="roseSummaryBox"><span>SPESO LEGA</span><b>${totalSpent}</b></div>
+      <div class="roseSummaryBox"><span>MEDIA CR</span><b>${avgBudget}</b></div>
+      <div class="roseSummaryBox"><span>GIOCATORI</span><b>${players}</b></div>
+      <div class="roseSummaryBox"><span>COMPLETE</span><b>${full}/12</b></div>`;
+  }
+
+  box.innerHTML=rows.length?rows.map(x=>`
+    <div class="roseCard ${x.i===state.me?'mine':''}" onclick="openParticipant(${x.i})">
+      <div class="roseCardTop">
+        <div style="min-width:0">
+          <div class="roseCardName">${esc(x.name)} ${x.i===state.me?'<span class="tag good">LA MIA ROSA</span>':''}</div>
+          <div class="roseMeta">${x.count}/${totalSlots} giocatori · spesi ${x.spent} cr · max sicura ${x.safe}</div>
+        </div>
+        <div class="roseBudget">${x.budget}<div class="roseMeta">rimasti</div></div>
+      </div>
+
+      <div class="roseRoleGrid">
+        ${['P','D','C','A'].map(r=>`
+          <div class="roseRoleMini">
+            <span>${r}</span>
+            <b>${roleCount(x.i,r)}/${LIMITS[r]}</b>
+          </div>`).join('')}
+      </div>
+
+      <div class="progress"><i style="width:${Math.min(100,(x.spent/INITIAL)*100)}%"></i></div>
+      <button class="roseOpenBtn" onclick="event.stopPropagation();openParticipant(${x.i})">APRI ROSA ›</button>
+    </div>`).join('')
+    :'<div class="empty">Nessuna rosa trovata.</div>';
+}
+
 function render(){
   setTimeout(()=>{renderAuctionPage();renderDashboardControl();},0);
  const me=state.me;
@@ -3848,10 +4097,7 @@ function render(){
  if(myRosterEl){
    myRosterEl.innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
  }
- const managersEl=document.getElementById('managers');
- if(managersEl){
-   managersEl.innerHTML=state.managers.map((n,i)=>({n,i})).sort((a,b)=>(a.i===me?-1:b.i===me?1:a.i-b.i)).map(({n,i})=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">LA MIA ROSA</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div><div class="meta" style="margin-top:4px">Max offerta sicura: ${safeMaxBid(i)} cr</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
- }
+ renderRosesPage();
  renderListone();
  renderHistory();
  renderStatsImportInfo();
@@ -6151,9 +6397,11 @@ function openParticipant(i){
     </div>`).join('')}
   </div>`:'';
 
+  const participantTitle=document.querySelector('#participantModal .participantStickyTitle');
+  if(participantTitle)participantTitle.textContent=i===state.me?'La mia rosa':n;
   document.getElementById('participantDetail').innerHTML=`
     <div class="detailHero">
-      <div class="detailName">${esc(n)} ${i===state.me?'<span class="tag good">TU</span>':''}</div>
+      <div class="detailName">${esc(n)} ${i===state.me?'<span class="tag good">LA MIA ROSA</span>':''}</div>
       <div class="meta" style="margin-top:4px">${total}/25 giocatori acquistati</div>
 
       <div class="detailStats">
