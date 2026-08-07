@@ -2617,9 +2617,14 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V32</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V33</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
+  <div class="section" style="margin-top:0">
+    <h2 style="margin-bottom:4px">Dashboard</h2>
+    <div class="hint">Situazione generale della tua asta e accesso rapido agli strumenti AI.</div>
+  </div>
+
   <div class="grid2">
     <div class="card"><div class="k">Crediti rimasti</div><div class="v" id="myBudget">600</div></div>
     <div class="card"><div class="k">Giocatori presi</div><div class="v" id="myCount">0 <small>/ 25</small></div></div>
@@ -2675,10 +2680,24 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
     </div>
   </div>
   <div class="section"><h2>Ultimi acquisti</h2><div id="recent" class="list"></div></div>
+
+  <div class="section" style="margin-top:12px">
+    <div class="grid2">
+      <button class="secondary" onclick="openBuy()">🔨 Registra acquisto</button>
+      <button class="secondary" onclick="goToListone()">🔎 Apri giocatori</button>
+    </div>
+  </div>
 </section>
 
 <section id="rosa" class="page">
-  <div class="section" style="margin-top:0"><h2>La mia rosa</h2><div id="myRoster" class="list"></div></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="k">Registra un acquisto</div>
+    <div class="hint" style="margin-top:5px">Inserisci il giocatore, il prezzo e il partecipante che lo ha acquistato.</div>
+    <button class="primary" style="position:static;margin-top:10px;width:100%" onclick="openBuy()">＋ REGISTRA ACQUISTO</button>
+  </div>
+
+  <div class="section" style="margin-top:0"><h2>La mia rosa</h2><div class="section" style="margin-top:16px"><h2>La mia rosa</h2></div>
+  <div id="myRoster" class="list"></div></div>
 </section>
 
 <section id="listone" class="page">
@@ -2716,7 +2735,7 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
 </section>
 
 <section id="players" class="page">
-  <div class="section" style="margin-top:0"><h2>Partecipanti</h2><div id="managers" class="list"></div></div>
+  <div class="section" style="margin-top:0"><h2>Rose</h2><div id="managers" class="list"></div></div>
 </section>
 
 <section id="more" class="page">
@@ -2757,10 +2776,10 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
 </section>
 
 <nav>
-<button class="active" onclick="tab('home',this)"><span class="ico">🏠</span>Asta</button>
-<button onclick="tab('rosa',this)"><span class="ico">👕</span>Rosa</button>
+<button class="active" onclick="tab('home',this)"><span class="ico">🏠</span>Dashboard</button>
+<button onclick="tab('rosa',this)"><span class="ico">🔨</span>Asta</button>
 <button onclick="tab('listone',this)"><span class="ico">🔎</span>Giocatori</button>
-<button onclick="tab('players',this)"><span class="ico">👥</span>Partecipanti</button>
+<button onclick="tab('players',this)"><span class="ico">👥</span>Rose</button>
 <button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
 </nav>
 
@@ -3449,6 +3468,11 @@ function renderHomeLive(){
     </div>`).join('');
   }
 }
+function goToListone(){
+  const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Giocatori'));
+  if(btn)tab('listone',btn);
+}
+
 function goToListoneFav(){
   const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Giocatori'));
   if(btn)tab('listone',btn);
@@ -3458,7 +3482,7 @@ function goToListoneFav(){
   },0);
 }
 function goToParticipants(){
-  const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Partecipanti'));
+  const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Rose'));
   if(btn)tab('players',btn);
 }
 
@@ -3469,7 +3493,7 @@ function render(){
  ['P','D','C','A'].forEach(r=>document.getElementById('cnt'+r).textContent=`${roleCount(me,r)}/${LIMITS[r]}`);
  const recent=[...state.purchases].slice(-6).reverse();document.getElementById('recent').innerHTML=recent.length?recent.map(itemHTML).join(''):'<div class="empty">Nessun acquisto registrato.</div>';
  const mr=roster(me);document.getElementById('myRoster').innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
- document.getElementById('managers').innerHTML=state.managers.map((n,i)=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">TU</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div><div class="meta" style="margin-top:4px">Max offerta sicura: ${safeMaxBid(i)} cr</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
+ document.getElementById('managers').innerHTML=state.managers.map((n,i)=>({n,i})).sort((a,b)=>(a.i===me?-1:b.i===me?1:a.i-b.i)).map(({n,i})=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">LA MIA ROSA</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div><div class="meta" style="margin-top:4px">Max offerta sicura: ${safeMaxBid(i)} cr</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
  renderListone();
  renderHomeLive();
  renderHistory();
