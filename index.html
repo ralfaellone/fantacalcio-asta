@@ -1606,16 +1606,29 @@ body, #app, main, .app, .page{
   filter:none !important;
 }
 
+
+/* V21.2 - Nascondi menu durante splash */
+body.splash-active nav{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+body:not(.splash-active) nav{
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body>
+<body class="splash-active">
 <div id="splashScreen">
   <img src="icon-512.png" alt="Asta Fanta">
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V21.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V21.2</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -3981,4 +3994,7 @@ render();
 })();
 </script>
 
+<script>
+setTimeout(()=>document.body.classList.remove('splash-active'),1800);
+</script>
 </body></html>
