@@ -2617,7 +2617,7 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V33.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V33.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
@@ -3514,6 +3514,7 @@ function renderAuctionPage(){
   const recent=document.getElementById('auctionRecentPurchases');
   if(!live||!recent)return;
 
+  const me=state.me;
   const cash=budget(me);
   const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
   const mine=roster(me);
@@ -3549,11 +3550,20 @@ function render(){
   setTimeout(renderAuctionPage,0);
  const me=state.me;
  const leaguePill=document.getElementById('leagueBudgetPill'); if(leaguePill)leaguePill.textContent=INITIAL;
- document.getElementById('myBudget').textContent=budget(me);document.getElementById('myCount').innerHTML=`${roster(me).length} <small>/ 25</small>`;document.getElementById('myNameLabel').textContent=state.managers[me];
- ['P','D','C','A'].forEach(r=>document.getElementById('cnt'+r).textContent=`${roleCount(me,r)}/${LIMITS[r]}`);
- const recent=[...state.purchases].slice(-6).reverse();document.getElementById('recent').innerHTML=recent.length?recent.map(itemHTML).join(''):'<div class="empty">Nessun acquisto registrato.</div>';
- const mr=roster(me);document.getElementById('myRoster').innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
- document.getElementById('managers').innerHTML=state.managers.map((n,i)=>({n,i})).sort((a,b)=>(a.i===me?-1:b.i===me?1:a.i-b.i)).map(({n,i})=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">LA MIA ROSA</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div><div class="meta" style="margin-top:4px">Max offerta sicura: ${safeMaxBid(i)} cr</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
+ const myBudgetEl=document.getElementById('myBudget'); if(myBudgetEl)myBudgetEl.textContent=budget(me);
+ const myCountEl=document.getElementById('myCount'); if(myCountEl)myCountEl.innerHTML=`${roster(me).length} <small>/ 25</small>`;
+ const myNameEl=document.getElementById('myNameLabel'); if(myNameEl)myNameEl.textContent=state.managers[me];
+ ['P','D','C','A'].forEach(r=>{const el=document.getElementById('cnt'+r);if(el)el.textContent=`${roleCount(me,r)}/${LIMITS[r]}`});
+ const recent=[...state.purchases].slice(-6).reverse();const recentEl=document.getElementById('recent');if(recentEl)recentEl.innerHTML=recent.length?recent.map(itemHTML).join(''):'<div class="empty">Nessun acquisto registrato.</div>';
+ const mr=roster(me);
+ const myRosterEl=document.getElementById('myRoster');
+ if(myRosterEl){
+   myRosterEl.innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
+ }
+ const managersEl=document.getElementById('managers');
+ if(managersEl){
+   managersEl.innerHTML=state.managers.map((n,i)=>({n,i})).sort((a,b)=>(a.i===me?-1:b.i===me?1:a.i-b.i)).map(({n,i})=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">LA MIA ROSA</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div><div class="meta" style="margin-top:4px">Max offerta sicura: ${safeMaxBid(i)} cr</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
+ }
  renderListone();
  renderHomeLive();
  renderHistory();
