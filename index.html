@@ -1746,6 +1746,91 @@ body.ai-page-open #aiModal{
   pointer-events:auto !important;
 }
 
+
+/* V23 - Assistente rilanci live */
+.bidCoach{
+  margin-top:14px;
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:13px;
+}
+.bidCoach h3{
+  margin:0 0 8px;
+  font-size:15px;
+}
+.bidRow{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+  align-items:end;
+}
+.bidField label{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+  margin:0 0 5px 2px;
+}
+.bidField input{
+  width:100%;
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+  border-radius:13px;
+  padding:11px;
+  font-size:18px;
+  font-weight:900;
+}
+.bidCheck{
+  border:0;
+  background:var(--accent);
+  color:#111;
+  border-radius:13px;
+  padding:12px 14px;
+  font-weight:950;
+}
+.bidQuick{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:7px;
+}
+.bidQuick button{
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+  border-radius:10px;
+  padding:6px 9px;
+  font-size:10px;
+  font-weight:900;
+}
+.bidVerdict{
+  margin-top:10px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:11px 12px;
+  background:#081321;
+}
+.bidVerdictTitle{
+  font-size:18px;
+  font-weight:950;
+}
+.bidVerdictText{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.45;
+}
+.bidVerdict.go{border-color:rgba(57,217,138,.45)}
+.bidVerdict.wait{border-color:rgba(244,196,48,.45)}
+.bidVerdict.stop{border-color:rgba(255,107,107,.5)}
+.bidAlternatives{
+  margin-top:9px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.45;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1755,7 +1840,7 @@ body.ai-page-open #aiModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V22.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V23.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -3640,6 +3725,79 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
 
   return {p,buyerIndex,available,safe,roleSlots,totalSlots,scarcityPct,ideal,low,high,maxRec,score,reasons,verdict};
 }
+
+function liveBidAlternatives(index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p)return [];
+  return PLAYER_ARCHIVE
+    .filter(x=>x.role===p.role && !purchaseForArchivePlayer(x.name) && normalizePlayerText(x.name)!==normalizePlayerText(p.name))
+    .map(x=>{
+      const idx=PLAYER_ARCHIVE.indexOf(x);
+      const a=aiPlayerAnalysis(idx,state.me);
+      return {p:x,idx,a};
+    })
+    .filter(x=>x.a)
+    .sort((a,b)=>b.a.score-a.a.score)
+    .slice(0,3);
+}
+function setLiveBid(v){
+  const input=document.getElementById('liveBidPrice');
+  if(!input)return;
+  input.value=Math.max(1,parseInt(v,10)||1);
+  input.dispatchEvent(new Event('change'));
+}
+function stepLiveBid(v){
+  const input=document.getElementById('liveBidPrice');
+  if(!input)return;
+  input.value=Math.max(1,(parseInt(input.value,10)||0)+v);
+}
+function focusManualBid(){
+  const input=document.getElementById('liveBidPrice');
+  if(!input)return;
+  input.focus();
+  input.select();
+}
+function evaluateLiveBid(index){
+  const input=document.getElementById('liveBidPrice');
+  const out=document.getElementById('liveBidVerdict');
+  if(!input||!out)return;
+  const price=Math.max(1,parseInt(input.value,10)||1);
+  const a=aiPlayerAnalysis(index,state.me);
+  if(!a)return;
+
+  let cls='go', title='✅ RILANCIA', text='';
+  if(price<=a.ideal){
+    title='✅ RILANCIA';
+    text=`Sei ancora sotto o in linea col prezzo ideale (${a.ideal}). Hai margine di ${Math.max(0,a.maxRec-price)} crediti prima del tetto AI.`;
+  }else if(price<=a.high){
+    cls='wait';
+    title='🟡 RILANCIA CON CAUTELA';
+    text=`Sei nella parte alta del range consigliato (${a.low}-${a.high}). Puoi continuare, ma ogni rilancio pesa di più sulla strategia.`;
+  }else if(price<a.maxRec){
+    cls='wait';
+    title='🟠 ULTIMI RILANCI';
+    text=`Sei sopra il range consigliato. Restano solo ${a.maxRec-price} crediti di margine prima del NON OLTRE (${a.maxRec}).`;
+  }else{
+    cls='stop';
+    title='🛑 STOP';
+    text=`Hai raggiunto o superato il NON OLTRE AI (${a.maxRec}). A questo prezzo il rapporto valore/budget non è più favorevole.`;
+  }
+
+  const alts=liveBidAlternatives(index);
+  let altText='';
+  if(alts.length){
+    const viable=alts.filter(x=>x.a.maxRec<price || x.a.ideal<price).slice(0,3);
+    const use=viable.length?viable:alts.slice(0,2);
+    altText=`<div class="bidAlternatives"><strong>Alternative ancora libere:</strong><br>${use.map(x=>`${esc(x.p.name)} · ideale ${x.a.ideal} · non oltre ${x.a.maxRec}`).join('<br>')}</div>`;
+  }
+
+  out.innerHTML=`<div class="bidVerdict ${cls}">
+    <div class="bidVerdictTitle">${title}</div>
+    <div class="bidVerdictText">${text}</div>
+    ${altText}
+  </div>`;
+}
+
 function renderAIAnalysis(a){
   const p=a.p;
   const gm=goalMeta(p.name);
@@ -3670,6 +3828,33 @@ function renderAIAnalysis(a){
       ${statsFor(p.name).rigTaken?`<span class="advisorStat">Rig ${statsFor(p.name).rigScored}/${statsFor(p.name).rigTaken}</span>`:''}
     </div>`:''}
 
+    <div class="bidCoach">
+      <h3>🎯 Assistente rilanci LIVE</h3>
+      <div class="bidRow">
+        <div class="bidField">
+          <label>Offerta attuale</label>
+          <input id="liveBidPrice" type="number" min="1" value="${a.low}" inputmode="numeric">
+        </div>
+        <button class="bidCheck" onclick="evaluateLiveBid(${PLAYER_ARCHIVE.indexOf(p)})">VALUTA</button>
+      </div>
+      <div class="bidQuick">
+        <button onclick="stepLiveBid(1)">+1</button>
+        <button onclick="stepLiveBid(2)">+2</button>
+        <button onclick="stepLiveBid(3)">+3</button>
+        <button onclick="stepLiveBid(4)">+4</button>
+        <button onclick="stepLiveBid(5)">+5</button>
+        <button onclick="stepLiveBid(6)">+6</button>
+        <button onclick="stepLiveBid(7)">+7</button>
+        <button onclick="stepLiveBid(8)">+8</button>
+        <button onclick="stepLiveBid(9)">+9</button>
+        <button onclick="stepLiveBid(10)">+10</button>
+        <button onclick="focusManualBid()">MANUALE</button>
+        <button onclick="setLiveBid(${a.high})">MAX RANGE</button>
+        <button onclick="setLiveBid(${a.maxRec})">NON OLTRE</button>
+      </div>
+      <div id="liveBidVerdict"></div>
+    </div>
+
     <div class="aiReason">
       <strong>Consiglio:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti. 
       Non supererei <strong>${a.maxRec}</strong>${a.maxRec<a.safe?' per questo giocatore':' per non compromettere il resto della rosa'}.
@@ -3687,6 +3872,7 @@ function openAIForPlayer(index,event){
   aiReturnScroll=window.scrollY||0;
   document.getElementById('aiPageTitle').textContent=`🤖 AI Asta · ${a.p.name}`;
   document.getElementById('aiAnalysis').innerHTML=renderAIAnalysis(a);
+  setTimeout(()=>evaluateLiveBid(index),0);
 
   document.body.classList.add('ai-page-open');
   document.getElementById('aiModal').classList.add('show');
