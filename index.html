@@ -959,6 +959,169 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   margin:10px 0;
 }
 
+
+/* V16 - Scheda giocatore completa */
+#playerDetailModal{
+  position:fixed;
+  inset:0;
+  display:none;
+  background:var(--bg);
+  z-index:140;
+}
+#playerDetailModal.show{display:block}
+.playerDetailShell{
+  height:100dvh;
+  width:100%;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  background:var(--bg);
+}
+.playerDetailHeader{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+.playerDetailBack{
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:13px;
+  padding:9px 11px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.playerDetailTitle{
+  min-width:0;
+  font-size:17px;
+  font-weight:900;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.playerDetailBody{
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:12px 14px 18px;
+}
+.playerDetailFooter{
+  padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);
+  background:rgba(7,16,29,.98);
+  backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);
+}
+.playerDetailHero{
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);
+  border-radius:19px;
+  padding:14px;
+}
+.playerDetailName{
+  font-size:24px;
+  font-weight:950;
+  letter-spacing:-.4px;
+}
+.playerDetailSub{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+.playerDetailGrid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin-top:12px;
+}
+.playerDetailMetric{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:9px 6px;
+  text-align:center;
+}
+.playerDetailMetric span{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+}
+.playerDetailMetric b{
+  display:block;
+  font-size:18px;
+  margin-top:3px;
+}
+.playerDetailSection{
+  margin-top:14px;
+}
+.playerDetailSection h3{
+  margin:0 0 8px;
+  font-size:15px;
+}
+.playerDetailStats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+}
+.playerDetailStat{
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:8px 5px;
+  text-align:center;
+}
+.playerDetailStat span{
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+}
+.playerDetailStat b{
+  display:block;
+  font-size:16px;
+  margin-top:2px;
+}
+.playerDetailNote{
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:11px 12px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+}
+.playerDetailActions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.playerDetailActions button{
+  width:100%;
+  border-radius:14px;
+  padding:12px 9px;
+  font-weight:900;
+}
+.playerDetailAI{
+  border:1px solid rgba(244,196,48,.5);
+  background:#171405;
+  color:var(--accent);
+}
+.playerDetailBuy{
+  border:0;
+  background:var(--accent);
+  color:#111;
+}
+.playerDetailOwned{
+  border:1px solid var(--line);
+  background:var(--card);
+  color:var(--text);
+}
+@media(max-width:390px){
+  .playerDetailStats{grid-template-columns:repeat(3,1fr)}
+  .playerDetailName{font-size:21px}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -968,7 +1131,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V15</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V16</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1129,6 +1292,20 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 
 
 
+
+
+<div id="playerDetailModal">
+  <div class="playerDetailShell">
+    <div class="playerDetailHeader">
+      <button class="playerDetailBack" onclick="closePlayerDetail()">← Indietro</button>
+      <div id="playerDetailHeaderTitle" class="playerDetailTitle">Scheda giocatore</div>
+    </div>
+
+    <div id="playerDetailBody" class="playerDetailBody"></div>
+
+    <div id="playerDetailFooter" class="playerDetailFooter"></div>
+  </div>
+</div>
 
 <div id="advisorModal" class="modal" onclick="if(event.target===this)closeAdvisor()">
   <div class="sheet">
@@ -1552,7 +1729,7 @@ function searchHomePlayers(){
   box.innerHTML=rows.length?rows.map(p=>{
     const bought=purchaseForArchivePlayer(p.name);
     const idx=PLAYER_ARCHIVE.indexOf(p);
-    return `<div class="homeResult" onclick="${bought?'openParticipant('+bought.buyer+')':'buyFromHome('+idx+')'}">
+    return `<div class="homeResult" onclick="openPlayerDetail(${idx})">
       <div class="playerSuggestionTop">
         <div>
           <div class="playerSuggestionName"><span class="tag">${p.role}</span>${esc(p.name)}</div>
@@ -1763,7 +1940,7 @@ function renderListone(){
   box.innerHTML=rows.length?rows.map(p=>{
     const bought=purchaseForArchivePlayer(p.name);
     const idx=PLAYER_ARCHIVE.indexOf(p);
-    return `<div class="playerCard ${bought?'taken':''}" onclick="${bought?'openParticipant('+bought.buyer+')':'buyFromListone('+idx+')'}">
+    return `<div class="playerCard ${bought?'taken':''}" onclick="openPlayerDetail(${idx})">
       <div class="playerCardInner">
         <button class="favBtn ${isFavorite(p.name)?'on':''}" onclick="toggleFavorite(decodeURIComponent('${encodeURIComponent(p.name)}'),event)" aria-label="Obiettivo">${isFavorite(p.name)?'★':'☆'}</button>
         <div class="playerMain">
@@ -1909,7 +2086,7 @@ function renderAdvisor(){
       </div>
       <div class="advisorWhy">${why.map(w=>'• '+esc(w)).join('<br>')}</div>
       <div class="advisorActions">
-        <button class="quickBuy" onclick="closeAdvisor();buyFromListone(${x.index})">VAI ALL'ASTA</button>
+        <button class="quickBuy" onclick="closeAdvisor();openPlayerDetail(${x.index})">SCHEDA</button>
         <button class="aiBtn" onclick="openAIForPlayer(${x.index},event)">ANALISI AI</button>
       </div>
     </div>`;
@@ -2048,6 +2225,129 @@ function openAIForSelected(event){
   openAIForPlayer(index,event);
 }
 function closeAI(){document.getElementById('aiModal').classList.remove('show')}
+
+
+let playerDetailReturnScroll=0;
+
+function playerStatusFor(name){
+  const buy=purchaseForArchivePlayer(name);
+  if(!buy)return {owned:false,buy:null};
+  return {owned:true,buy};
+}
+
+function renderPlayerDetail(index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p)return;
+
+  const st=statsFor(p.name);
+  const status=playerStatusFor(p.name);
+  const ai=aiPlayerAnalysis(index,state.me);
+  const gm=goalMeta(p.name);
+
+  document.getElementById('playerDetailHeaderTitle').textContent=p.name;
+
+  const statBlock=st ? `
+    <div class="playerDetailSection">
+      <h3>📊 Statistiche</h3>
+      <div class="playerDetailStats">
+        <div class="playerDetailStat"><span>PV</span><b>${st.pv}</b></div>
+        <div class="playerDetailStat"><span>MV</span><b>${Number(st.mv).toFixed(2)}</b></div>
+        <div class="playerDetailStat"><span>FM</span><b>${Number(st.fm).toFixed(2)}</b></div>
+        <div class="playerDetailStat"><span>GOL</span><b>${st.gol}</b></div>
+        <div class="playerDetailStat"><span>ASSIST</span><b>${st.ass}</b></div>
+        <div class="playerDetailStat"><span>AMM.</span><b>${st.amm}</b></div>
+        <div class="playerDetailStat"><span>ESP.</span><b>${st.esp}</b></div>
+        <div class="playerDetailStat"><span>RIGORI</span><b>${st.rigTaken?`${st.rigScored}/${st.rigTaken}`:'—'}</b></div>
+      </div>
+    </div>
+  ` : `
+    <div class="playerDetailSection">
+      <h3>📊 Statistiche</h3>
+      <div class="playerDetailNote">Statistiche non disponibili per questo giocatore nell'archivio importato.</div>
+    </div>
+  `;
+
+  const goalBlock=isFavorite(p.name) ? `
+    <div class="playerDetailSection">
+      <h3>🎯 Il tuo obiettivo</h3>
+      <div class="playerDetailNote">
+        Priorità: <strong>${priorityLabel(gm.priority||'medium')}</strong>
+        ${Number(gm.target)>0?` · Target <strong>${gm.target}</strong>`:''}
+        ${Number(gm.max)>0?` · Max personale <strong>${gm.max}</strong>`:''}
+        ${gm.note?`<br><br>${esc(gm.note)}`:''}
+      </div>
+    </div>
+  ` : '';
+
+  const ownedBlock=status.owned ? `
+    <div class="playerDetailSection">
+      <h3>✅ Stato asta</h3>
+      <div class="playerDetailNote">
+        Acquistato da <strong>${esc(state.managers[status.buy.buyer])}</strong> per <strong>${status.buy.price} crediti</strong>.
+      </div>
+    </div>
+  ` : '';
+
+  document.getElementById('playerDetailBody').innerHTML=`
+    <div class="playerDetailHero">
+      <div class="playerDetailName">${esc(p.name)}</div>
+      <div class="playerDetailSub">${p.role} · ${p.team}</div>
+
+      <div class="playerDetailGrid">
+        <div class="playerDetailMetric"><span>QI</span><b>${p.qi}</b></div>
+        <div class="playerDetailMetric"><span>QA</span><b>${p.qa!==undefined?p.qa:'—'}</b></div>
+        <div class="playerDetailMetric"><span>FVM</span><b>${p.fvm}</b></div>
+      </div>
+    </div>
+
+    ${statBlock}
+
+    <div class="playerDetailSection">
+      <h3>🤖 AI Asta</h3>
+      <div class="playerDetailGrid">
+        <div class="playerDetailMetric"><span>MIN</span><b>${ai.low}</b></div>
+        <div class="playerDetailMetric"><span>MAX</span><b>${ai.high}</b></div>
+        <div class="playerDetailMetric"><span>NON OLTRE</span><b>${ai.maxRec}</b></div>
+      </div>
+      <div class="playerDetailNote" style="margin-top:8px">
+        Prezzo ideale <strong>${ai.ideal}</strong> · Score AI <strong>${ai.score}/99</strong> · ${ai.verdict}.
+        <br><br>
+        La tua max sicura attuale è <strong>${ai.safe}</strong> crediti.
+      </div>
+    </div>
+
+    ${goalBlock}
+    ${ownedBlock}
+  `;
+
+  const footer=document.getElementById('playerDetailFooter');
+  if(status.owned){
+    footer.innerHTML=`<div class="playerDetailActions">
+      <button class="playerDetailAI" onclick="openAIForPlayer(${index},event)">🤖 ANALISI AI</button>
+      <button class="playerDetailOwned" onclick="closePlayerDetail();openParticipant(${status.buy.buyer})">VEDI SQUADRA</button>
+    </div>`;
+  }else{
+    footer.innerHTML=`<div class="playerDetailActions">
+      <button class="playerDetailAI" onclick="openAIForPlayer(${index},event)">🤖 ANALISI AI</button>
+      <button class="playerDetailBuy" onclick="closePlayerDetail();buyFromListone(${index})">VAI ALL'ASTA</button>
+    </div>`;
+  }
+}
+
+function openPlayerDetail(index){
+  playerDetailReturnScroll=window.scrollY||0;
+  renderPlayerDetail(index);
+  document.getElementById('playerDetailModal').classList.add('show');
+  document.body.style.overflow='hidden';
+  const body=document.getElementById('playerDetailBody');
+  if(body)body.scrollTop=0;
+}
+
+function closePlayerDetail(){
+  document.getElementById('playerDetailModal').classList.remove('show');
+  document.body.style.overflow='';
+  requestAnimationFrame(()=>window.scrollTo(0,playerDetailReturnScroll));
+}
 
 function buyFromListone(index){
   const p=PLAYER_ARCHIVE[index];
