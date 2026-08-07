@@ -2210,6 +2210,46 @@ body.compare-page-open #compareModal{
   margin-left:0 !important;
 }
 
+
+/* V27.2 - Confronto contestuale su rosa e budget */
+.compareContext{
+  margin-top:10px;
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:10px 11px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.45;
+}
+.compareContext strong{color:var(--text)}
+.compareFit{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
+  margin-top:10px;
+}
+.compareFitBox{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:8px 5px;
+  text-align:center;
+}
+.compareFitBox span{
+  display:block;
+  font-size:8px;
+  color:var(--muted);
+}
+.compareFitBox b{
+  display:block;
+  margin-top:2px;
+  font-size:14px;
+}
+.compareCard.bestFit{
+  border-color:rgba(57,217,138,.6);
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2219,7 +2259,7 @@ body.compare-page-open #compareModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V27.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V27.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -3198,6 +3238,37 @@ function toggleComparePlayer(index,event){
   renderListone();
   updateCompareButton();
 }
+
+function roleUrgencyScore(role,buyerIndex=state.me){
+  const missing=Math.max(0,LIMITS[role]-roleCount(buyerIndex,role));
+  const ratio=missing/Math.max(1,LIMITS[role]);
+  const strat=strategyData(buyerIndex).find(x=>x.role===role);
+  const budgetPressure=strat && strat.recommendedRemaining>0
+    ? clamp(strat.recommendedRemaining/Math.max(1,budget(buyerIndex)),0,1)
+    : 0;
+  return Math.round(clamp(ratio*70 + budgetPressure*30,0,100));
+}
+function affordabilityScore(ai,buyerIndex=state.me){
+  const cash=budget(buyerIndex);
+  const missing=remainingRosterSlots(buyerIndex);
+  const reserve=Math.max(0,missing-1); // leave at least 1 credit for other spots
+  const spendable=Math.max(1,cash-reserve);
+  if(!ai)return 0;
+  if(ai.ideal<=spendable*.45)return 100;
+  if(ai.ideal<=spendable*.65)return 88;
+  if(ai.ideal<=spendable*.80)return 72;
+  if(ai.ideal<=spendable)return 55;
+  if(ai.maxRec<=spendable)return 40;
+  return 15;
+}
+function rosterFitScore(p,ai,buyerIndex=state.me){
+  const urgency=roleUrgencyScore(p.role,buyerIndex);
+  const afford=affordabilityScore(ai,buyerIndex);
+  const roleFilled=roleCount(buyerIndex,p.role)>=LIMITS[p.role];
+  if(roleFilled)return 0;
+  return Math.round(clamp(urgency*.56 + afford*.44,0,100));
+}
+
 function comparePlayerData(index){
   const p=PLAYER_ARCHIVE[index];
   const ai=aiPlayerAnalysis(index,state.me);
@@ -3205,29 +3276,45 @@ function comparePlayerData(index){
   const valueScore=ai && ai.ideal>0
     ? Math.round(clamp((ai.score*0.68)+((Number(p.fvm)||0)/Math.max(1,ai.ideal))*2.2,0,99))
     : ai?.score||0;
-  return {index,p,ai,st,valueScore};
+  const fitScore=rosterFitScore(p,ai,state.me);
+  const affordScore=affordabilityScore(ai,state.me);
+  const roleUrgency=roleUrgencyScore(p.role,state.me);
+  const contextualScore=Math.round(clamp(valueScore*.47 + fitScore*.33 + affordScore*.20,0,99));
+  return {index,p,ai,st,valueScore,fitScore,affordScore,roleUrgency,contextualScore};
 }
 function compareVerdictText(rows){
-  const ranked=[...rows].sort((a,b)=>b.valueScore-a.valueScore || b.ai.score-a.ai.score);
+  const ranked=[...rows].sort((a,b)=>b.contextualScore-a.contextualScore || b.ai.score-a.ai.score);
   const best=ranked[0], second=ranked[1];
   const sameRole=rows.every(x=>x.p.role===rows[0].p.role);
+  const cash=budget(state.me);
+  const missing=remainingRosterSlots(state.me);
 
-  let text=`<strong>Scelta AI: ${esc(best.p.name)}</strong>. `;
-  if(sameRole){
-    text+=`Tra questi profili è quello con il miglior equilibrio tra rendimento, prezzo e valore per il tuo budget. `;
+  let text=`<strong>Scelta AI per la tua rosa: ${esc(best.p.name)}</strong>. `;
+
+  if(best.fitScore>=75){
+    text+=`È molto adatto alla situazione attuale della tua squadra: reparto prioritario e prezzo sostenibile. `;
+  }else if(best.fitScore>=55){
+    text+=`È compatibile con la tua rosa, ma senza necessità di forzare l'acquisto. `;
   }else{
-    text+=`È il profilo con il miglior valore complessivo, ma i giocatori hanno ruoli diversi: considera prima quale reparto devi completare. `;
+    text+=`È il migliore del confronto, ma non è una priorità assoluta per la tua rosa in questo momento. `;
+  }
+
+  if(!sameRole){
+    text+=`Stai confrontando ruoli diversi: l'AI sta pesando anche i posti mancanti in ogni reparto. `;
   }
 
   if(second){
-    if(best.ai.maxRec < second.ai.maxRec){
-      text+=`${esc(best.p.name)} ha anche un tetto AI più basso (${best.ai.maxRec}) rispetto a ${esc(second.p.name)} (${second.ai.maxRec}). `;
-    }else if(best.ai.score-second.ai.score<=4){
-      text+=`Il confronto con ${esc(second.p.name)} è molto equilibrato: scegli quello che rimane più vicino al proprio prezzo ideale. `;
+    const gap=best.contextualScore-second.contextualScore;
+    if(gap<=3){
+      text+=`Il confronto con ${esc(second.p.name)} è molto equilibrato: scegli quello che rimane più vicino al prezzo ideale. `;
+    }else if(gap>=10){
+      text+=`Il vantaggio su ${esc(second.p.name)} è netto considerando rosa + budget. `;
     }
   }
 
-  text+=`Regola pratica: prendi ${esc(best.p.name)} se resta entro ${best.ai.high} crediti; oltre ${best.ai.maxRec} passa a un'alternativa.`;
+  text+=`Hai ${cash} crediti e ${missing} posti da completare. `;
+  text+=`Per ${esc(best.p.name)}: zona buona fino a ${best.ai.high}, tetto assoluto ${best.ai.maxRec}.`;
+
   return text;
 }
 function renderComparePage(){
@@ -3240,7 +3327,7 @@ function renderComparePage(){
     return;
   }
 
-  const best=[...rows].sort((a,b)=>b.valueScore-a.valueScore || b.ai.score-a.ai.score)[0];
+  const best=[...rows].sort((a,b)=>b.contextualScore-a.contextualScore || b.ai.score-a.ai.score)[0];
 
   box.innerHTML=`
     <div class="compareVerdict">
@@ -3248,9 +3335,15 @@ function renderComparePage(){
       ${compareVerdictText(rows)}
     </div>
 
+    <div class="compareContext">
+      <strong>Situazione attuale:</strong> ${budget(state.me)} crediti disponibili · ${remainingRosterSlots(state.me)} posti mancanti ·
+      P ${roleCount(state.me,'P')}/${LIMITS.P} · D ${roleCount(state.me,'D')}/${LIMITS.D} ·
+      C ${roleCount(state.me,'C')}/${LIMITS.C} · A ${roleCount(state.me,'A')}/${LIMITS.A}.
+    </div>
+
     <div class="compareGrid" style="margin-top:12px">
       ${rows.map(x=>`
-        <div class="compareCard ${x.index===best.index?'winner':''}">
+        <div class="compareCard ${x.index===best.index?'winner bestFit':''}">
           <div class="compareName">
             <div>
               <b>${esc(x.p.name)}</b>
@@ -3272,6 +3365,16 @@ function renderComparePage(){
             <div class="compareMetric"><span>ASSIST</span><b>${x.st?x.st.ass:'—'}</b></div>
             <div class="compareMetric"><span>AMM.</span><b>${x.st?x.st.amm:'—'}</b></div>
             <div class="compareMetric"><span>ESP.</span><b>${x.st?x.st.esp:'—'}</b></div>
+          </div>
+
+          <div class="compareFit">
+            <div class="compareFitBox"><span>FIT ROSA</span><b>${x.fitScore}</b></div>
+            <div class="compareFitBox"><span>SOSTENIBILITÀ</span><b>${x.affordScore}</b></div>
+            <div class="compareFitBox"><span>PRIORITÀ RUOLO</span><b>${x.roleUrgency}</b></div>
+          </div>
+          <div class="compareContext" style="margin-top:8px">
+            <strong>Punteggio contestuale ${x.contextualScore}/99.</strong>
+            ${x.fitScore>=75?'Ottimo incastro con la tua rosa.':x.fitScore>=55?'Buon incastro, senza necessità di forzare.':'Profilo valido, ma il reparto non è tra le priorità principali.'}
           </div>
 
           <div class="compareAction">
