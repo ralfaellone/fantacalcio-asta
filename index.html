@@ -1682,7 +1682,7 @@ body.simulator-open #simModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V21.3</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V22</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2816,7 +2816,8 @@ function renderNextMove(){
     const ml=auctionMarketLearning(role);
     if(ml.count){
       const pct=Math.round((ml.factor-1)*100);
-      marketInfo.innerHTML=`🧠 <b>AI mercato reale:</b> ${ml.count} acquisti ${role} analizzati · correzione ${pct>=0?'+':''}${pct}% · confidenza ${Math.round(ml.confidence*100)}%.`;
+      const rd=rivalRoleDemand(role,state.me);
+      marketInfo.innerHTML=`🧠 <b>AI mercato reale:</b> ${ml.count} acquisti ${role} analizzati · correzione ${pct>=0?'+':''}${pct}% · confidenza ${Math.round(ml.confidence*100)}% · ${rd.active} rivali ancora scoperti (${rd.strong} con molti crediti).`;
     }else{
       const gl=globalAuctionLearning();
       marketInfo.innerHTML=gl.count>=4
@@ -3312,6 +3313,59 @@ function globalAuctionLearning(){
   return {count,factor:clamp(weighted,.82,1.30)};
 }
 
+
+function playerMarketComposite(p){
+  return (Number(p.fvm)||0)*0.7 + (Number(p.qa)||Number(p.qi)||0)*3;
+}
+function comparableAuctionLearning(player){
+  const role=player.role;
+  const target=playerMarketComposite(player);
+  const sold=state.purchases
+    .filter(x=>x.role===role && Number(x.price)>0)
+    .map(x=>{
+      const p=PLAYER_ARCHIVE.find(p=>normalizePlayerText(p.name)===normalizePlayerText(x.name));
+      if(!p)return null;
+      const comp=playerMarketComposite(p);
+      const qi=Math.max(1,Number(p.qa)||Number(p.qi)||1);
+      const distance=Math.abs(comp-target)/Math.max(1,target);
+      return {name:x.name,price:Number(x.price),qi,comp,distance,ratio:Number(x.price)/qi};
+    }).filter(Boolean)
+    .sort((a,b)=>a.distance-b.distance);
+
+  if(!sold.length)return {count:0,factor:1,confidence:0,names:[]};
+
+  const near=sold.filter(x=>x.distance<=.38).slice(0,6);
+  const sample=(near.length>=2?near:sold.slice(0,4));
+  const weights=sample.map(x=>1/Math.max(.12,x.distance+.12));
+  const weightedRatio=sample.reduce((s,x,i)=>s+x.ratio*weights[i],0)/weights.reduce((a,b)=>a+b,0);
+  const observedFactor=clamp(weightedRatio/1.35,.72,1.65);
+  const confidence=clamp(sample.length/5,0,1);
+  return {
+    count:sample.length,
+    factor:1+(observedFactor-1)*confidence,
+    confidence,
+    names:sample.map(x=>x.name)
+  };
+}
+function auctionPhaseForRole(role){
+  const total=PLAYER_ARCHIVE.filter(p=>p.role===role).length;
+  const sold=state.purchases.filter(x=>x.role===role).length;
+  const soldPct=total?sold/total:0;
+  const free=PLAYER_ARCHIVE.filter(p=>p.role===role&&!purchaseForArchivePlayer(p.name)).length;
+  return {total,sold,free,soldPct};
+}
+function rivalRoleDemand(role,buyerIndex=state.me){
+  const rivals=state.managers.map((name,i)=>{
+    if(i===buyerIndex)return null;
+    const missing=Math.max(0,LIMITS[role]-roleCount(i,role));
+    const cash=budget(i);
+    return {name,i,missing,cash};
+  }).filter(Boolean);
+  const active=rivals.filter(x=>x.missing>0);
+  const strong=active.filter(x=>x.cash>=INITIAL*.55);
+  return {active:active.length,strong:strong.length};
+}
+
 function aiPlayerAnalysis(index,buyerIndex=state.me){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return null;
@@ -3405,6 +3459,26 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
     rawIdeal*=1+(globalMarket.factor-1)*.35;
   }
 
+  // V22: learn more from players truly comparable in the same role/tier.
+  const comparableMarket=comparableAuctionLearning(p);
+  if(comparableMarket.count>=2){
+    rawIdeal*=1+(comparableMarket.factor-1)*.65;
+  }
+
+  // Auction phase: elite players become more expensive when comparable supply dries up.
+  const phase=auctionPhaseForRole(p.role);
+  const remainingElite=rolePool.filter(x=>playerMarketComposite(x)>=composite*.88).length;
+  if(elitePct>=.75){
+    if(remainingElite<=3)rawIdeal*=1.13;
+    else if(remainingElite<=6)rawIdeal*=1.07;
+  }
+
+  // Rival demand: managers still missing this role and holding strong liquidity create bidding pressure.
+  const rivalDemand=rivalRoleDemand(p.role,buyerIndex);
+  if(rivalDemand.strong>=7)rawIdeal*=1.10;
+  else if(rivalDemand.strong>=4)rawIdeal*=1.06;
+  else if(rivalDemand.strong>=2)rawIdeal*=1.03;
+
   const gm=goalMeta(p.name);
   if(Number(gm.target)>0) rawIdeal=(rawIdeal*0.78)+(Number(gm.target)*0.22);
   if(gm.priority==='high') rawIdeal*=1.06;
@@ -3469,7 +3543,12 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   if(roleMarket.count){
     const direction=roleMarket.factor>1.04?'più caro':roleMarket.factor<.96?'più economico':'in linea';
     reasons.push(`Mercato reale ${p.role}: ${roleMarket.count} acquisti registrati, prezzi ${direction} rispetto al modello base (confidenza ${Math.round(roleMarket.confidence*100)}%).`);
-  }else if(globalMarket.count>=4){
+  }
+  if(comparableMarket.count>=2){
+    reasons.push(`Confronto diretto con ${comparableMarket.count} giocatori simili già battuti: ${comparableMarket.names.slice(0,3).join(', ')}${comparableMarket.names.length>3?'…':''}.`);
+  }
+  reasons.push(`Pressione reparto: ${rivalDemand.active} rivali devono ancora completarlo, ${rivalDemand.strong} hanno oltre il 55% del budget iniziale; restano ${remainingElite} profili di fascia comparabile.`);
+  if(!roleMarket.count && globalMarket.count>=4){
     reasons.push(`Nessun acquisto ${p.role} ancora disponibile: uso temporaneamente il trend generale di ${globalMarket.count} acquisti con peso ridotto.`);
   }
 
