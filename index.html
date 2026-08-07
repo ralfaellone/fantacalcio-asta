@@ -968,7 +968,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V14</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V14.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1851,10 +1851,10 @@ function renderAdvisor(){
   const ranked=free.map(p=>{
     const index=PLAYER_ARCHIVE.indexOf(p);
     return {p,index,...advisorScore(p,index)};
-  }).sort((a,b)=>b.score-a.score).slice(0,5);
+  }).sort((a,b)=>b.score-a.score).slice(0,10);
 
   document.getElementById('advisorSummary').textContent=
-    `${roleName(advisorRole)}: te ne mancano ${Math.max(0,LIMITS[advisorRole]-roleCount(state.me,advisorRole))}. Mostro i 5 profili più adatti ancora liberi.`;
+    `${roleName(advisorRole)}: te ne mancano ${Math.max(0,LIMITS[advisorRole]-roleCount(state.me,advisorRole))}. Mostro i 10 profili più adatti ancora liberi.`;
 
   document.getElementById('advisorList').innerHTML=ranked.length?ranked.map((x,i)=>{
     const s=statsFor(x.p.name);
