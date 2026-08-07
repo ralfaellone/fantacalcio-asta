@@ -795,6 +795,79 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 .goalPreviewName{font-size:18px;font-weight:900}
 .goalPreviewMeta{font-size:11px;color:var(--muted);margin-top:4px}
 
+
+/* V13 - AI Asta */
+.aiBtn{
+  border:1px solid rgba(244,196,48,.45);
+  background:#171405;
+  color:var(--accent);
+  border-radius:11px;
+  padding:6px 8px;
+  font-size:12px;
+  font-weight:900;
+  margin-left:5px;
+}
+.aiCard{
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:13px;
+}
+.aiScore{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+}
+.aiScoreNum{
+  font-size:34px;
+  font-weight:950;
+  line-height:1;
+}
+.aiGrid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+  margin-top:12px;
+}
+.aiMetric{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:9px 6px;
+  text-align:center;
+}
+.aiMetric b{
+  display:block;
+  font-size:18px;
+  margin-top:3px;
+}
+.aiReason{
+  margin-top:12px;
+  padding:11px 12px;
+  border-radius:14px;
+  background:#0b1727;
+  border:1px solid var(--line);
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+}
+.aiReason strong{color:var(--text)}
+.aiBar{
+  height:8px;
+  background:#07101d;
+  border-radius:99px;
+  overflow:hidden;
+  margin-top:10px;
+}
+.aiBar i{
+  display:block;
+  height:100%;
+  width:0;
+  background:var(--accent);
+  border-radius:99px;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -804,7 +877,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V12</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V13</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -953,6 +1026,18 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <div class="hint" id="buyHint"></div>
 </div></div>
 
+
+
+<div id="aiModal" class="modal" onclick="if(event.target===this)closeAI()">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <h3 style="margin:0">🤖 AI Asta</h3>
+      <button class="closeX" onclick="closeAI()">×</button>
+    </div>
+    <div id="aiAnalysis" style="margin-top:14px"></div>
+  </div>
+</div>
 
 <div id="goalModal" class="modal goalModal" onclick="if(event.target===this)closeGoalEditor()">
   <div class="sheet">
@@ -1266,7 +1351,7 @@ function renderHomeLive(){
           <div class="quickMeta">${p.role} · ${p.team} · FVM ${p.fvm}${goalBits?' · '+goalBits:''}</div>
           ${gm.note?`<div class="quickMeta" style="margin-top:4px">${esc(gm.note)}</div>`:''}
         </div>
-        <button class="quickBuy" onclick="buyFromHome(${idx})">ASTA</button>
+        <div style="display:flex;flex-direction:column;gap:5px"><button class="quickBuy" onclick="buyFromHome(${idx})">ASTA</button><button class="aiBtn" onclick="openAIForPlayer(${idx},event)">AI</button></div>
       </div>`;
     }).join(''):'<div class="playerMetaLine">Nessun obiettivo disponibile.</div>';
   }
@@ -1442,7 +1527,7 @@ function renderListone(){
       <div class="playerCardInner">
         <button class="favBtn ${isFavorite(p.name)?'on':''}" onclick="toggleFavorite(decodeURIComponent('${encodeURIComponent(p.name)}'),event)" aria-label="Obiettivo">${isFavorite(p.name)?'★':'☆'}</button>
         <div class="playerMain">
-          <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}${isFavorite(p.name)?`<button class="goalMetaBtn" onclick="openGoalEditor(decodeURIComponent('${encodeURIComponent(p.name)}'),event)">🎯</button>`:''}</div>
+          <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}${isFavorite(p.name)?`<button class="goalMetaBtn" onclick="openGoalEditor(decodeURIComponent('${encodeURIComponent(p.name)}'),event)">🎯</button>`:''}<button class="aiBtn" onclick="openAIForPlayer(${idx},event)">🤖 AI</button></div>
           <div class="playerInfo">${p.team} · QI ${p.qi}${p.qa!==undefined?' · QA '+p.qa:''}</div>
           ${goalMetaHTML(p.name)}
         </div>
@@ -1454,6 +1539,130 @@ function renderListone(){
     </div>`;
   }).join(''):'<div class="empty">Nessun giocatore trovato con questi filtri.</div>';
 }
+
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+function median(arr){
+  if(!arr.length)return 0;
+  const a=[...arr].sort((x,y)=>x-y);
+  const m=Math.floor(a.length/2);
+  return a.length%2?a[m]:(a[m-1]+a[m])/2;
+}
+function aiPlayerAnalysis(index,buyerIndex=state.me){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p)return null;
+
+  const sameRoleFree=PLAYER_ARCHIVE
+    .filter(x=>x.role===p.role && !purchaseForArchivePlayer(x.name));
+
+  const fvmValues=sameRoleFree.map(x=>Number(x.fvm)||0).sort((a,b)=>a-b);
+  const below=fvmValues.filter(v=>v<(Number(p.fvm)||0)).length;
+  const scarcityPct=fvmValues.length?below/fvmValues.length:0.5;
+
+  const available=budget(buyerIndex);
+  const safe=safeMaxBid(buyerIndex);
+  const roleSlots=Math.max(0,LIMITS[p.role]-roleCount(buyerIndex,p.role));
+  const totalSlots=remainingRosterSlots(buyerIndex);
+
+  // Baseline: FVM is published per 1000 credits, convert to this league's 600-credit budget.
+  let base=(Number(p.fvm)||0)*(INITIAL/1000);
+
+  // Dynamic adjustments.
+  const scarcityFactor=0.88 + scarcityPct*0.22;          // 0.88 -> 1.10
+  const needFactor=roleSlots<=1 ? 0.92 : roleSlots>=4 ? 1.05 : 1.00;
+  const budgetFactor=clamp(available/INITIAL,0.35,1.0);
+
+  // Rivals with enough liquidity can increase auction pressure.
+  const rivalBudgets=state.managers.map((_,i)=>i===buyerIndex?null:budget(i)).filter(v=>v!==null);
+  const rivalMedian=median(rivalBudgets);
+  const pressure=clamp((rivalMedian-available)/INITIAL,-0.10,0.10);
+  const pressureFactor=1 + pressure*0.6;
+
+  let ideal=base*scarcityFactor*needFactor*pressureFactor;
+
+  const gm=goalMeta(p.name);
+  if(Number(gm.target)>0) ideal=(ideal*0.7)+(Number(gm.target)*0.3);
+  if(gm.priority==='high') ideal*=1.05;
+  if(gm.priority==='low') ideal*=0.95;
+
+  ideal=Math.round(clamp(ideal,1,safe||available));
+  let low=Math.max(1,Math.round(ideal*0.88));
+  let high=Math.max(low,Math.round(ideal*1.10));
+  let maxRec=Math.round(ideal*1.16);
+
+  if(Number(gm.max)>0) maxRec=Math.min(maxRec,Number(gm.max));
+  maxRec=Math.min(maxRec,safe,available);
+  high=Math.min(high,maxRec);
+
+  // Prevent nonsense if safe budget is very low.
+  low=Math.min(low,maxRec);
+  ideal=Math.min(ideal,maxRec);
+
+  const score=Math.round(clamp(
+    50 + scarcityPct*30 +
+    (gm.priority==='high'?12:gm.priority==='low'?-8:0) +
+    (Number(p.fvm)>=100?8:0) -
+    (totalSlots<=5?5:0),
+    1,99
+  ));
+
+  const reasons=[];
+  reasons.push(`FVM ${p.fvm} rapportato a un budget iniziale di ${INITIAL} crediti.`);
+  reasons.push(`È circa nel ${Math.round(scarcityPct*100)}° percentile tra i ${sameRoleFree.length} ${roleName(p.role).toLowerCase()} ancora disponibili.`);
+  reasons.push(`Hai ${available} crediti, ${totalSlots} posti rosa e ${roleSlots} posti ${p.role} da coprire.`);
+  if(gm.priority)reasons.push(`Priorità personale: ${priorityLabel(gm.priority)}.`);
+  if(Number(gm.target)>0)reasons.push(`Il tuo target di ${gm.target} crediti è stato incluso nel calcolo.`);
+  if(Number(gm.max)>0)reasons.push(`Il tuo limite personale di ${gm.max} crediti viene rispettato.`);
+  reasons.push(`La tua max sicura attuale è ${safe} crediti.`);
+
+  let verdict='Equilibrato';
+  if(score>=78)verdict='Obiettivo forte';
+  else if(score>=64)verdict='Interessante';
+  else if(score<45)verdict='Da prendere solo a prezzo';
+
+  return {p,buyerIndex,available,safe,roleSlots,totalSlots,scarcityPct,ideal,low,high,maxRec,score,reasons,verdict};
+}
+function renderAIAnalysis(a){
+  const p=a.p;
+  const gm=goalMeta(p.name);
+  return `<div class="aiCard">
+    <div class="aiScore">
+      <div>
+        <div class="k">AI Asta · ${esc(p.name)}</div>
+        <div class="aiScoreNum">${a.score}<small style="font-size:14px;color:var(--muted)">/99</small></div>
+      </div>
+      <div style="text-align:right"><div class="tag good">${a.verdict}</div><div class="playerMetaLine">${p.role} · ${p.team} · FVM ${p.fvm}</div></div>
+    </div>
+    <div class="aiBar"><i style="width:${a.score}%"></i></div>
+
+    <div class="aiGrid">
+      <div class="aiMetric"><span class="k">Prezzo ideale</span><b>${a.ideal}</b></div>
+      <div class="aiMetric"><span class="k">Range</span><b>${a.low}-${a.high}</b></div>
+      <div class="aiMetric"><span class="k">MAX AI</span><b>${a.maxRec}</b></div>
+    </div>
+
+    <div class="aiReason">
+      <strong>Consiglio:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti. 
+      Non supererei <strong>${a.maxRec}</strong>${a.maxRec<a.safe?' per questo giocatore':' per non compromettere il resto della rosa'}.
+      ${gm.note?`<br><br><strong>Tua nota:</strong> ${esc(gm.note)}`:''}
+      <br><br>${a.reasons.map(x=>'• '+esc(x)).join('<br>')}
+    </div>
+  </div>`;
+}
+function openAIForPlayer(index,event){
+  if(event)event.stopPropagation();
+  const a=aiPlayerAnalysis(index,state.me);
+  if(!a)return;
+  document.getElementById('aiAnalysis').innerHTML=renderAIAnalysis(a);
+  document.getElementById('aiModal').classList.add('show');
+}
+function openAIForSelected(event){
+  if(event)event.stopPropagation();
+  if(!selectedArchivePlayer)return;
+  const index=PLAYER_ARCHIVE.indexOf(selectedArchivePlayer);
+  openAIForPlayer(index,event);
+}
+function closeAI(){document.getElementById('aiModal').classList.remove('show')}
+
 function buyFromListone(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p || alreadyBoughtPlayer(p.name)) return;
@@ -1571,7 +1780,7 @@ function selectArchivePlayer(index){
   const selected=document.getElementById('playerSelected');
   selected.innerHTML=`<div class="playerSelectedTop">
       <div><div style="font-weight:900">${esc(p.name)}</div><div class="playerMetaLine">${p.team} · ruolo Classic ${p.role}</div></div>
-      <span class="tag good">LISTONE</span>
+      <div><span class="tag good">LISTONE</span><button class="aiBtn" onclick="openAIForSelected(event)">🤖 AI</button></div>
     </div>
     <div class="playerValueGrid">
       <div class="playerValue"><span class="k">Ruolo</span><b>${p.role}</b></div>
