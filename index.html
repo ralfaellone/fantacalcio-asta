@@ -3585,6 +3585,67 @@ body.ai-page-open nav{
   display:none !important;
 }
 
+
+/* V45 - Giocatori/Rose: elimina spazio vuoto e usa tutta l'altezza disponibile */
+#listone.active,
+#players.active{
+  position:fixed !important;
+  left:14px !important;
+  right:14px !important;
+  top:calc(env(safe-area-inset-top) + 118px) !important;
+  bottom:calc(env(safe-area-inset-bottom) + 67px) !important;
+  height:auto !important;
+  max-height:none !important;
+  min-height:0 !important;
+  display:grid !important;
+  grid-template-rows:auto minmax(0,1fr) !important;
+  overflow:hidden !important;
+  padding-bottom:0 !important;
+  margin:0 !important;
+  background:var(--bg) !important;
+}
+
+/* the scrolling lists must consume the complete remaining height */
+#listonePlayers.playersProList,
+#managers.roseProList{
+  min-height:0 !important;
+  height:100% !important;
+  max-height:none !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior:contain !important;
+  padding:8px 0 18px !important;
+  margin:0 !important;
+}
+
+/* avoid old page padding reserving a second fake menu area */
+#listone.page,
+#players.page{
+  padding-bottom:0 !important;
+}
+
+/* top controls stay compact, list gets the rest */
+.playersProTop,
+.roseProTop{
+  flex:0 0 auto !important;
+  min-height:0 !important;
+}
+
+/* mobile tuning for iPhone-sized screens */
+@media(max-width:430px){
+  #listone.active,
+  #players.active{
+    top:calc(env(safe-area-inset-top) + 116px) !important;
+    bottom:calc(env(safe-area-inset-bottom) + 66px) !important;
+  }
+}
+
+
+body.players-pro-open,
+body.rose-pro-open{
+  overflow:hidden !important;
+  height:100dvh !important;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3594,7 +3655,7 @@ body.ai-page-open nav{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V44</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V45</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
