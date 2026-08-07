@@ -732,6 +732,69 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 #settingsModal .field input,
 #settingsModal .field select{padding:12px 11px}
 
+
+/* V12 - Obiettivi avanzati */
+.goalMetaBtn{
+  border:1px solid var(--line);
+  background:#101d2f;
+  color:var(--accent);
+  border-radius:11px;
+  padding:6px 8px;
+  font-size:13px;
+  font-weight:900;
+  margin-left:6px;
+}
+.goalChips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:5px;
+}
+.goalChip{
+  display:inline-block;
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--muted);
+  border-radius:9px;
+  padding:4px 7px;
+  font-size:10px;
+  font-weight:800;
+}
+.goalChip.high{color:#ffcf33}
+.goalChip.medium{color:#8db6ff}
+.goalChip.low{color:#9fb0c5}
+.goalModal textarea{
+  width:100%;
+  min-height:96px;
+  resize:vertical;
+  border-radius:15px;
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--text);
+  padding:13px;
+  outline:none;
+}
+.goalModal textarea:focus{border-color:var(--accent)}
+.goalDanger{
+  width:100%;
+  border:1px solid rgba(255,107,107,.45);
+  background:transparent;
+  color:var(--danger);
+  border-radius:15px;
+  padding:12px;
+  font-weight:900;
+  margin-top:9px;
+}
+.goalPreview{
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:11px 12px;
+  margin-bottom:12px;
+}
+.goalPreviewName{font-size:18px;font-weight:900}
+.goalPreviewMeta{font-size:11px;color:var(--muted);margin-top:4px}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -741,7 +804,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V11.5</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V12</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -890,6 +953,48 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <div class="hint" id="buyHint"></div>
 </div></div>
 
+
+<div id="goalModal" class="modal goalModal" onclick="if(event.target===this)closeGoalEditor()">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <h3 style="margin:0">🎯 Obiettivo giocatore</h3>
+      <button class="closeX" onclick="closeGoalEditor()">×</button>
+    </div>
+
+    <input id="goalPlayerKey" type="hidden">
+    <div id="goalPlayerPreview" class="goalPreview" style="margin-top:14px"></div>
+
+    <div class="row">
+      <div class="field">
+        <label>Prezzo obiettivo</label>
+        <input id="goalTarget" type="number" min="0" inputmode="numeric" placeholder="Es. 35">
+      </div>
+      <div class="field">
+        <label>Prezzo massimo</label>
+        <input id="goalMax" type="number" min="0" inputmode="numeric" placeholder="Es. 45">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Priorità</label>
+      <select id="goalPriority">
+        <option value="high">Alta</option>
+        <option value="medium" selected>Media</option>
+        <option value="low">Bassa</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Nota</label>
+      <textarea id="goalNote" placeholder="Es. Da prendere sotto 40 · alternativa a..."></textarea>
+    </div>
+
+    <button class="primary" onclick="saveGoalMeta()">SALVA OBIETTIVO</button>
+    <button class="goalDanger" onclick="removeGoalFromEditor()">RIMUOVI DAI MIEI OBIETTIVI</button>
+  </div>
+</div>
+
 <div id="editBuyModal" class="modal" onclick="if(event.target===this)closeEditBuy()"><div class="sheet"><div class="handle"></div><h3>Modifica acquisto</h3>
   <input id="editBuyId" type="hidden">
   <div class="field"><label>Giocatore</label><input id="editPname" autocomplete="off"></div>
@@ -936,11 +1041,12 @@ let state=load();
 let PLAYER_ARCHIVE=loadPlayerArchive();
 let selectedArchivePlayer=null;
 let listoneFilter='ALL';
-function defaultState(){return {favorites:[],managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
+function defaultState(){return {favorites:[],favoriteMeta:{},managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
 function load(){
   try{
     const s=JSON.parse(localStorage.getItem('astaFantaV1'))||defaultState();
     if(!Array.isArray(s.favorites))s.favorites=[];
+    if(!s.favoriteMeta || typeof s.favoriteMeta!=='object')s.favoriteMeta={};
     return s;
   }catch(e){return defaultState()}
 }
@@ -1143,12 +1249,23 @@ function buyFromHome(index){
 function renderHomeLive(){
   const favBox=document.getElementById('homeFavorites');
   if(favBox){
+    const pRank={high:3,medium:2,low:1};
     const favs=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name))
-      .sort((a,b)=>b.fvm-a.fvm).slice(0,5);
+      .sort((a,b)=>(pRank[goalMeta(b.name).priority]||2)-(pRank[goalMeta(a.name).priority]||2)||b.fvm-a.fvm).slice(0,5);
     favBox.innerHTML=favs.length?favs.map(p=>{
       const idx=PLAYER_ARCHIVE.indexOf(p);
+      const gm=goalMeta(p.name);
+      const goalBits=[
+        gm.priority?`Priorità ${priorityLabel(gm.priority)}`:'',
+        Number(gm.target)>0?`Target ${gm.target}`:'',
+        Number(gm.max)>0?`Max ${gm.max}`:''
+      ].filter(Boolean).join(' · ');
       return `<div class="quickPlayer">
-        <div style="min-width:0"><div class="quickName">${esc(p.name)}</div><div class="quickMeta">${p.role} · ${p.team} · FVM ${p.fvm}</div></div>
+        <div style="min-width:0" onclick="openGoalEditor(decodeURIComponent('${encodeURIComponent(p.name)}'),event)">
+          <div class="quickName">${esc(p.name)}</div>
+          <div class="quickMeta">${p.role} · ${p.team} · FVM ${p.fvm}${goalBits?' · '+goalBits:''}</div>
+          ${gm.note?`<div class="quickMeta" style="margin-top:4px">${esc(gm.note)}</div>`:''}
+        </div>
         <button class="quickBuy" onclick="buyFromHome(${idx})">ASTA</button>
       </div>`;
     }).join(''):'<div class="playerMetaLine">Nessun obiettivo disponibile.</div>';
@@ -1188,20 +1305,102 @@ function render(){
 
 
 
+
+function goalKey(name){return normalizePlayerText(name)}
+function goalMeta(name){
+  if(!state.favoriteMeta || typeof state.favoriteMeta!=='object')state.favoriteMeta={};
+  return state.favoriteMeta[goalKey(name)]||{};
+}
+function priorityLabel(v){
+  return {high:'ALTA',medium:'MEDIA',low:'BASSA'}[v]||'MEDIA';
+}
+function goalMetaHTML(name){
+  if(!isFavorite(name))return '';
+  const m=goalMeta(name);
+  const chips=[];
+  if(m.priority)chips.push(`<span class="goalChip ${m.priority}">Priorità ${priorityLabel(m.priority)}</span>`);
+  if(Number(m.target)>0)chips.push(`<span class="goalChip">Target ${m.target} cr</span>`);
+  if(Number(m.max)>0)chips.push(`<span class="goalChip">Max ${m.max} cr</span>`);
+  return chips.length?`<div class="goalChips">${chips.join('')}</div>`:'';
+}
+function openGoalEditor(name,event){
+  if(event)event.stopPropagation();
+  if(!Array.isArray(state.favorites))state.favorites=[];
+  if(!state.favoriteMeta || typeof state.favoriteMeta!=='object')state.favoriteMeta={};
+
+  const key=goalKey(name);
+  if(!state.favorites.includes(key)){
+    state.favorites.push(key);
+    persist();
+  }
+
+  const p=PLAYER_ARCHIVE.find(x=>goalKey(x.name)===key);
+  const m=goalMeta(name);
+
+  document.getElementById('goalPlayerKey').value=key;
+  document.getElementById('goalTarget').value=m.target||'';
+  document.getElementById('goalMax').value=m.max||'';
+  document.getElementById('goalPriority').value=m.priority||'medium';
+  document.getElementById('goalNote').value=m.note||'';
+  document.getElementById('goalPlayerPreview').innerHTML=p
+    ? `<div class="goalPreviewName">${esc(p.name)}</div><div class="goalPreviewMeta">${p.role} · ${p.team} · QI ${p.qi} · FVM ${p.fvm}</div>`
+    : `<div class="goalPreviewName">${esc(name)}</div>`;
+
+  document.getElementById('goalModal').classList.add('show');
+  renderListone();
+  renderHomeLive();
+}
+function closeGoalEditor(){document.getElementById('goalModal').classList.remove('show')}
+function saveGoalMeta(){
+  const key=document.getElementById('goalPlayerKey').value;
+  if(!key)return;
+  if(!state.favoriteMeta || typeof state.favoriteMeta!=='object')state.favoriteMeta={};
+  const target=Math.max(0,parseInt(document.getElementById('goalTarget').value,10)||0);
+  const max=Math.max(0,parseInt(document.getElementById('goalMax').value,10)||0);
+  const priority=document.getElementById('goalPriority').value||'medium';
+  const note=document.getElementById('goalNote').value.trim();
+
+  if(target && max && target>max){
+    alert('Il prezzo obiettivo non può essere maggiore del prezzo massimo.');
+    return;
+  }
+
+  state.favoriteMeta[key]={target,max,priority,note};
+  if(!state.favorites.includes(key))state.favorites.push(key);
+  persist();
+  closeGoalEditor();
+  renderListone();
+  renderHomeLive();
+}
+function removeGoalFromEditor(){
+  const key=document.getElementById('goalPlayerKey').value;
+  if(!key)return;
+  if(!confirm('Rimuovere questo giocatore dagli obiettivi?'))return;
+  state.favorites=state.favorites.filter(x=>x!==key);
+  if(state.favoriteMeta)delete state.favoriteMeta[key];
+  persist();
+  closeGoalEditor();
+  renderListone();
+  renderHomeLive();
+}
+
 function isFavorite(name){
   return Array.isArray(state.favorites) && state.favorites.includes(normalizePlayerText(name));
 }
 function toggleFavorite(name,event){
   if(event)event.stopPropagation();
   if(!Array.isArray(state.favorites))state.favorites=[];
+  if(!state.favoriteMeta || typeof state.favoriteMeta!=='object')state.favoriteMeta={};
   const key=normalizePlayerText(name);
   if(state.favorites.includes(key)){
     state.favorites=state.favorites.filter(x=>x!==key);
+    delete state.favoriteMeta[key];
   }else{
     state.favorites.push(key);
   }
   persist();
   renderListone();
+  renderHomeLive();
 }
 
 function setListoneFilter(filter,btn){
@@ -1243,8 +1442,9 @@ function renderListone(){
       <div class="playerCardInner">
         <button class="favBtn ${isFavorite(p.name)?'on':''}" onclick="toggleFavorite(decodeURIComponent('${encodeURIComponent(p.name)}'),event)" aria-label="Obiettivo">${isFavorite(p.name)?'★':'☆'}</button>
         <div class="playerMain">
-          <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}</div>
+          <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}${isFavorite(p.name)?`<button class="goalMetaBtn" onclick="openGoalEditor(decodeURIComponent('${encodeURIComponent(p.name)}'),event)">🎯</button>`:''}</div>
           <div class="playerInfo">${p.team} · QI ${p.qi}${p.qa!==undefined?' · QA '+p.qa:''}</div>
+          ${goalMetaHTML(p.name)}
         </div>
       </div>
       <div class="playerRight">
