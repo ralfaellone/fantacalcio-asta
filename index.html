@@ -297,7 +297,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 .playerCard{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;border-radius:17px;background:var(--card);border:1px solid var(--line);cursor:pointer}
 .playerCard.taken{opacity:.62}
 .playerCard:active{transform:scale(.99)}
-.playerMain{min-width:0;flex:1}
+.playerMain{min-width:0;flex:1;width:100%}
 .playerName{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .playerInfo{color:var(--muted);font-size:11px;margin-top:4px}
 .playerRight{text-align:right;flex:0 0 auto}
@@ -2187,6 +2187,29 @@ body.compare-page-open #compareModal{
   pointer-events:auto !important;
 }
 
+
+/* V27.1 - Confronta sempre visibile su tutti i giocatori */
+.playerName{
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  display:flex !important;
+  align-items:center;
+  gap:5px;
+  flex-wrap:wrap;
+}
+.playerName > .tag{
+  flex:0 0 auto;
+}
+.playerName .aiBtn,
+.playerName .goalMetaBtn,
+.playerName .comparePickBtn{
+  flex:0 0 auto;
+}
+.comparePickBtn{
+  margin-left:0 !important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2196,7 +2219,7 @@ body.compare-page-open #compareModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V27</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V27.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
