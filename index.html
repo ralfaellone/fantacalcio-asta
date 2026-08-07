@@ -510,6 +510,14 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   padding:3px 0;
 }
 
+
+/* V11 - Cronologia acquisti e modifica */
+.historyTools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.historyTools input,.historyTools select{width:100%;border-radius:14px;border:1px solid var(--line);background:#081321;color:var(--text);padding:12px 11px;outline:none}
+.historyActions{display:flex;align-items:center;gap:5px;margin-left:8px}
+.editBuy{border:0;background:transparent;color:var(--accent);font-size:18px;padding:5px}
+.historyCount{color:var(--muted);font-size:11px;margin:7px 2px 10px}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -519,7 +527,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V10</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V11</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -597,6 +605,21 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
     <div class="hint">Puoi cambiare i nomi dei 12 partecipanti e scegliere quale squadra è la tua.</div>
   </div>
   <div class="section"><button class="secondary" onclick="openSettings()">⚙️ Impostazioni partecipanti</button></div>
+  <div class="section">
+    <h2>📋 Cronologia acquisti</h2>
+    <div class="historyTools">
+      <input id="historySearch" placeholder="Cerca giocatore..." oninput="renderHistory()">
+      <select id="historyManager" onchange="renderHistory()"></select>
+      <select id="historyRole" onchange="renderHistory()">
+        <option value="">Tutti i ruoli</option><option>P</option><option>D</option><option>C</option><option>A</option>
+      </select>
+      <select id="historyOrder" onchange="renderHistory()">
+        <option value="new">Più recenti</option><option value="old">Meno recenti</option><option value="priceDesc">Prezzo ↓</option><option value="priceAsc">Prezzo ↑</option>
+      </select>
+    </div>
+    <div id="historyCount" class="historyCount"></div>
+    <div id="historyList" class="list"></div>
+  </div>
   <div class="section"><button class="secondary" onclick="exportData()">⬆️ Esporta backup</button></div>
   <div class="section"><button class="secondary" onclick="document.getElementById('importFile').click()">⬇️ Importa backup</button><input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(event)"></div>
   <div class="section"><button class="secondary danger" onclick="resetAll()">🗑️ Azzera tutta l'asta</button></div>
@@ -650,6 +673,15 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <div id="buyStatus" class="buyStatus">Inserisci giocatore e prezzo.</div>
   <button id="saveBuyBtn" class="primary" onclick="saveBuy()">SALVA ACQUISTO</button>
   <div class="hint" id="buyHint"></div>
+</div></div>
+
+<div id="editBuyModal" class="modal" onclick="if(event.target===this)closeEditBuy()"><div class="sheet"><div class="handle"></div><h3>Modifica acquisto</h3>
+  <input id="editBuyId" type="hidden">
+  <div class="field"><label>Giocatore</label><input id="editPname" autocomplete="off"></div>
+  <div class="row"><div class="field"><label>Ruolo</label><select id="editProle"><option>P</option><option>D</option><option>C</option><option>A</option></select></div><div class="field"><label>Prezzo</label><input id="editPprice" inputmode="numeric" type="number" min="1"></div></div>
+  <div class="field"><label>Acquistato da</label><select id="editPbuyer"></select></div>
+  <div id="editBuyHint" class="hint"></div>
+  <button class="primary" onclick="saveEditBuy()">SALVA MODIFICHE</button>
 </div></div>
 
 <div id="settingsModal" class="modal" onclick="if(event.target===this)closeSettings()"><div class="sheet"><div class="handle"></div><h3>Partecipanti</h3>
@@ -839,6 +871,7 @@ function resetPlayerArchive(){
   renderArchiveInfo();
   renderListone();
  renderHomeLive();
+ renderHistory();
 }
 
 function spent(i){return state.purchases.filter(x=>x.buyer===i).reduce((s,x)=>s+x.price,0)}
@@ -1233,6 +1266,69 @@ function del(id){if(confirm('Eliminare questo acquisto?')){state.purchases=state
 function openSettings(){const mine=document.getElementById('myManager');mine.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)}</option>`).join('');document.getElementById('managerInputs').innerHTML=state.managers.map((n,i)=>`<div class="field"><label>Partecipante ${i+1}</label><input id="m${i}" value="${esc(n)}"></div>`).join('');document.getElementById('settingsModal').classList.add('show')}
 function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
 function saveSettings(){state.managers=state.managers.map((_,i)=>document.getElementById('m'+i).value.trim()||`Squadra ${i+1}`);state.me=parseInt(document.getElementById('myManager').value,10);persist();closeSettings();render()}
+
+function populateHistoryManager(){
+  const sel=document.getElementById('historyManager');
+  if(!sel)return;
+  const current=sel.value;
+  sel.innerHTML='<option value="">Tutti i partecipanti</option>'+state.managers.map((n,i)=>`<option value="${i}">${esc(n)}</option>`).join('');
+  if([...sel.options].some(o=>o.value===current))sel.value=current;
+}
+function renderHistory(){
+  const box=document.getElementById('historyList');
+  if(!box)return;
+  populateHistoryManager();
+  const q=normalizePlayerText(document.getElementById('historySearch')?.value||'');
+  const manager=document.getElementById('historyManager')?.value??'';
+  const role=document.getElementById('historyRole')?.value||'';
+  const order=document.getElementById('historyOrder')?.value||'new';
+  let rows=[...state.purchases].filter(x=>{
+    if(q && !normalizePlayerText(x.name).includes(q))return false;
+    if(manager!=='' && x.buyer!==Number(manager))return false;
+    if(role && x.role!==role)return false;
+    return true;
+  });
+  if(order==='new')rows.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(order==='old')rows.sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if(order==='priceDesc')rows.sort((a,b)=>b.price-a.price);
+  if(order==='priceAsc')rows.sort((a,b)=>a.price-b.price);
+  const total=rows.reduce((s,x)=>s+x.price,0);
+  document.getElementById('historyCount').textContent=`${rows.length} acquisti visualizzati · ${total} crediti`;
+  box.innerHTML=rows.length?rows.map(x=>`<div class="item">
+    <div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div></div>
+    <div style="display:flex;align-items:center"><div class="price">${x.price}</div><div class="historyActions"><button class="editBuy" onclick="openEditBuy('${x.id}')">✎</button><button class="delete" onclick="del('${x.id}')">×</button></div></div>
+  </div>`).join(''):'<div class="empty">Nessun acquisto con questi filtri.</div>';
+}
+function openEditBuy(id){
+  const x=state.purchases.find(p=>p.id===id); if(!x)return;
+  document.getElementById('editBuyId').value=x.id;
+  document.getElementById('editPname').value=x.name;
+  document.getElementById('editProle').value=x.role;
+  document.getElementById('editPprice').value=x.price;
+  const sel=document.getElementById('editPbuyer');
+  sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===x.buyer?'selected':''}>${esc(n)}</option>`).join('');
+  document.getElementById('editBuyHint').textContent='';
+  document.getElementById('editBuyModal').classList.add('show');
+}
+function closeEditBuy(){document.getElementById('editBuyModal').classList.remove('show')}
+function saveEditBuy(){
+  const id=document.getElementById('editBuyId').value;
+  const x=state.purchases.find(p=>p.id===id); if(!x)return;
+  const name=document.getElementById('editPname').value.trim();
+  const role=document.getElementById('editProle').value;
+  const price=parseInt(document.getElementById('editPprice').value,10);
+  const buyer=parseInt(document.getElementById('editPbuyer').value,10);
+  const hint=document.getElementById('editBuyHint');
+  if(!name||!price||price<1){hint.textContent='Inserisci nome e prezzo validi.';hint.className='hint danger';return}
+  const otherSpent=state.purchases.filter(p=>p.buyer===buyer&&p.id!==id).reduce((s,p)=>s+p.price,0);
+  if(price>INITIAL-otherSpent){hint.textContent='Crediti insufficienti per questo partecipante.';hint.className='hint danger';return}
+  const otherRole=state.purchases.filter(p=>p.buyer===buyer&&p.role===role&&p.id!==id).length;
+  if(otherRole>=LIMITS[role]){hint.textContent=`${state.managers[buyer]} ha già completato il reparto ${roleName(role)}.`;hint.className='hint danger';return}
+  if(!confirm(`Salvare le modifiche?\\n\\n${name}\\n${state.managers[buyer]} · ${role} · ${price} crediti`))return;
+  Object.assign(x,{name,role,price,buyer});
+  persist(); closeEditBuy(); render(); renderHistory();
+}
+
 function resetAll(){if(confirm("Vuoi davvero cancellare tutti gli acquisti dell'asta?")){state.purchases=[];persist();render()}}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-asta-fantacalcio.json';a.click();URL.revokeObjectURL(a.href)}
 function importData(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!d.managers||!d.purchases)throw 0;state=d;persist();render();alert('Backup importato.')}catch(_){alert('Backup non valido.')}};rd.readAsText(f);e.target.value=''}
