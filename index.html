@@ -1917,7 +1917,7 @@ body.subpage-open #editBuyModal.show{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V24</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V24.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2272,7 +2272,8 @@ body.subpage-open #editBuyModal.show{
       <div class="field">
         <label>Budget iniziale lega</label>
         <input id="initialBudgetInput" type="number" min="1" inputmode="numeric" value="600">
-        <div class="hint" style="margin-top:6px">Si applica a tutti i 12 partecipanti. Gli acquisti già registrati non vengono cancellati: cambiano automaticamente crediti residui, Max sicura e calcoli AI.</div>
+        <button type="button" class="secondary" style="margin-top:8px" onclick="applyInitialBudget()">APPLICA BUDGET A TUTTI</button>
+        <div id="budgetSaveInfo" class="hint" style="margin-top:7px">Si applica a tutti i 12 partecipanti. Gli acquisti già registrati non vengono cancellati: cambiano automaticamente crediti residui, Max sicura e calcoli AI.</div>
       </div>
       <div class="field"><label>La mia squadra</label><select id="myManager"></select></div>
       <div id="managerInputs"></div>
@@ -2681,7 +2682,9 @@ function goToParticipants(){
 }
 
 function render(){
- const me=state.me; document.getElementById('myBudget').textContent=budget(me);document.getElementById('myCount').innerHTML=`${roster(me).length} <small>/ 25</small>`;document.getElementById('myNameLabel').textContent=state.managers[me];
+ const me=state.me;
+ const leaguePill=document.getElementById('leagueBudgetPill'); if(leaguePill)leaguePill.textContent=INITIAL;
+ document.getElementById('myBudget').textContent=budget(me);document.getElementById('myCount').innerHTML=`${roster(me).length} <small>/ 25</small>`;document.getElementById('myNameLabel').textContent=state.managers[me];
  ['P','D','C','A'].forEach(r=>document.getElementById('cnt'+r).textContent=`${roleCount(me,r)}/${LIMITS[r]}`);
  const recent=[...state.purchases].slice(-6).reverse();document.getElementById('recent').innerHTML=recent.length?recent.map(itemHTML).join(''):'<div class="empty">Nessun acquisto registrato.</div>';
  const mr=roster(me);document.getElementById('myRoster').innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
@@ -4385,6 +4388,11 @@ function openSettings(){
   settingsReturnScroll=window.scrollY||0;
   const budgetInput=document.getElementById('initialBudgetInput');
   if(budgetInput)budgetInput.value=INITIAL;
+  const budgetInfo=document.getElementById('budgetSaveInfo');
+  if(budgetInfo){
+    budgetInfo.textContent=`Budget attuale: ${INITIAL} crediti per tutti i 12 partecipanti.`;
+    budgetInfo.className='hint';
+  }
   const mine=document.getElementById('myManager');
   mine.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)}</option>`).join('');
   document.getElementById('managerInputs').innerHTML=state.managers.map((n,i)=>`<div class="field"><label>Partecipante ${i+1}</label><input id="m${i}" value="${esc(n)}"></div>`).join('');
@@ -4398,27 +4406,53 @@ function closeSettings(){
   document.body.style.overflow='';
   requestAnimationFrame(()=>window.scrollTo(0,settingsReturnScroll));
 }
-function saveSettings(){
-  const requested=Math.max(1,parseInt(document.getElementById('initialBudgetInput')?.value,10)||INITIAL);
-  const maxSpent=Math.max(0,...state.managers.map((_,i)=>spent(i)));
 
-  if(requested<maxSpent){
-    const ok=confirm(`Attenzione: almeno un partecipante ha già speso ${maxSpent} crediti. Impostando il budget iniziale a ${requested}, quel partecipante avrà un saldo negativo. Vuoi continuare comunque?`);
-    if(!ok)return;
+function applyInitialBudget(showAlert=false){
+  const input=document.getElementById('initialBudgetInput');
+  const info=document.getElementById('budgetSaveInfo');
+  const requested=parseInt(input?.value,10);
+
+  if(!Number.isFinite(requested) || requested<1){
+    if(info){info.textContent='Inserisci un budget valido maggiore di 0.';info.className='hint danger';}
+    return false;
   }
 
-  const oldBudget=INITIAL;
+  const maxSpent=Math.max(0,...state.managers.map((_,i)=>spent(i)));
+  if(requested<maxSpent){
+    const ok=confirm(`Attenzione: almeno un partecipante ha già speso ${maxSpent} crediti. Con budget ${requested}, il suo saldo diventerebbe negativo. Vuoi continuare?`);
+    if(!ok){
+      if(input)input.value=INITIAL;
+      return false;
+    }
+  }
+
+  const old=INITIAL;
   INITIAL=requested;
   state.initialBudget=requested;
+  persist();
+
+  const pill=document.getElementById('leagueBudgetPill');
+  if(pill)pill.textContent=INITIAL;
+
+  render();
+
+  if(info){
+    info.textContent=`✅ Budget iniziale salvato: ${INITIAL} crediti per tutti i 12 partecipanti.`;
+    info.className='hint good';
+  }
+  if(showAlert && old!==INITIAL){
+    alert(`Budget aggiornato da ${old} a ${INITIAL} crediti per tutti.`);
+  }
+  return true;
+}
+
+function saveSettings(){
+  if(!applyInitialBudget(false))return;
   state.managers=state.managers.map((_,i)=>document.getElementById('m'+i).value.trim()||`Squadra ${i+1}`);
   state.me=parseInt(document.getElementById('myManager').value,10);
   persist();
   closeSettings();
   render();
-
-  if(oldBudget!==requested){
-    setTimeout(()=>alert(`Budget iniziale aggiornato da ${oldBudget} a ${requested} crediti per tutti i partecipanti. Tutti i calcoli sono stati ricalcolati.`),80);
-  }
 }
 
 function populateHistoryManager(){
