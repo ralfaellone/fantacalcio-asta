@@ -2250,6 +2250,35 @@ body.compare-page-open #compareModal{
   border-color:rgba(57,217,138,.6);
 }
 
+
+/* V27.3 - Rimozione rapida direttamente dal confronto */
+.compareRemove{
+  border:1px solid rgba(255,107,107,.45);
+  background:transparent;
+  color:var(--danger);
+  border-radius:10px;
+  width:32px;
+  height:32px;
+  font-size:16px;
+  font-weight:950;
+  flex:0 0 auto;
+}
+.compareTopActions{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.compareClearBtn{
+  margin-left:auto;
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--muted);
+  border-radius:11px;
+  padding:8px 10px;
+  font-size:10px;
+  font-weight:900;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2259,7 +2288,7 @@ body.compare-page-open #compareModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V27.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V27.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2409,6 +2438,7 @@ body.compare-page-open #compareModal{
     <div class="compareHeader">
       <button class="compareBack" onclick="closeComparePage()">← Indietro</button>
       <div class="compareTitle">⚖️ Confronta giocatori</div>
+      <button class="compareClearBtn" onclick="clearComparePlayers()">AZZERA</button>
     </div>
     <div id="compareBody" class="compareBody"></div>
   </div>
@@ -3269,6 +3299,25 @@ function rosterFitScore(p,ai,buyerIndex=state.me){
   return Math.round(clamp(urgency*.56 + afford*.44,0,100));
 }
 
+
+function removeComparePlayer(index){
+  COMPARE_PLAYERS=COMPARE_PLAYERS.filter(i=>i!==index);
+  updateCompareButton();
+  if(COMPARE_PLAYERS.length<2){
+    closeComparePage();
+    renderListone();
+    return;
+  }
+  renderComparePage();
+  renderListone();
+}
+function clearComparePlayers(){
+  COMPARE_PLAYERS=[];
+  closeComparePage();
+  renderListone();
+  updateCompareButton();
+}
+
 function comparePlayerData(index){
   const p=PLAYER_ARCHIVE[index];
   const ai=aiPlayerAnalysis(index,state.me);
@@ -3349,7 +3398,10 @@ function renderComparePage(){
               <b>${esc(x.p.name)}</b>
               <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi}${x.p.qa!==undefined?' · QA '+x.p.qa:''}</div>
             </div>
-            <span class="tag ${x.index===best.index?'good':''}">${x.index===best.index?'MIGLIORE':'AI '+x.ai.score+'/99'}</span>
+            <div class="compareTopActions">
+              <span class="tag ${x.index===best.index?'good':''}">${x.index===best.index?'MIGLIORE':'AI '+x.ai.score+'/99'}</span>
+              <button class="compareRemove" title="Togli dal confronto" onclick="removeComparePlayer(${x.index})">✕</button>
+            </div>
           </div>
 
           <div class="compareMetrics">
