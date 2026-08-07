@@ -868,6 +868,97 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   border-radius:99px;
 }
 
+
+/* V14 - AI Consigliere Rosa */
+.advisorLaunch{
+  width:100%;
+  margin-top:10px;
+  border:1px solid rgba(244,196,48,.5);
+  background:linear-gradient(145deg,#1d1907,#101d2f);
+  color:var(--text);
+  border-radius:18px;
+  padding:14px;
+  font-weight:950;
+  font-size:16px;
+}
+.advisorRoleBar{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+  margin:12px 0;
+}
+.advisorRoleBtn{
+  border:1px solid var(--line);
+  background:#081321;
+  color:var(--muted);
+  border-radius:13px;
+  padding:10px 4px;
+  font-weight:900;
+}
+.advisorRoleBtn.active{
+  background:var(--accent);
+  color:#111;
+  border-color:var(--accent);
+}
+.advisorCard{
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:12px;
+  margin:9px 0;
+}
+.advisorRank{
+  font-size:11px;
+  color:var(--accent);
+  font-weight:950;
+}
+.advisorName{
+  font-size:18px;
+  font-weight:950;
+  margin-top:2px;
+}
+.advisorStats{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  margin-top:7px;
+}
+.advisorStat{
+  border:1px solid var(--line);
+  background:#081321;
+  border-radius:9px;
+  padding:4px 7px;
+  font-size:10px;
+  color:var(--muted);
+}
+.advisorWhy{
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.4;
+  margin-top:8px;
+}
+.advisorActions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+  margin-top:10px;
+}
+.advisorActions button{
+  border-radius:12px;
+  padding:9px 8px;
+  font-weight:900;
+}
+.statsState{
+  border:1px solid var(--line);
+  background:#0b1727;
+  border-radius:14px;
+  padding:10px 11px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.4;
+  margin:10px 0;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -877,7 +968,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V13</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V14</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -898,6 +989,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   </div>
 
   <button class="primary" style="margin-top:10px" onclick="openBuy()">＋ Registra acquisto</button>
+  <button class="advisorLaunch" onclick="openAdvisor()">🤖 CHI PRENDO? · Consigliere Rosa</button>
 
   <div class="liveGrid">
     <div class="liveBox">
@@ -970,6 +1062,11 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
     <div id="historyCount" class="historyCount"></div>
     <div id="historyList" class="list"></div>
   </div>
+  <div class="section">
+    <button class="secondary" onclick="document.getElementById('statsFile').click()">📊 Aggiorna statistiche giocatori</button>
+    <input id="statsFile" type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" onchange="importStatsFile(event)">
+    <div id="statsImportInfo" class="hint" style="margin-top:7px"></div>
+  </div>
   <div class="section"><button class="secondary" onclick="exportData()">⬆️ Esporta backup</button></div>
   <div class="section"><button class="secondary" onclick="document.getElementById('importFile').click()">⬇️ Importa backup</button><input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(event)"></div>
   <div class="section"><button class="secondary danger" onclick="resetAll()">🗑️ Azzera tutta l'asta</button></div>
@@ -1027,6 +1124,29 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 </div></div>
 
 
+
+
+<div id="advisorModal" class="modal" onclick="if(event.target===this)closeAdvisor()">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <h3 style="margin:0">🤖 Consigliere Rosa</h3>
+      <button class="closeX" onclick="closeAdvisor()">×</button>
+    </div>
+
+    <div id="advisorStatsState" class="statsState"></div>
+
+    <div class="advisorRoleBar">
+      <button class="advisorRoleBtn" data-arole="P" onclick="setAdvisorRole('P',this)">P</button>
+      <button class="advisorRoleBtn" data-arole="D" onclick="setAdvisorRole('D',this)">D</button>
+      <button class="advisorRoleBtn" data-arole="C" onclick="setAdvisorRole('C',this)">C</button>
+      <button class="advisorRoleBtn" data-arole="A" onclick="setAdvisorRole('A',this)">A</button>
+    </div>
+
+    <div id="advisorSummary" class="hint"></div>
+    <div id="advisorList"></div>
+  </div>
+</div>
 
 <div id="aiModal" class="modal" onclick="if(event.target===this)closeAI()">
   <div class="sheet">
@@ -1126,6 +1246,8 @@ let state=load();
 let PLAYER_ARCHIVE=loadPlayerArchive();
 let selectedArchivePlayer=null;
 let listoneFilter='ALL';
+let PLAYER_STATS=loadPlayerStats();
+let advisorRole='';
 function defaultState(){return {favorites:[],favoriteMeta:{},managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
 function load(){
   try{
@@ -1136,6 +1258,107 @@ function load(){
   }catch(e){return defaultState()}
 }
 function persist(){localStorage.setItem('astaFantaV1',JSON.stringify(state))}
+
+function loadPlayerStats(){
+  try{
+    const s=JSON.parse(localStorage.getItem('astaFantaStatsV1'));
+    if(s && typeof s==='object')return s;
+  }catch(e){}
+  return {};
+}
+function savePlayerStats(obj){
+  PLAYER_STATS=obj||{};
+  localStorage.setItem('astaFantaStatsV1',JSON.stringify(PLAYER_STATS));
+}
+function statsFor(name){
+  return PLAYER_STATS[normalizePlayerText(name)]||null;
+}
+function statsCount(){return Object.keys(PLAYER_STATS||{}).length}
+function renderStatsImportInfo(){
+  const el=document.getElementById('statsImportInfo');
+  if(!el)return;
+  const n=statsCount();
+  el.textContent=n?`Statistiche importate: ${n} giocatori.`:'Statistiche non ancora importate. Il Consigliere userà solo FVM, budget e situazione rosa.';
+}
+function parseNumberIT(v){
+  if(v===null||v===undefined||v==='')return 0;
+  const s=String(v).trim().replace(',','.');
+  const n=parseFloat(s);
+  return Number.isFinite(n)?n:0;
+}
+function parseRigori(v){
+  const s=String(v??'').trim();
+  const m=s.match(/(\d+)\s*\/\s*(\d+)/);
+  return m?{scored:Number(m[1]),taken:Number(m[2])}:{scored:0,taken:0};
+}
+function mapStatsRows(rows){
+  if(!rows.length)return {};
+  const headers=Object.keys(rows[0]);
+  const nameCol=findColumn(headers,['Calciatore','Nome','Giocatore']);
+  const pvCol=findColumn(headers,['PV','Partite a voto','Presenze']);
+  const mvCol=findColumn(headers,['MV','Media voto']);
+  const fmCol=findColumn(headers,['FM','Fantamedia','Media Fantavoto']);
+  const golCol=findColumn(headers,['Gol','Gf','Gol fatti']);
+  const assCol=findColumn(headers,['Ass','Assist']);
+  const ammCol=findColumn(headers,['Amm','Ammonizioni']);
+  const espCol=findColumn(headers,['Esp','Espulsioni']);
+  const rigCol=findColumn(headers,['Rig','Rigori']);
+  if(!nameCol)return {};
+
+  const out={};
+  for(const row of rows){
+    const name=String(row[nameCol]??'').trim();
+    if(!name)continue;
+    const rig=parseRigori(rigCol?row[rigCol]:'');
+    out[normalizePlayerText(name)]={
+      pv:parseNumberIT(pvCol?row[pvCol]:0),
+      mv:parseNumberIT(mvCol?row[mvCol]:0),
+      fm:parseNumberIT(fmCol?row[fmCol]:0),
+      gol:parseNumberIT(golCol?row[golCol]:0),
+      ass:parseNumberIT(assCol?row[assCol]:0),
+      amm:parseNumberIT(ammCol?row[ammCol]:0),
+      esp:parseNumberIT(espCol?row[espCol]:0),
+      rigScored:rig.scored,
+      rigTaken:rig.taken
+    };
+  }
+  return out;
+}
+function importStatsFile(event){
+  const file=event.target.files&&event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      if(typeof XLSX==='undefined')throw new Error('Lettore Excel non disponibile.');
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+      let best={};
+      for(const sheetName of wb.SheetNames){
+        const ws=wb.Sheets[sheetName];
+        const matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        for(let start=0;start<Math.min(8,matrix.length);start++){
+          const rows=XLSX.utils.sheet_to_json(ws,{defval:'',range:start});
+          try{
+            const mapped=mapStatsRows(rows);
+            if(Object.keys(mapped).length>Object.keys(best).length)best=mapped;
+          }catch(err){}
+        }
+      }
+      const n=Object.keys(best).length;
+      if(n<50)throw new Error(`Ho riconosciuto solo ${n} giocatori. Usa il file statistiche ufficiale Fantacalcio.it.`);
+      savePlayerStats(best);
+      renderStatsImportInfo();
+      alert(`Statistiche aggiornate: ${n} giocatori.`);
+    }catch(err){
+      alert('Importazione statistiche non riuscita: '+(err.message||err));
+    }finally{
+      event.target.value='';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 
 function normalizeHeader(v){
   return String(v??'')
@@ -1288,6 +1511,7 @@ function resetPlayerArchive(){
   renderListone();
  renderHomeLive();
  renderHistory();
+ renderStatsImportInfo();
 }
 
 function spent(i){return state.purchases.filter(x=>x.buyer===i).reduce((s,x)=>s+x.price,0)}
@@ -1547,6 +1771,134 @@ function median(arr){
   const m=Math.floor(a.length/2);
   return a.length%2?a[m]:(a[m-1]+a[m])/2;
 }
+
+function roleNeedWeight(role){
+  const need=Math.max(0,LIMITS[role]-roleCount(state.me,role));
+  return LIMITS[role]?need/LIMITS[role]:0;
+}
+function statScoreForPlayer(p){
+  const s=statsFor(p.name);
+  if(!s || !s.pv)return {score:0,has:false,parts:[]};
+
+  const fm=clamp((s.fm-5.5)/3.5,0,1);
+  const mv=clamp((s.mv-5.5)/1.5,0,1);
+  const bonusPer90=(s.gol*3+s.ass)/(Math.max(1,s.pv));
+  const bonus=clamp(bonusPer90/1.2,0,1);
+  const availability=clamp(s.pv/38,0,1);
+  const malusRate=(s.amm*0.5+s.esp)/(Math.max(1,s.pv));
+  const discipline=clamp(1-malusRate/0.35,0,1);
+  const pens=clamp(s.rigTaken/6,0,1);
+
+  const score=(fm*.30+mv*.10+bonus*.28+availability*.18+discipline*.08+pens*.06)*100;
+  return {
+    score,
+    has:true,
+    parts:[
+      `FM ${s.fm.toFixed(2)}`,
+      `MV ${s.mv.toFixed(2)}`,
+      `${s.gol} gol`,
+      `${s.ass} assist`,
+      `${s.pv} PV`,
+      `${s.amm} amm`,
+      `${s.esp} esp`,
+      s.rigTaken?`${s.rigScored}/${s.rigTaken} rigori`:''
+    ].filter(Boolean)
+  };
+}
+function advisorScore(p,index){
+  const st=statScoreForPlayer(p);
+  const fvmScore=clamp((Number(p.fvm)||0)/220,0,1)*100;
+  const need=roleNeedWeight(p.role)*100;
+  const price=aiPlayerAnalysis(index,state.me);
+  const valueScore=price&&price.maxRec>0?clamp((Number(p.fvm)||0)/(price.maxRec*2.2),0,1)*100:50;
+  const goalBoost=isFavorite(p.name)?8:0;
+
+  let score;
+  if(st.has){
+    score=st.score*.52+fvmScore*.20+need*.12+valueScore*.16+goalBoost;
+  }else{
+    score=fvmScore*.50+need*.20+valueScore*.30+goalBoost;
+  }
+  return {score:clamp(score,1,99),stats:st,price};
+}
+function defaultAdvisorRole(){
+  const order=['P','D','C','A']
+    .map(r=>({r,need:Math.max(0,LIMITS[r]-roleCount(state.me,r))/LIMITS[r]}))
+    .sort((a,b)=>b.need-a.need);
+  return order[0]?.r||'A';
+}
+function openAdvisor(){
+  advisorRole=defaultAdvisorRole();
+  document.getElementById('advisorModal').classList.add('show');
+  document.querySelectorAll('.advisorRoleBtn').forEach(b=>b.classList.toggle('active',b.dataset.arole===advisorRole));
+  renderAdvisor();
+}
+function closeAdvisor(){document.getElementById('advisorModal').classList.remove('show')}
+function setAdvisorRole(role,btn){
+  advisorRole=role;
+  document.querySelectorAll('.advisorRoleBtn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderAdvisor();
+}
+function renderAdvisor(){
+  const stateBox=document.getElementById('advisorStatsState');
+  const n=statsCount();
+  stateBox.innerHTML=n
+    ? `<strong style="color:var(--ok)">Modalità statistica attiva</strong><br>${n} giocatori con dati storici importati. Il ranking combina statistiche, bonus/malus, FVM, prezzo AI e bisogni della tua rosa.`
+    : `<strong style="color:var(--accent)">Modalità base</strong><br>Non hai ancora importato le statistiche. I consigli usano FVM, prezzo AI, crediti e necessità della rosa senza inventare dati statistici.`;
+
+  const free=PLAYER_ARCHIVE.filter(p=>p.role===advisorRole&&!purchaseForArchivePlayer(p.name));
+  const ranked=free.map(p=>{
+    const index=PLAYER_ARCHIVE.indexOf(p);
+    return {p,index,...advisorScore(p,index)};
+  }).sort((a,b)=>b.score-a.score).slice(0,5);
+
+  document.getElementById('advisorSummary').textContent=
+    `${roleName(advisorRole)}: te ne mancano ${Math.max(0,LIMITS[advisorRole]-roleCount(state.me,advisorRole))}. Mostro i 5 profili più adatti ancora liberi.`;
+
+  document.getElementById('advisorList').innerHTML=ranked.length?ranked.map((x,i)=>{
+    const s=statsFor(x.p.name);
+    const price=x.price;
+    const statChips=s?[
+      `PV ${s.pv}`,`MV ${s.mv.toFixed(2)}`,`FM ${s.fm.toFixed(2)}`,
+      `⚽ ${s.gol}`,`🅰 ${s.ass}`,`🟨 ${s.amm}`,`🟥 ${s.esp}`,
+      s.rigTaken?`Rig ${s.rigScored}/${s.rigTaken}`:''
+    ].filter(Boolean):[];
+
+    let why=[];
+    if(s){
+      if(s.fm>=7)why.push('fantamedia molto alta');
+      else if(s.fm>=6.5)why.push('buona fantamedia');
+      if(s.gol>=8)why.push('forte produzione di gol');
+      if(s.ass>=6)why.push('molti assist');
+      if(s.pv>=30)why.push('alta continuità');
+      if(s.rigTaken>=2)why.push('coinvolto sui rigori');
+      if(s.amm>=7||s.esp>=1)why.push('attenzione ai malus disciplinari');
+    }else{
+      why.push('valutazione basata su FVM e situazione asta');
+    }
+    if(roleCount(state.me,x.p.role)<LIMITS[x.p.role])why.push('copre un posto ancora necessario');
+    if(isFavorite(x.p.name))why.push('è tra i tuoi obiettivi');
+
+    return `<div class="advisorCard">
+      <div class="advisorRank">#${i+1} CONSIGLIATO · SCORE ${Math.round(x.score)}/99</div>
+      <div class="advisorName">${esc(x.p.name)}</div>
+      <div class="playerMetaLine">${x.p.role} · ${x.p.team} · FVM ${x.p.fvm}</div>
+      <div class="advisorStats">
+        ${statChips.map(v=>`<span class="advisorStat">${v}</span>`).join('')}
+        <span class="advisorStat">MIN ${price.low}</span>
+        <span class="advisorStat">MAX ${price.high}</span>
+        <span class="advisorStat">NON OLTRE ${price.maxRec}</span>
+      </div>
+      <div class="advisorWhy">${why.map(w=>'• '+esc(w)).join('<br>')}</div>
+      <div class="advisorActions">
+        <button class="quickBuy" onclick="closeAdvisor();buyFromListone(${x.index})">VAI ALL'ASTA</button>
+        <button class="aiBtn" onclick="openAIForPlayer(${x.index},event)">ANALISI AI</button>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">Nessun giocatore disponibile in questo ruolo.</div>';
+}
+
 function aiPlayerAnalysis(index,buyerIndex=state.me){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return null;
@@ -1597,15 +1949,21 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   low=Math.min(low,maxRec);
   ideal=Math.min(ideal,maxRec);
 
+  const histScore=statScoreForPlayer(p);
   const score=Math.round(clamp(
-    50 + scarcityPct*30 +
-    (gm.priority==='high'?12:gm.priority==='low'?-8:0) +
-    (Number(p.fvm)>=100?8:0) -
-    (totalSlots<=5?5:0),
+    50 + scarcityPct*22 +
+    (gm.priority==='high'?10:gm.priority==='low'?-8:0) +
+    (Number(p.fvm)>=100?7:0) -
+    (totalSlots<=5?5:0) +
+    (histScore.has?(histScore.score-50)*0.28:0),
     1,99
   ));
 
   const reasons=[];
+  const hist=statsFor(p.name);
+  if(hist){
+    reasons.push(`Storico: ${hist.pv} partite a voto, MV ${hist.mv.toFixed(2)}, FM ${hist.fm.toFixed(2)}, ${hist.gol} gol, ${hist.ass} assist, ${hist.amm} ammonizioni, ${hist.esp} espulsioni${hist.rigTaken?`, rigori ${hist.rigScored}/${hist.rigTaken}`:''}.`);
+  }
   reasons.push(`FVM ${p.fvm} rapportato a un budget iniziale di ${INITIAL} crediti.`);
   reasons.push(`È circa nel ${Math.round(scarcityPct*100)}° percentile tra i ${sameRoleFree.length} ${roleName(p.role).toLowerCase()} ancora disponibili.`);
   reasons.push(`Hai ${available} crediti, ${totalSlots} posti rosa e ${roleSlots} posti ${p.role} da coprire.`);
