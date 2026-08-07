@@ -2348,6 +2348,82 @@ body.alternatives-page-open nav{display:none!important}
 body.alternatives-page-open .page{visibility:hidden!important;pointer-events:none!important}
 body.alternatives-page-open #alternativesModal{visibility:visible!important;pointer-events:auto!important}
 
+
+/* V29 - Chi compro adesso */
+.buyNowBtn{
+  width:100%;
+  margin-top:10px;
+  border:0;
+  background:var(--accent);
+  color:#111;
+  border-radius:15px;
+  padding:12px 14px;
+  font-weight:950;
+  font-size:13px;
+}
+#buyNowModal{
+  position:fixed; inset:0; display:none; background:var(--bg);
+  z-index:7900; overflow:hidden;
+}
+#buyNowModal.show{display:block}
+.buyNowShell{
+  position:absolute; inset:0; height:100dvh;
+  display:grid; grid-template-rows:auto minmax(0,1fr); background:var(--bg);
+}
+.buyNowHeader{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);border-bottom:1px solid var(--line);
+}
+.buyNowBack{
+  border:1px solid var(--line);background:#0b1727;color:var(--text);
+  border-radius:13px;padding:9px 11px;font-weight:900;
+}
+.buyNowTitle{font-size:18px;font-weight:950}
+.buyNowBody{
+  min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:12px 14px calc(env(safe-area-inset-bottom) + 28px);
+}
+.buyNowContext{
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);border-radius:16px;padding:12px;
+}
+.buyNowRoles{
+  display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;
+}
+.buyNowRole{
+  border:1px solid var(--line);background:#081321;color:var(--text);
+  border-radius:10px;padding:7px 10px;font-weight:900;font-size:10px;
+}
+.buyNowRole.on{background:var(--accent);color:#111;border-color:var(--accent)}
+.buyNowCard{
+  background:#0b1727;border:1px solid var(--line);
+  border-radius:16px;padding:11px;margin:8px 0;
+}
+.buyNowTop{display:flex;align-items:flex-start;gap:9px}
+.buyNowRank{
+  width:31px;height:31px;flex:0 0 31px;border-radius:10px;
+  background:var(--accent);color:#111;display:flex;align-items:center;
+  justify-content:center;font-weight:950;
+}
+.buyNowName{font-size:17px;font-weight:950}
+.buyNowMetrics{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px;
+}
+.buyNowMetric{
+  background:#081321;border:1px solid var(--line);border-radius:10px;
+  text-align:center;padding:6px 3px;
+}
+.buyNowMetric span{display:block;font-size:7px;color:var(--muted)}
+.buyNowMetric b{display:block;font-size:12px;margin-top:2px}
+.buyNowWhy{font-size:10px;color:var(--muted);line-height:1.45;margin-top:8px}
+.buyNowActions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:9px}
+.buyNowActions button{border-radius:11px;padding:9px 5px;font-size:9px;font-weight:950}
+body.buy-now-page-open{overflow:hidden!important;height:100dvh!important}
+body.buy-now-page-open nav{display:none!important}
+body.buy-now-page-open .page{visibility:hidden!important;pointer-events:none!important}
+body.buy-now-page-open #buyNowModal{visibility:visible!important;pointer-events:auto!important}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -2357,7 +2433,7 @@ body.alternatives-page-open #alternativesModal{visibility:visible!important;poin
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V28</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V29</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2448,6 +2524,7 @@ body.alternatives-page-open #alternativesModal{visibility:visible!important;poin
     <div class="compareToolbar">
       <button id="compareOpenBtn" class="compareOpenBtn" onclick="openComparePage()" disabled>⚖️ CONFRONTA · 0/3</button>
     </div>
+    <button class="buyNowBtn" onclick="openBuyNowPage()">🤖 CHI COMPRO ADESSO?</button>
   </div>
   <div id="listonePlayers" class="list"></div>
 </section>
@@ -2502,6 +2579,17 @@ body.alternatives-page-open #alternativesModal{visibility:visible!important;poin
 </nav>
 
 
+
+
+<div id="buyNowModal">
+  <div class="buyNowShell">
+    <div class="buyNowHeader">
+      <button class="buyNowBack" onclick="closeBuyNowPage()">← Indietro</button>
+      <div class="buyNowTitle">🤖 Chi compro adesso?</div>
+    </div>
+    <div id="buyNowBody" class="buyNowBody"></div>
+  </div>
+</div>
 
 <div id="alternativesModal">
   <div class="altPageShell">
@@ -3327,6 +3415,115 @@ function renderListone(){
 }
 
 
+
+
+let BUY_NOW_ROLE='ALL';
+
+function buyNowCandidate(index){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p || purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))return null;
+  if(roleCount(state.me,p.role)>=LIMITS[p.role])return null;
+
+  const ai=aiPlayerAnalysis(index,state.me);
+  if(!ai)return null;
+  const st=statsFor(p.name);
+  const fit=rosterFitScore(p,ai,state.me);
+  const afford=affordabilityScore(ai,state.me);
+  const urgency=roleUrgencyScore(p.role,state.me);
+  const statBonus=st ? clamp((Number(st.fm||0)-5.5)*13 + Math.min(18,Number(st.pv||0)*.65),0,28) : 8;
+  const score=Math.round(clamp(ai.score*.39 + fit*.27 + afford*.18 + urgency*.10 + statBonus*.06,0,99));
+  return {index,p,ai,st,fit,afford,urgency,score};
+}
+function buyNowCandidates(){
+  return PLAYER_ARCHIVE
+    .map((p,index)=>buyNowCandidate(index))
+    .filter(Boolean)
+    .filter(x=>BUY_NOW_ROLE==='ALL'||x.p.role===BUY_NOW_ROLE)
+    .sort((a,b)=>b.score-a.score || b.fit-a.fit || b.ai.score-a.ai.score)
+    .slice(0,10);
+}
+function buyNowReason(x){
+  const bits=[];
+  if(x.urgency>=75)bits.push('reparto prioritario');
+  else if(x.urgency>=50)bits.push('reparto da completare');
+  if(x.fit>=75)bits.push('ottimo fit con la rosa');
+  if(x.afford>=80)bits.push('prezzo molto sostenibile');
+  else if(x.afford>=55)bits.push('prezzo compatibile col budget');
+  if(x.ai.score>=82)bits.push('profilo AI di fascia alta');
+  if(x.st && Number(x.st.fm)>=6.5)bits.push('buon rendimento statistico');
+  return (bits.length?bits:['buon equilibrio tra qualità, necessità e costo']).slice(0,3).join(' · ');
+}
+function setBuyNowRole(role){
+  BUY_NOW_ROLE=role;
+  renderBuyNowPage();
+}
+function renderBuyNowPage(){
+  const box=document.getElementById('buyNowBody');
+  if(!box)return;
+  const rows=buyNowCandidates();
+  const cash=budget(state.me);
+  const slots=remainingRosterSlots(state.me);
+
+  box.innerHTML=`
+    <div class="buyNowContext">
+      <div style="font-size:17px;font-weight:950">La tua situazione adesso</div>
+      <div class="playerMetaLine">${cash} crediti · ${slots} posti mancanti · P ${roleCount(state.me,'P')}/${LIMITS.P} · D ${roleCount(state.me,'D')}/${LIMITS.D} · C ${roleCount(state.me,'C')}/${LIMITS.C} · A ${roleCount(state.me,'A')}/${LIMITS.A}</div>
+      <div class="buyNowRoles">
+        ${['ALL','P','D','C','A'].map(r=>`<button class="buyNowRole ${BUY_NOW_ROLE===r?'on':''}" onclick="setBuyNowRole('${r}')">${r==='ALL'?'TUTTI':r}</button>`).join('')}
+      </div>
+    </div>
+
+    <div style="margin:12px 2px 6px;font-size:11px;color:var(--muted)">TOP 10 consigliati in questo momento</div>
+
+    ${rows.length?rows.map((x,n)=>`
+      <div class="buyNowCard">
+        <div class="buyNowTop">
+          <div class="buyNowRank">${n+1}</div>
+          <div style="flex:1">
+            <div class="buyNowName">${esc(x.p.name)}</div>
+            <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+          </div>
+          <span class="tag">${x.score}/99</span>
+        </div>
+        <div class="buyNowMetrics">
+          <div class="buyNowMetric"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
+          <div class="buyNowMetric"><span>RANGE</span><b>${x.ai.low}-${x.ai.high}</b></div>
+          <div class="buyNowMetric"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+          <div class="buyNowMetric"><span>FM</span><b>${x.st?Number(x.st.fm).toFixed(2):'—'}</b></div>
+          <div class="buyNowMetric"><span>FIT ROSA</span><b>${x.fit}</b></div>
+          <div class="buyNowMetric"><span>BUDGET</span><b>${x.afford}</b></div>
+          <div class="buyNowMetric"><span>PRIORITÀ</span><b>${x.urgency}</b></div>
+          <div class="buyNowMetric"><span>AI</span><b>${x.ai.score}</b></div>
+        </div>
+        <div class="buyNowWhy">${buyNowReason(x)}</div>
+        <div class="buyNowActions">
+          <button class="altCompare" onclick="addBuyNowToCompare(${x.index})">⚖️ CONFRONTA</button>
+          <button class="altAI" onclick="closeBuyNowPage();openAIForPlayer(${x.index})">🤖 AI</button>
+          <button class="altAuction" onclick="closeBuyNowPage();buyFromListone(${x.index})">ASTA</button>
+        </div>
+      </div>`).join(''):'<div class="empty" style="margin-top:12px">Nessun giocatore libero compatibile con questo filtro.</div>'}
+  `;
+}
+function openBuyNowPage(){
+  BUY_NOW_ROLE='ALL';
+  renderBuyNowPage();
+  document.body.classList.add('buy-now-page-open');
+  document.getElementById('buyNowModal').classList.add('show');
+  const b=document.getElementById('buyNowBody'); if(b)b.scrollTop=0;
+}
+function closeBuyNowPage(){
+  document.getElementById('buyNowModal').classList.remove('show');
+  document.body.classList.remove('buy-now-page-open');
+  document.body.style.overflow='';
+}
+function addBuyNowToCompare(index){
+  if(!COMPARE_PLAYERS.includes(index)){
+    if(COMPARE_PLAYERS.length>=3)COMPARE_PLAYERS.shift();
+    COMPARE_PLAYERS.push(index);
+  }
+  updateCompareButton();
+  alert(`${PLAYER_ARCHIVE[index].name} aggiunto al confronto (${COMPARE_PLAYERS.length}/3).`);
+}
 
 function alternativeScore(index,sourceIndex){
   const p=PLAYER_ARCHIVE[index];
