@@ -584,6 +584,66 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   #participantModal .detailRole span{font-size:8px}
 }
 
+
+/* V11.3 - Impostazioni partecipanti ottimizzate per iPhone */
+#settingsModal{
+  align-items:stretch;
+  background:var(--bg);
+  z-index:100;
+}
+#settingsModal.show{display:flex}
+#settingsModal .settingsSheet{
+  width:100%;
+  height:100dvh;
+  max-height:none;
+  border-radius:0;
+  border:0;
+  padding:0 14px calc(env(safe-area-inset-bottom) + 86px);
+  background:var(--bg);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.settingsSticky{
+  position:sticky;
+  top:0;
+  z-index:110;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:58px;
+  padding:calc(env(safe-area-inset-top) + 7px) 0 9px;
+  background:rgba(7,16,29,.96);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+.settingsBack{
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:13px;
+  padding:9px 11px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.settingsStickyTitle{
+  min-width:0;
+  font-size:17px;
+  font-weight:900;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#settingsModal .field{margin:9px 0}
+#settingsModal .field input,
+#settingsModal .field select{padding:12px 11px}
+#settingsModal .primary{
+  position:sticky;
+  bottom:calc(env(safe-area-inset-bottom) + 8px);
+  z-index:105;
+  margin-top:14px;
+  box-shadow:0 -10px 24px rgba(7,16,29,.75);
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -593,7 +653,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V11.2</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V11.3</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -751,11 +811,17 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <button class="primary" onclick="saveEditBuy()">SALVA MODIFICHE</button>
 </div></div>
 
-<div id="settingsModal" class="modal" onclick="if(event.target===this)closeSettings()"><div class="sheet"><div class="handle"></div><h3>Partecipanti</h3>
-  <div class="field"><label>La mia squadra</label><select id="myManager"></select></div>
-  <div id="managerInputs"></div>
-  <button class="primary" onclick="saveSettings()">SALVA</button>
-</div></div>
+<div id="settingsModal" class="modal">
+  <div class="settingsSheet">
+    <div class="settingsSticky">
+      <button class="settingsBack" onclick="closeSettings()">← Indietro</button>
+      <div class="settingsStickyTitle">Impostazioni partecipanti</div>
+    </div>
+    <div class="field"><label>La mia squadra</label><select id="myManager"></select></div>
+    <div id="managerInputs"></div>
+    <button class="primary" onclick="saveSettings()">SALVA</button>
+  </div>
+</div>
 
 
 <div id="participantModal" class="modal">
@@ -1336,8 +1402,22 @@ function saveBuy(){
   render();
 }
 function del(id){if(confirm('Eliminare questo acquisto?')){state.purchases=state.purchases.filter(x=>x.id!==id);persist();render()}}
-function openSettings(){const mine=document.getElementById('myManager');mine.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)}</option>`).join('');document.getElementById('managerInputs').innerHTML=state.managers.map((n,i)=>`<div class="field"><label>Partecipante ${i+1}</label><input id="m${i}" value="${esc(n)}"></div>`).join('');document.getElementById('settingsModal').classList.add('show')}
-function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
+let settingsReturnScroll=0;
+function openSettings(){
+  settingsReturnScroll=window.scrollY||0;
+  const mine=document.getElementById('myManager');
+  mine.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)}</option>`).join('');
+  document.getElementById('managerInputs').innerHTML=state.managers.map((n,i)=>`<div class="field"><label>Partecipante ${i+1}</label><input id="m${i}" value="${esc(n)}"></div>`).join('');
+  document.getElementById('settingsModal').classList.add('show');
+  document.body.style.overflow='hidden';
+  const ss=document.querySelector('#settingsModal .settingsSheet');
+  if(ss)ss.scrollTop=0;
+}
+function closeSettings(){
+  document.getElementById('settingsModal').classList.remove('show');
+  document.body.style.overflow='';
+  requestAnimationFrame(()=>window.scrollTo(0,settingsReturnScroll));
+}
 function saveSettings(){state.managers=state.managers.map((_,i)=>document.getElementById('m'+i).value.trim()||`Squadra ${i+1}`);state.me=parseInt(document.getElementById('myManager').value,10);persist();closeSettings();render()}
 
 function populateHistoryManager(){
