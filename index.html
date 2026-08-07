@@ -1908,6 +1908,125 @@ body.subpage-open #editBuyModal.show{
   pointer-events:auto !important;
 }
 
+
+/* V25 - Svincoli mercato */
+.releaseBtn{
+  border:1px solid rgba(255,107,107,.45);
+  background:transparent;
+  color:var(--danger);
+  border-radius:10px;
+  padding:7px 9px;
+  font-size:10px;
+  font-weight:950;
+  margin-left:7px;
+}
+#releaseModal{
+  position:fixed;
+  inset:0;
+  display:none;
+  background:var(--bg);
+  z-index:7200;
+  overflow:hidden;
+}
+#releaseModal.show{display:block}
+.releaseShell{
+  position:absolute;
+  inset:0;
+  height:100dvh;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  background:var(--bg);
+}
+.releaseHeader{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,16,29,.98);
+  border-bottom:1px solid var(--line);
+}
+.releaseBack{
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:13px;
+  padding:9px 11px;
+  font-weight:900;
+}
+.releaseTitle{
+  font-size:18px;
+  font-weight:950;
+}
+.releaseBody{
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding:12px 14px 20px;
+}
+.releaseFooter{
+  padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);
+  background:rgba(7,16,29,.98);
+  border-top:1px solid var(--line);
+}
+.releaseHero{
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:13px;
+  margin-bottom:12px;
+}
+.releaseHeroName{font-size:22px;font-weight:950}
+.releaseHeroMeta{font-size:11px;color:var(--muted);margin-top:4px}
+.releaseCheck{
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:11px;
+  margin-top:10px;
+}
+.releaseCheck input{
+  width:20px;
+  height:20px;
+  margin-top:1px;
+  accent-color:var(--accent);
+}
+.releaseCheck strong{display:block;font-size:12px}
+.releaseCheck span{display:block;color:var(--muted);font-size:10px;line-height:1.4;margin-top:3px}
+.releaseConfirm{
+  width:100%;
+  border:0;
+  background:var(--danger);
+  color:#fff;
+  border-radius:15px;
+  padding:13px;
+  font-weight:950;
+}
+.releaseHistory{
+  margin-top:14px;
+  border-top:1px solid var(--line);
+  padding-top:10px;
+}
+.releaseHistoryRow{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:9px 10px;
+  margin:6px 0;
+}
+.outTag{
+  display:inline-block;
+  color:var(--danger);
+  border:1px solid rgba(255,107,107,.4);
+  border-radius:8px;
+  padding:3px 6px;
+  font-size:9px;
+  font-weight:900;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1917,7 +2036,7 @@ body.subpage-open #editBuyModal.show{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V24.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V25</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -2261,6 +2380,51 @@ body.subpage-open #editBuyModal.show{
   </div>
 </div>
 
+
+<div id="releaseModal">
+  <div class="releaseShell">
+    <div class="releaseHeader">
+      <button class="releaseBack" onclick="closeReleasePage()">← Indietro</button>
+      <div class="releaseTitle">Svincola giocatore</div>
+    </div>
+    <div class="releaseBody">
+      <input id="releasePurchaseId" type="hidden">
+      <input id="releaseManagerId" type="hidden">
+      <div id="releaseHero" class="releaseHero"></div>
+
+      <div class="field">
+        <label>Motivo dello svincolo</label>
+        <select id="releaseReason" onchange="releaseReasonChanged()">
+          <option value="Scelta tecnica">Scelta tecnica</option>
+          <option value="Infortunio">Infortunio</option>
+          <option value="Scarso utilizzo / non gioca">Scarso utilizzo / non gioca</option>
+          <option value="Trasferito fuori Serie A">Trasferito fuori Serie A</option>
+          <option value="Altro">Altro</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Crediti restituiti</label>
+        <input id="releaseRefund" type="number" min="0" inputmode="numeric" oninput="updateReleaseInfo()">
+        <div class="hint" style="margin-top:6px">Puoi decidere quanti crediti restituire in base al regolamento della lega.</div>
+      </div>
+
+      <label class="releaseCheck">
+        <input id="releaseBackToMarket" type="checkbox" checked onchange="updateReleaseInfo()">
+        <div>
+          <strong>Rendi il giocatore nuovamente disponibile</strong>
+          <span>Se attivo, torna libero nel Listone e può essere acquistato da un altro partecipante. Per “Trasferito fuori Serie A” viene disattivato automaticamente.</span>
+        </div>
+      </label>
+
+      <div id="releaseInfo" class="statsState" style="margin-top:12px"></div>
+    </div>
+    <div class="releaseFooter">
+      <button class="releaseConfirm" onclick="confirmRelease()">CONFERMA SVINCOLO</button>
+    </div>
+  </div>
+</div>
+
 <div id="settingsModal" class="modal">
   <div class="settingsShell">
     <div class="settingsHeader">
@@ -2312,13 +2476,15 @@ let nextMoveSelectedRole='';
 let SIM_PLANS=loadSimPlans();
 let simPlanKey='A';
 let simAltOpenKey='';
-function defaultState(){return {favorites:[],favoriteMeta:{},initialBudget:600,managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[]}}
+function defaultState(){return {favorites:[],favoriteMeta:{},initialBudget:600,managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[],releases:[],unavailablePlayers:[]}}
 function load(){
   try{
     const s=JSON.parse(localStorage.getItem('astaFantaV1'))||defaultState();
     if(!Array.isArray(s.favorites))s.favorites=[];
     if(!s.favoriteMeta || typeof s.favoriteMeta!=='object')s.favoriteMeta={};
     if(!Number.isFinite(Number(s.initialBudget)) || Number(s.initialBudget)<1)s.initialBudget=600;
+    if(!Array.isArray(s.releases))s.releases=[];
+    if(!Array.isArray(s.unavailablePlayers))s.unavailablePlayers=[];
     return s;
   }catch(e){return defaultState()}
 }
@@ -2592,7 +2758,11 @@ function resetPlayerArchive(){
  renderAudit();
 }
 
-function spent(i){return state.purchases.filter(x=>x.buyer===i).reduce((s,x)=>s+x.price,0)}
+function spent(i){
+  const active=state.purchases.filter(x=>x.buyer===i).reduce((s,x)=>s+x.price,0);
+  const sunk=(state.releases||[]).filter(x=>x.buyer===i).reduce((s,x)=>s+Math.max(0,(Number(x.originalPrice)||0)-(Number(x.refund)||0)),0);
+  return active+sunk;
+}
 function budget(i){return INITIAL-spent(i)}
 function roster(i){return state.purchases.filter(x=>x.buyer===i)}
 function roleCount(i,r){return roster(i).filter(x=>x.role===r).length}
@@ -2637,7 +2807,7 @@ function renderHomeLive(){
   const favBox=document.getElementById('homeFavorites');
   if(favBox){
     const pRank={high:3,medium:2,low:1};
-    const favs=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name))
+    const favs=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name)&&!isUnavailablePlayer(p.name))
       .sort((a,b)=>(pRank[goalMeta(b.name).priority]||2)-(pRank[goalMeta(a.name).priority]||2)||b.fvm-a.fvm).slice(0,5);
     favBox.innerHTML=favs.length?favs.map(p=>{
       const idx=PLAYER_ARCHIVE.indexOf(p);
@@ -2814,10 +2984,11 @@ function renderListone(){
   const q=normalizePlayerText(input?input.value:'');
   let rows=PLAYER_ARCHIVE.filter(p=>{
     const bought=!!purchaseForArchivePlayer(p.name);
+    const unavailable=isUnavailablePlayer(p.name);
     const text=normalizePlayerText(`${p.name} ${p.team}`);
     if(q && !text.includes(q)) return false;
     if(['P','D','C','A'].includes(listoneFilter) && p.role!==listoneFilter) return false;
-    if(listoneFilter==='FREE' && bought) return false;
+    if(listoneFilter==='FREE' && (bought||unavailable)) return false;
     if(listoneFilter==='TAKEN' && !bought) return false;
     if(listoneFilter==='FAV' && !isFavorite(p.name)) return false;
     return true;
@@ -2825,13 +2996,14 @@ function renderListone(){
   rows.sort((a,b)=>a.role.localeCompare(b.role)||b.fvm-a.fvm||a.name.localeCompare(b.name));
   document.getElementById('listoneCount').textContent=`${rows.length} giocatori visualizzati · ${PLAYER_ARCHIVE.filter(p=>!purchaseForArchivePlayer(p.name)).length} disponibili`;
   const favTotal=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)).length;
-  const favFree=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name)).length;
+  const favFree=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name)&&!isUnavailablePlayer(p.name)).length;
   const favEl=document.getElementById('favSummary');
   if(favEl)favEl.textContent=`⭐ Obiettivi: ${favTotal} totali · ${favFree} ancora disponibili`;
   box.innerHTML=rows.length?rows.map(p=>{
     const bought=purchaseForArchivePlayer(p.name);
+    const unavailable=isUnavailablePlayer(p.name);
     const idx=PLAYER_ARCHIVE.indexOf(p);
-    return `<div class="playerCard ${bought?'taken':''}" onclick="openPlayerDetail(${idx})">
+    return `<div class="playerCard ${bought||unavailable?'taken':''}" onclick="openPlayerDetail(${idx})">
       <div class="playerCardInner">
         <button class="favBtn ${isFavorite(p.name)?'on':''}" onclick="toggleFavorite(decodeURIComponent('${encodeURIComponent(p.name)}'),event)" aria-label="Obiettivo">${isFavorite(p.name)?'★':'☆'}</button>
         <div class="playerMain">
@@ -2932,7 +3104,7 @@ function renderAdvisor(){
     ? `<strong style="color:var(--ok)">Modalità statistica reale attiva</strong><br>${n} giocatori con dati storici importati. Il ranking combina statistiche, bonus/malus, FVM, prezzo AI e bisogni della tua rosa.`
     : `<strong style="color:var(--accent)">Modalità base</strong><br>Non hai ancora importato le statistiche. I consigli usano FVM, prezzo AI, crediti e necessità della rosa senza inventare dati statistici.`;
 
-  const free=PLAYER_ARCHIVE.filter(p=>p.role===advisorRole&&!purchaseForArchivePlayer(p.name));
+  const free=PLAYER_ARCHIVE.filter(p=>p.role===advisorRole&&!purchaseForArchivePlayer(p.name)&&!isUnavailablePlayer(p.name));
   const ranked=free.map(p=>{
     const index=PLAYER_ARCHIVE.indexOf(p);
     return {p,index,...advisorScore(p,index)};
@@ -3007,7 +3179,7 @@ function setNextMoveRole(role,btn){
 function nextMoveCandidates(role){
   if(!role)return [];
   return PLAYER_ARCHIVE
-    .filter(p=>p.role===role&&!purchaseForArchivePlayer(p.name))
+    .filter(p=>p.role===role&&!purchaseForArchivePlayer(p.name)&&!isUnavailablePlayer(p.name))
     .map(p=>{
       const index=PLAYER_ARCHIVE.indexOf(p);
       const adv=advisorScore(p,index);
@@ -3405,7 +3577,7 @@ function auditAsta(){
   }
 
   // 6) Top objectives still free.
-  const freeFav=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name));
+  const freeFav=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name)&&!isUnavailablePlayer(p.name));
   const highFav=freeFav.filter(p=>(goalMeta(p.name).priority||'medium')==='high');
   if(highFav.length){
     const top=highFav.slice(0,3).map(p=>p.name).join(', ');
@@ -3601,7 +3773,7 @@ function auctionPhaseForRole(role){
   const total=PLAYER_ARCHIVE.filter(p=>p.role===role).length;
   const sold=state.purchases.filter(x=>x.role===role).length;
   const soldPct=total?sold/total:0;
-  const free=PLAYER_ARCHIVE.filter(p=>p.role===role&&!purchaseForArchivePlayer(p.name)).length;
+  const free=PLAYER_ARCHIVE.filter(p=>p.role===role&&!purchaseForArchivePlayer(p.name)&&!isUnavailablePlayer(p.name)).length;
   return {total,sold,free,soldPct};
 }
 function rivalRoleDemand(role,buyerIndex=state.me){
@@ -3621,7 +3793,7 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   if(!p)return null;
 
   const sameRoleFree=PLAYER_ARCHIVE
-    .filter(x=>x.role===p.role && !purchaseForArchivePlayer(x.name));
+    .filter(x=>x.role===p.role && !purchaseForArchivePlayer(x.name) && !isUnavailablePlayer(x.name));
 
   const fvmValues=sameRoleFree.map(x=>Number(x.fvm)||0).sort((a,b)=>a-b);
   const below=fvmValues.filter(v=>v<(Number(p.fvm)||0)).length;
@@ -3991,8 +4163,8 @@ let playerDetailReturnScroll=0;
 
 function playerStatusFor(name){
   const buy=purchaseForArchivePlayer(name);
-  if(!buy)return {owned:false,buy:null};
-  return {owned:true,buy};
+  if(buy)return {owned:true,buy,unavailable:false};
+  return {owned:false,buy:null,unavailable:isUnavailablePlayer(name)};
 }
 
 function renderPlayerDetail(index){
@@ -4111,9 +4283,89 @@ function closePlayerDetail(){
 
 function buyFromListone(index){
   const p=PLAYER_ARCHIVE[index];
-  if(!p || alreadyBoughtPlayer(p.name)) return;
+  if(!p || alreadyBoughtPlayer(p.name) || isUnavailablePlayer(p.name)) return;
   openBuy();
   setTimeout(()=>selectArchivePlayer(index),0);
+}
+
+
+let releaseReturnManager=-1;
+
+function openReleasePage(purchaseId,managerIndex){
+  const x=state.purchases.find(p=>p.id===purchaseId);
+  if(!x)return;
+  releaseReturnManager=managerIndex;
+  document.getElementById('releasePurchaseId').value=x.id;
+  document.getElementById('releaseManagerId').value=managerIndex;
+  document.getElementById('releaseReason').value='Scelta tecnica';
+  document.getElementById('releaseRefund').value=x.price;
+  document.getElementById('releaseBackToMarket').checked=true;
+  document.getElementById('releaseHero').innerHTML=`
+    <div class="releaseHeroName">${esc(x.name)}</div>
+    <div class="releaseHeroMeta">${x.role} · ${esc(state.managers[x.buyer])} · acquistato a ${x.price} crediti</div>`;
+  updateReleaseInfo();
+  document.getElementById('releaseModal').classList.add('show');
+  document.body.classList.add('release-page-open');
+}
+function closeReleasePage(){
+  document.getElementById('releaseModal').classList.remove('show');
+  document.body.classList.remove('release-page-open');
+}
+function releaseReasonChanged(){
+  const reason=document.getElementById('releaseReason').value;
+  const check=document.getElementById('releaseBackToMarket');
+  if(reason==='Trasferito fuori Serie A')check.checked=false;
+  updateReleaseInfo();
+}
+function updateReleaseInfo(){
+  const id=document.getElementById('releasePurchaseId').value;
+  const x=state.purchases.find(p=>p.id===id);
+  if(!x)return;
+  const refund=Math.max(0,Math.min(x.price,parseInt(document.getElementById('releaseRefund').value,10)||0));
+  const after=budget(x.buyer)+refund;
+  const back=document.getElementById('releaseBackToMarket').checked;
+  document.getElementById('releaseInfo').innerHTML=
+    `Dopo lo svincolo <strong>${esc(state.managers[x.buyer])}</strong> avrà <strong>${after}</strong> crediti. `+
+    `${back?`${esc(x.name)} tornerà acquistabile.`:`${esc(x.name)} verrà segnato come non disponibile.`}`;
+}
+function confirmRelease(){
+  const id=document.getElementById('releasePurchaseId').value;
+  const x=state.purchases.find(p=>p.id===id);
+  if(!x)return;
+
+  const reason=document.getElementById('releaseReason').value;
+  const refund=Math.max(0,Math.min(x.price,parseInt(document.getElementById('releaseRefund').value,10)||0));
+  const backToMarket=document.getElementById('releaseBackToMarket').checked;
+
+  if(!confirm(`Confermi lo svincolo di ${x.name}?\\n\\nMotivo: ${reason}\\nCrediti restituiti: ${refund}\\n${backToMarket?'Il giocatore tornerà disponibile.':'Il giocatore NON tornerà disponibile.'}`))return;
+
+  state.releases=state.releases||[];
+  state.unavailablePlayers=state.unavailablePlayers||[];
+  state.releases.push({
+    id:'rel_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    purchaseId:x.id,
+    name:x.name,
+    role:x.role,
+    buyer:x.buyer,
+    originalPrice:x.price,
+    refund,
+    reason,
+    backToMarket,
+    ts:Date.now()
+  });
+
+  state.purchases=state.purchases.filter(p=>p.id!==id);
+  const key=normalizePlayerText(x.name);
+  state.unavailablePlayers=state.unavailablePlayers.filter(k=>k!==key);
+  if(!backToMarket)state.unavailablePlayers.push(key);
+
+  persist();
+  closeReleasePage();
+  render();
+
+  if(releaseReturnManager>=0){
+    openParticipant(releaseReturnManager);
+  }
 }
 
 let participantReturnScroll=0;
@@ -4131,8 +4383,17 @@ function openParticipant(i){
     if(!players.length) return '';
     const totalRole=players.reduce((sum,x)=>sum+x.price,0);
     return `<div class="detailSectionTitle"><span>${roleName(role)}</span><span class="tag">${players.length}/${LIMITS[role]} · ${totalRole} cr</span></div>`+
-      players.map(x=>`<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">Acquistato a ${x.price} crediti</div></div><div class="price">${x.price}</div></div>`).join('');
+      players.map(x=>`<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">Acquistato a ${x.price} crediti</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="releaseBtn" onclick="event.stopPropagation();openReleasePage('${x.id}',${i})">SVINCOLA</button></div></div>`).join('');
   }).join('');
+
+  const released=(state.releases||[]).filter(x=>x.buyer===i).slice().reverse();
+  const releaseHistory=released.length?`<div class="releaseHistory">
+    <div class="detailSectionTitle"><span>Svincoli</span><span class="tag">${released.length}</span></div>
+    ${released.map(x=>`<div class="releaseHistoryRow">
+      <div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div>
+      <div class="meta">${esc(x.reason)} · restituiti ${x.refund} cr${x.backToMarket?' · tornato libero':' · non disponibile'}</div>
+    </div>`).join('')}
+  </div>`:'';
 
   document.getElementById('participantDetail').innerHTML=`
     <div class="detailHero">
@@ -4153,6 +4414,7 @@ function openParticipant(i){
     </div>
 
     ${grouped || '<div class="empty" style="margin-top:14px">Nessun giocatore acquistato da questo partecipante.</div>'}
+    ${releaseHistory}
   `;
   document.getElementById('participantModal').classList.add('show');
   document.body.style.overflow='hidden';
@@ -4176,6 +4438,11 @@ function alreadyBoughtPlayer(name){
   const key=normalizePlayerText(name);
   return state.purchases.some(x=>normalizePlayerText(x.name)===key);
 }
+function isUnavailablePlayer(name){
+  const key=normalizePlayerText(name);
+  return (state.unavailablePlayers||[]).includes(key);
+}
+
 function searchPlayers(){
   const input=document.getElementById('pname');
   const box=document.getElementById('playerSuggestions');
@@ -4204,12 +4471,13 @@ function searchPlayers(){
 
   box.innerHTML=list.map((p,i)=>{
     const taken=alreadyBoughtPlayer(p.name);
-    return `<div class="playerSuggestion" style="${taken?'opacity:.45':''}" onclick="${taken?'':'selectArchivePlayer('+PLAYER_ARCHIVE.indexOf(p)+')'}">
+    const unavailable=isUnavailablePlayer(p.name);
+    return `<div class="playerSuggestion" style="${taken||unavailable?'opacity:.45':''}" onclick="${taken||unavailable?'':'selectArchivePlayer('+PLAYER_ARCHIVE.indexOf(p)+')'}">
       <div class="playerSuggestionTop">
         <div class="playerSuggestionName">${esc(p.name)}</div>
         <span class="tag">${p.role}</span>
       </div>
-      <div class="playerMetaLine">${p.team} · QI ${p.qi} · FVM ${p.fvm}${taken?' · GIÀ ACQUISTATO':''}</div>
+      <div class="playerMetaLine">${p.team} · QI ${p.qi} · FVM ${p.fvm}${taken?' · GIÀ ACQUISTATO':unavailable?' · FUORI SERIE A / NON DISPONIBILE':''}</div>
     </div>`;
   }).join('');
   box.classList.add('show');
