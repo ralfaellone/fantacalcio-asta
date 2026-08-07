@@ -968,7 +968,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V14.1</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V15</div></div><div style="display:flex;align-items:center"><div class="pill">600 crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="grid2">
@@ -1063,7 +1063,11 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
     <div id="historyList" class="list"></div>
   </div>
   <div class="section">
-    <button class="secondary" onclick="document.getElementById('statsFile').click()">📊 Aggiorna statistiche giocatori</button>
+    <h2>📊 Statistiche giocatori</h2>
+    <div class="row">
+      <button class="secondary" onclick="document.getElementById('statsFile').click()">⬆️ Importa statistiche</button>
+      <button class="secondary" onclick="openOfficialStats()">🌐 Fantacalcio.it</button>
+    </div>
     <input id="statsFile" type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" onchange="importStatsFile(event)">
     <div id="statsImportInfo" class="hint" style="margin-top:7px"></div>
   </div>
@@ -1238,6 +1242,7 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 </div>
 
 <script src="players.js"></script>
+<script src="stats.js"></script>
 <script>
 const LIMITS={P:3,D:8,C:8,A:6};
 const INITIAL=600;
@@ -1262,10 +1267,16 @@ function persist(){localStorage.setItem('astaFantaV1',JSON.stringify(state))}
 function loadPlayerStats(){
   try{
     const s=JSON.parse(localStorage.getItem('astaFantaStatsV1'));
-    if(s && typeof s==='object')return s;
+    if(s && typeof s==='object' && Object.keys(s).length>50)return s;
   }catch(e){}
-  return {};
+  return (window.PLAYER_STATS_BUILTIN && typeof window.PLAYER_STATS_BUILTIN==='object')
+    ? window.PLAYER_STATS_BUILTIN
+    : {};
 }
+function openOfficialStats(){
+  window.open('https://www.fantacalcio.it/statistiche-serie-a/2025-26/statistico/riepilogo','_blank');
+}
+
 function savePlayerStats(obj){
   PLAYER_STATS=obj||{};
   localStorage.setItem('astaFantaStatsV1',JSON.stringify(PLAYER_STATS));
@@ -1278,7 +1289,12 @@ function renderStatsImportInfo(){
   const el=document.getElementById('statsImportInfo');
   if(!el)return;
   const n=statsCount();
-  el.textContent=n?`Statistiche importate: ${n} giocatori.`:'Statistiche non ancora importate. Il Consigliere userà solo FVM, budget e situazione rosa.';
+  const external=window.PLAYER_STATS_UPDATED_AT||'';
+  if(n){
+    el.textContent=`Statistiche disponibili: ${n} giocatori${external?' · archivio '+external:''}. AI Asta e Consigliere Rosa usano bonus/malus, MV, FM e presenze.`;
+  }else{
+    el.textContent='Statistiche non ancora caricate. Scarica il file ufficiale Fantacalcio.it 2025/26 e importalo qui.';
+  }
 }
 function parseNumberIT(v){
   if(v===null||v===undefined||v==='')return 0;
@@ -1295,14 +1311,14 @@ function mapStatsRows(rows){
   if(!rows.length)return {};
   const headers=Object.keys(rows[0]);
   const nameCol=findColumn(headers,['Calciatore','Nome','Giocatore']);
-  const pvCol=findColumn(headers,['PV','Partite a voto','Presenze']);
-  const mvCol=findColumn(headers,['MV','Media voto']);
-  const fmCol=findColumn(headers,['FM','Fantamedia','Media Fantavoto']);
+  const pvCol=findColumn(headers,['PV','Partite a voto','Presenze','Partite Giocate']);
+  const mvCol=findColumn(headers,['MV','Media voto','Media Voto']);
+  const fmCol=findColumn(headers,['FM','Fantamedia','Media Fantavoto','Media FantaVoto']);
   const golCol=findColumn(headers,['Gol','Gf','Gol fatti']);
   const assCol=findColumn(headers,['Ass','Assist']);
   const ammCol=findColumn(headers,['Amm','Ammonizioni']);
   const espCol=findColumn(headers,['Esp','Espulsioni']);
-  const rigCol=findColumn(headers,['Rig','Rigori']);
+  const rigCol=findColumn(headers,['Rig','Rigori','Rigori segnati/tirati']);
   if(!nameCol)return {};
 
   const out={};
@@ -1753,6 +1769,7 @@ function renderListone(){
         <div class="playerMain">
           <div class="playerName"><span class="tag">${p.role}</span>${esc(p.name)}${isFavorite(p.name)?`<button class="goalMetaBtn" onclick="openGoalEditor(decodeURIComponent('${encodeURIComponent(p.name)}'),event)">🎯</button>`:''}<button class="aiBtn" onclick="openAIForPlayer(${idx},event)">🤖 AI</button></div>
           <div class="playerInfo">${p.team} · QI ${p.qi}${p.qa!==undefined?' · QA '+p.qa:''}</div>
+          ${statsFor(p.name)?`<div class="goalChips"><span class="goalChip">PV ${statsFor(p.name).pv}</span><span class="goalChip">MV ${Number(statsFor(p.name).mv).toFixed(2)}</span><span class="goalChip">FM ${Number(statsFor(p.name).fm).toFixed(2)}</span><span class="goalChip">⚽ ${statsFor(p.name).gol}</span><span class="goalChip">🅰 ${statsFor(p.name).ass}</span></div>`:''}
           ${goalMetaHTML(p.name)}
         </div>
       </div>
@@ -1844,7 +1861,7 @@ function renderAdvisor(){
   const stateBox=document.getElementById('advisorStatsState');
   const n=statsCount();
   stateBox.innerHTML=n
-    ? `<strong style="color:var(--ok)">Modalità statistica attiva</strong><br>${n} giocatori con dati storici importati. Il ranking combina statistiche, bonus/malus, FVM, prezzo AI e bisogni della tua rosa.`
+    ? `<strong style="color:var(--ok)">Modalità statistica reale attiva</strong><br>${n} giocatori con dati storici importati. Il ranking combina statistiche, bonus/malus, FVM, prezzo AI e bisogni della tua rosa.`
     : `<strong style="color:var(--accent)">Modalità base</strong><br>Non hai ancora importato le statistiche. I consigli usano FVM, prezzo AI, crediti e necessità della rosa senza inventare dati statistici.`;
 
   const free=PLAYER_ARCHIVE.filter(p=>p.role===advisorRole&&!purchaseForArchivePlayer(p.name));
@@ -1997,6 +2014,17 @@ function renderAIAnalysis(a){
       <div class="aiMetric"><span class="k">Range</span><b>${a.low}-${a.high}</b></div>
       <div class="aiMetric"><span class="k">MAX AI</span><b>${a.maxRec}</b></div>
     </div>
+
+    ${statsFor(p.name)?`<div class="advisorStats" style="margin-top:12px">
+      <span class="advisorStat">PV ${statsFor(p.name).pv}</span>
+      <span class="advisorStat">MV ${Number(statsFor(p.name).mv).toFixed(2)}</span>
+      <span class="advisorStat">FM ${Number(statsFor(p.name).fm).toFixed(2)}</span>
+      <span class="advisorStat">⚽ ${statsFor(p.name).gol}</span>
+      <span class="advisorStat">🅰 ${statsFor(p.name).ass}</span>
+      <span class="advisorStat">🟨 ${statsFor(p.name).amm}</span>
+      <span class="advisorStat">🟥 ${statsFor(p.name).esp}</span>
+      ${statsFor(p.name).rigTaken?`<span class="advisorStat">Rig ${statsFor(p.name).rigScored}/${statsFor(p.name).rigTaken}</span>`:''}
+    </div>`:''}
 
     <div class="aiReason">
       <strong>Consiglio:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti. 

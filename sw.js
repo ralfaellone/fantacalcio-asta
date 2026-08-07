@@ -1,4 +1,4 @@
-const CACHE='asta-fanta-v16';
+const CACHE='asta-fanta-v17';
 const STATIC_ASSETS=[
   './manifest.json',
   './icon-180.png',
@@ -21,7 +21,7 @@ self.addEventListener('activate',event=>{
 self.addEventListener('fetch',event=>{
   const url=new URL(event.request.url);
 
-  if(event.request.mode==='navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/players.js')){
+  if(event.request.mode==='navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/players.js') || url.pathname.endsWith('/stats.js')){
     event.respondWith(
       fetch(event.request,{cache:'no-store'})
         .then(response=>{
