@@ -3173,6 +3173,117 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
   border-radius:11px;padding:8px 9px;font-size:9px;line-height:1.4;margin:8px 0;
 }
 
+
+/* V39 - Costruttore Rosa AI con budget dinamico e alternative */
+.aiRosterBudgetPanel{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:9px 10px;
+  margin:9px 0 11px;
+}
+.aiRosterBudgetGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px;
+  margin-top:7px;
+}
+.aiRosterBudgetGrid div{
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:9px;
+  text-align:center;
+  padding:6px 3px;
+}
+.aiRosterBudgetGrid span{display:block;font-size:7px;color:var(--muted)}
+.aiRosterBudgetGrid b{display:block;font-size:12px;margin-top:2px}
+.aiSlotCard{
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:9px;
+  margin:6px 0;
+}
+.aiSlotCard.owned{
+  border-color:rgba(57,217,138,.45);
+  background:#0b211b;
+}
+.aiSlotHead{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+}
+.aiSlotTitle{
+  font-size:10px;
+  font-weight:950;
+}
+.aiSlotBudget{
+  text-align:right;
+  font-size:10px;
+  font-weight:950;
+}
+.aiSlotBudget span{
+  display:block;
+  font-size:7px;
+  color:var(--muted);
+  font-weight:700;
+  margin-top:1px;
+}
+.aiSlotOptions{
+  margin-top:7px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.aiSlotOption{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:7px;
+  align-items:center;
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:7px 8px;
+}
+.aiSlotOption.primary{
+  border-color:rgba(244,196,48,.45);
+}
+.aiSlotRank{
+  width:22px;height:22px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  background:#15304d;color:var(--text);
+  font-size:8px;font-weight:950;
+}
+.aiSlotOption.primary .aiSlotRank{
+  background:var(--accent);color:#111;
+}
+.aiSlotOptionName{
+  font-size:10px;font-weight:950;
+}
+.aiSlotOptionMeta{
+  font-size:7.5px;color:var(--muted);margin-top:2px;
+}
+.aiSlotOptionRight{
+  text-align:right;
+}
+.aiSlotOptionPrice{
+  font-size:10px;font-weight:950;
+}
+.aiSlotOptionActions{
+  display:flex;justify-content:flex-end;gap:3px;margin-top:3px;
+}
+.aiSlotOptionActions button{
+  border:1px solid var(--line);background:#0b1727;color:var(--text);
+  border-radius:7px;padding:4px 5px;font-size:6.5px;font-weight:900;
+}
+.aiBudgetOk{
+  color:var(--ok);
+}
+.aiBudgetWarn{
+  color:#ffd166;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3182,7 +3293,7 @@ body.formation-page-open #formationModal{visibility:visible!important;pointer-ev
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V38</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V39</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div class="section" style="margin-top:0">
@@ -4578,126 +4689,234 @@ function renderListone(){
 
 
 
+
 let AI_ROSTER_MODULE='433';
 
 function setAIRosterModule(id){
   AI_ROSTER_MODULE=id;
   renderFormationPage();
 }
+
 function aiRosterTier(role,slot,plan){
   if(slot < plan.xi[role]) return 'TITOLARE';
   const firstAlt={P:1,D:2,C:2,A:2}[role]||1;
   if(slot < plan.xi[role]+firstAlt) return 'PRIMA ALTERNATIVA';
   return 'RISERVA';
 }
-function aiRosterBudgetWeights(role,count,xi){
+
+function aiRosterReserveBudget(){
+  // Leave a realistic auction cushion rather than spending the entire budget.
+  const initial=Number(state.initialBudget)||INITIAL||600;
+  return Math.max(12,Math.round(initial*.045));
+}
+
+function aiRosterAvailablePlanningBudget(){
+  const cash=budget(state.me);
+  const reserve=aiRosterReserveBudget();
+  return Math.max(0,cash-reserve);
+}
+
+function aiRosterRolePlanningBudget(plan,role){
+  const cash=aiRosterAvailablePlanningBudget();
+  const openRoles=['P','D','C','A'].filter(r=>roleCount(state.me,r)<LIMITS[r]);
+  const den=openRoles.reduce((s,r)=>s+plan.budget[r],0)||1;
+  return Math.round(cash*(plan.budget[role]/den));
+}
+
+function aiRosterSlotWeights(role,count,xi){
   const arr=[];
   for(let i=0;i<count;i++){
-    if(i<xi) arr.push(Math.max(.7,1.75-i*.13));
-    else if(i<xi+2) arr.push(.55);
-    else arr.push(.30);
+    if(i<xi){
+      // starters receive progressively smaller chunks
+      arr.push(role==='A' ? Math.max(.85,2.1-i*.22) : Math.max(.80,1.85-i*.17));
+    }else if(i<xi+2){
+      arr.push(.55);
+    }else{
+      arr.push(.28);
+    }
   }
   const sum=arr.reduce((a,b)=>a+b,0)||1;
   return arr.map(x=>x/sum);
 }
-function buildAIRoster(plan){
-  const roles=['P','D','C','A'];
+
+function aiRosterCandidatePool(role,slotBudget,tier){
+  return PLAYER_ARCHIVE.map((p,index)=>({p,index}))
+    .filter(x=>x.p.role===role && !purchaseForArchivePlayer(x.p.name) && !isUnavailablePlayer(x.p.name))
+    .map(x=>{
+      const ai=aiPlayerAnalysis(x.index,state.me);
+      if(!ai)return null;
+      const dir=ai2DirectionalScore(x.index,state.me);
+      const ideal=Number(ai.ideal||1);
+      const max=Number(ai.maxRec||ideal);
+      const priceFit=100-Math.min(100,Math.abs(ideal-slotBudget)/Math.max(1,slotBudget)*72);
+      const overPenalty=ideal>slotBudget*1.35 ? Math.min(35,(ideal-slotBudget)/Math.max(1,slotBudget)*28) : 0;
+      const tierWeight=tier==='TITOLARE' ? .68 : tier==='PRIMA ALTERNATIVA' ? .54 : .45;
+      const score=clamp(dir*tierWeight + priceFit*(1-tierWeight) - overPenalty,0,99);
+      return {p:x.p,index:x.index,ai,dir,score,ideal,max};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score || b.dir-a.dir || b.ai.score-a.ai.score);
+}
+
+function buildAIRosterPlan(plan){
   const result=[];
-  const ownedNames=new Set(state.purchases.filter(x=>x.buyer===state.me).map(x=>normalizePlayerText(x.name)));
-  const already=new Set();
+  const used=new Set();
+  const reserve=aiRosterReserveBudget();
+  const planningBudget=aiRosterAvailablePlanningBudget();
+  const roles=['P','D','C','A'];
 
+  // Keep all already owned players.
   roles.forEach(role=>{
-    const owned=state.purchases.filter(x=>x.buyer===state.me&&x.role===role)
-      .map(x=>{
-        const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(x.name));
-        return {owned:true,index:idx,p:idx>=0?PLAYER_ARCHIVE[idx]:{name:x.name,role,team:'',fvm:0,qi:0},paid:Number(x.price||0)};
+    const owned=state.purchases.filter(x=>x.buyer===state.me&&x.role===role);
+    owned.forEach((x,idx)=>{
+      const index=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(x.name));
+      const p=index>=0?PLAYER_ARCHIVE[index]:{name:x.name,role,team:'',fvm:0,qi:0};
+      used.add(normalizePlayerText(p.name));
+      result.push({
+        role,slot:idx,tier:aiRosterTier(role,idx,plan),owned:true,
+        p,index,paid:Number(x.price||0),slotBudget:Number(x.price||0),
+        alternatives:[]
       });
-    owned.forEach(x=>{result.push({...x,tier:aiRosterTier(role,result.filter(y=>y.p.role===role).length,plan)});already.add(normalizePlayerText(x.p.name));});
+    });
+  });
 
-    const missing=Math.max(0,LIMITS[role]-owned.length);
-    const candidates=PLAYER_ARCHIVE.map((p,index)=>({p,index}))
-      .filter(x=>x.p.role===role && !ownedNames.has(normalizePlayerText(x.p.name)) && !purchaseForArchivePlayer(x.p.name) && !isUnavailablePlayer(x.p.name))
-      .map(x=>({p:x.p,index:x.index,ai:aiPlayerAnalysis(x.index,state.me),dir:ai2DirectionalScore(x.index,state.me)}))
-      .filter(x=>x.ai)
-      .sort((a,b)=>b.dir-a.dir || b.ai.score-a.ai.score || Number(b.p.fvm||0)-Number(a.p.fvm||0));
+  // Dynamic role budgets based on remaining cash and selected module.
+  roles.forEach(role=>{
+    const ownedCount=roleCount(state.me,role);
+    const missing=Math.max(0,LIMITS[role]-ownedCount);
+    if(!missing)return;
 
-    const roleRows=result.filter(y=>y.p.role===role);
-    const weights=aiRosterBudgetWeights(role,LIMITS[role],plan.xi[role]);
-    let pickPool=[...candidates];
+    const roleBudget=aiRosterRolePlanningBudget(plan,role);
+    const weights=aiRosterSlotWeights(role,missing,Math.max(0,plan.xi[role]-ownedCount));
 
-    for(let j=0;j<missing && pickPool.length;j++){
-      const slot=roleRows.length+j;
+    for(let m=0;m<missing;m++){
+      const slot=ownedCount+m;
       const tier=aiRosterTier(role,slot,plan);
-      const targetRoleBudget=Math.round(INITIAL*plan.budget[role]);
-      const target=Math.max(1,Math.round(targetRoleBudget*(weights[slot]||.05)));
-      // Pick strongest candidate whose ideal price is reasonably near slot target; fallback best directional.
-      let ranked=pickPool.map(x=>{
-        const priceFit=100-Math.min(100,Math.abs(Number(x.ai.ideal||1)-target)/Math.max(1,target)*70);
-        const tierPower=tier==='TITOLARE'?x.dir*.72+priceFit*.28:x.dir*.50+priceFit*.50;
-        return {...x,pickScore:tierPower};
-      }).sort((a,b)=>b.pickScore-a.pickScore);
-      const chosen=ranked[0];
-      if(!chosen)break;
-      result.push({...chosen,owned:false,tier,target});
-      already.add(normalizePlayerText(chosen.p.name));
-      pickPool=pickPool.filter(x=>x.index!==chosen.index);
+      const slotBudget=Math.max(1,Math.round(roleBudget*(weights[m]||1/missing)));
+
+      const pool=aiRosterCandidatePool(role,slotBudget,tier)
+        .filter(x=>!used.has(normalizePlayerText(x.p.name)));
+
+      const options=[];
+      for(const cand of pool){
+        if(options.length>=3)break;
+        options.push(cand);
+      }
+
+      const chosen=options[0]||null;
+      if(chosen)used.add(normalizePlayerText(chosen.p.name));
+
+      result.push({
+        role,slot,tier,owned:false,
+        p:chosen?chosen.p:null,
+        index:chosen?chosen.index:-1,
+        slotBudget,
+        chosen,
+        alternatives:options
+      });
     }
   });
-  return result;
+
+  const ownedSpent=state.purchases.filter(x=>x.buyer===state.me).reduce((s,x)=>s+Number(x.price||0),0);
+  const projectedNew=result.filter(x=>!x.owned&&x.chosen).reduce((s,x)=>s+Math.min(x.slotBudget,Number(x.chosen.ai.ideal||x.slotBudget)),0);
+  return {rows:result,reserve,planningBudget,ownedSpent,projectedNew,projectedTotal:ownedSpent+projectedNew};
 }
+
+function formationBudgetText(plan){
+  const b=['P','D','C','A'].map(r=>`${r} ${Math.round(aiRosterRolePlanningBudget(plan,r))}`).join(' · ');
+  return b;
+}
+
 function renderFormationPage(){
   const body=document.getElementById('formationBody');
   if(!body)return;
+
   const plan=FORMATION_PLANS.find(x=>x.id===AI_ROSTER_MODULE)||FORMATION_PLANS[1];
-  const rosterPlan=buildAIRoster(plan);
-  const owned=rosterPlan.filter(x=>x.owned);
-  const suggested=rosterPlan.filter(x=>!x.owned);
-  const estimated=owned.reduce((s,x)=>s+x.paid,0)+suggested.reduce((s,x)=>s+Number(x.ai?.ideal||x.target||1),0);
-  const nonOltre=owned.reduce((s,x)=>s+x.paid,0)+suggested.reduce((s,x)=>s+Number(x.ai?.maxRec||x.target||1),0);
-  const remaining=budget(state.me);
-  const projectedNew=suggested.reduce((s,x)=>s+Number(x.ai?.ideal||x.target||1),0);
-  const over=projectedNew>remaining;
+  const built=buildAIRosterPlan(plan);
+  const rows=built.rows;
+  const currentCash=budget(state.me);
+  const plannedSpend=Math.max(0,built.projectedTotal-spent(state.me));
+  const remainingAfter=Math.max(0,currentCash-plannedSpend);
+  const isSafe=plannedSpend<=built.planningBudget+2;
 
   body.innerHTML=`
     <div class="formationHero">
       <div style="font-size:18px;font-weight:950">Costruisci la tua rosa completa</div>
-      <div class="playerMetaLine">Scegli il modulo: l'AI mantiene i tuoi acquisti e completa automaticamente tutti i 25 posti con giocatori ancora liberi.</div>
+      <div class="playerMetaLine">Scegli il modulo. L'AI mantiene i giocatori già tuoi e costruisce tutti i 25 slot con un piano principale + 2 alternative per ogni acquisto.</div>
+
       <div class="aiRosterSelector">
         ${FORMATION_PLANS.map(x=>`<button class="${x.id===plan.id?'active':''}" onclick="setAIRosterModule('${x.id}')">${x.name}</button>`).join('')}
       </div>
+
       <div class="formationWhy"><b>${plan.name} · ${plan.style}</b><br>${formationPlanWhy(plan)}</div>
     </div>
 
-    <div class="aiRosterSummary">
-      <div><span>ROSA</span><b>${rosterPlan.length}/25</b></div>
-      <div><span>GIÀ TUOI</span><b>${owned.length}</b></div>
-      <div><span>STIMA ROSA</span><b>${estimated}</b></div>
-      <div><span>NON OLTRE TOT.</span><b>${nonOltre}</b></div>
+    <div class="aiRosterBudgetPanel">
+      <div style="font-size:11px;font-weight:950">Piano economico dinamico</div>
+      <div class="playerMetaLine">L'AI non cerca di spendere tutti i ${INITIAL} crediti: conserva una riserva d'asta e ridistribuisce automaticamente i risparmi o gli extra dopo ogni acquisto.</div>
+      <div class="aiRosterBudgetGrid">
+        <div><span>CREDITI ORA</span><b>${currentCash}</b></div>
+        <div><span>RISERVA</span><b>${built.reserve}</b></div>
+        <div><span>DA SPENDERE</span><b class="${isSafe?'aiBudgetOk':'aiBudgetWarn'}">${plannedSpend}</b></div>
+        <div><span>RESTANO</span><b>${remainingAfter}</b></div>
+      </div>
+      <div class="playerMetaLine" style="margin-top:7px">Distribuzione residua: ${formationBudgetText(plan)}</div>
     </div>
-    ${over?`<div class="aiRosterWarning">⚠️ Con i prezzi ideali attuali servirebbero circa ${projectedNew} crediti per completare i posti mancanti, ma ne hai ${remaining}. L'AI continuerà comunque a privilegiare alternative più sostenibili mentre l'asta evolve.</div>`:''}
 
     ${['P','D','C','A'].map(role=>{
-      const rows=rosterPlan.filter(x=>x.p.role===role);
-      return `<div class="aiRosterRoleTitle"><span>${roleName(role)}</span><span>${rows.length}/${LIMITS[role]}</span></div>
-        ${rows.map((x,i)=>`
-          <div class="aiRosterPlayer ${x.owned?'owned':''}">
-            <div>
-              <div class="aiRosterPlayerName">${i+1}. ${esc(x.p.name)} ${x.owned?'<span class="tag good">GIÀ TUO</span>':''}</div>
-              <div class="aiRosterPlayerMeta">${esc(x.p.team||'')} · FVM ${x.p.fvm||'-'} ${x.owned?`· pagato ${x.paid}`:`· AI2 ${x.dir}/99`}</div>
+      const roleRows=rows.filter(x=>x.role===role).sort((a,b)=>a.slot-b.slot);
+      return `
+        <div class="aiRosterRoleTitle"><span>${roleName(role)}</span><span>${roleRows.length}/${LIMITS[role]}</span></div>
+        ${roleRows.map((x,i)=>{
+          if(x.owned){
+            return `<div class="aiSlotCard owned">
+              <div class="aiSlotHead">
+                <div>
+                  <div class="aiSlotTitle">${i+1}. ${x.tier}</div>
+                  <div class="aiRosterPlayerName">${esc(x.p.name)} <span class="tag good">GIÀ TUO</span></div>
+                  <div class="aiRosterPlayerMeta">${esc(x.p.team||'')} · pagato ${x.paid} cr</div>
+                </div>
+                <div class="aiSlotBudget">${x.paid} cr<span>già spesi</span></div>
+              </div>
+            </div>`;
+          }
+
+          const opts=x.alternatives||[];
+          return `<div class="aiSlotCard">
+            <div class="aiSlotHead">
+              <div>
+                <div class="aiSlotTitle">${i+1}. ${x.tier}</div>
+                <div class="aiRosterPlayerMeta">Budget slot consigliato</div>
+              </div>
+              <div class="aiSlotBudget">${x.slotBudget} cr<span>target massimo slot</span></div>
             </div>
-            <div class="aiRosterPlayerRight">
-              <div class="aiRosterPrice">${x.owned?`${x.paid} cr`:`${x.ai.ideal} cr`}</div>
-              <div class="aiRosterTier">${x.tier}</div>
-              ${!x.owned?`<div class="aiRosterPlayerMeta">non oltre ${x.ai.maxRec}</div>
-                <div class="aiRosterActions">
-                  <button onclick="closeFormationPage();openAIForPlayer(${x.index})">AI</button>
-                  <button onclick="closeFormationPage();buyFromListone(${x.index})">ASTA</button>
-                </div>`:''}
+
+            <div class="aiSlotOptions">
+              ${opts.length?opts.map((o,n)=>`
+                <div class="aiSlotOption ${n===0?'primary':''}">
+                  <div class="aiSlotRank">${n===0?'A':n===1?'B':'C'}</div>
+                  <div>
+                    <div class="aiSlotOptionName">${esc(o.p.name)}</div>
+                    <div class="aiSlotOptionMeta">${esc(o.p.team)} · FVM ${o.p.fvm} · AI2 ${o.dir}/99</div>
+                  </div>
+                  <div class="aiSlotOptionRight">
+                    <div class="aiSlotOptionPrice">${o.ai.ideal} cr</div>
+                    <div class="aiRosterPlayerMeta">non oltre ${o.ai.maxRec}</div>
+                    <div class="aiSlotOptionActions">
+                      <button onclick="closeFormationPage();openAIForPlayer(${o.index})">AI</button>
+                      <button onclick="closeFormationPage();buyFromListone(${o.index})">ASTA</button>
+                    </div>
+                  </div>
+                </div>`).join('')
+                :`<div class="empty" style="padding:10px">Nessuna alternativa libera disponibile.</div>`}
             </div>
-          </div>`).join('')}`;
+          </div>`;
+        }).join('')}
+      `;
     }).join('')}
   `;
 }
+
 function openFormationPage(){
   renderFormationPage();
   document.body.classList.add('formation-page-open');
