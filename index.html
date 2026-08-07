@@ -69,6 +69,91 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:none;align-items:flex-end;z-index:30}.modal.show{display:flex}.sheet{width:100%;background:#0d1828;border-radius:26px 26px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);border-top:1px solid var(--line);max-height:92vh;overflow:auto}.handle{width:42px;height:5px;border-radius:9px;background:#53657b;margin:0 auto 14px}.sheet h3{font-size:21px;margin:0 0 14px}.field{margin:11px 0}.field label{display:block;color:var(--muted);font-size:12px;font-weight:700;margin:0 0 6px 3px}.field input,.field select{width:100%;border-radius:15px;border:1px solid var(--line);background:#081321;color:var(--text);padding:14px 13px;outline:none}.field input:focus,.field select:focus{border-color:var(--accent)}.hint{font-size:12px;color:var(--muted);margin-top:8px}.danger{color:var(--danger)}
 .progress{height:8px;background:#07101d;border-radius:99px;overflow:hidden;margin-top:8px}.progress i{display:block;height:100%;background:var(--accent);border-radius:99px}
 .tag{display:inline-block;border:1px solid var(--line);background:#0b1727;padding:4px 8px;border-radius:10px;font-size:11px;color:var(--muted);margin-right:4px}.good{color:var(--ok)}
+
+.managerCard{
+  cursor:pointer;
+  transition:transform .15s ease,border-color .15s ease,background .15s ease;
+}
+.managerCard:active{
+  transform:scale(.985);
+  border-color:var(--accent);
+}
+.managerArrow{
+  color:var(--muted);
+  font-size:20px;
+  margin-left:8px;
+}
+.detailHero{
+  background:linear-gradient(145deg,#172a44,#0d1a2b);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:15px;
+}
+.detailName{
+  font-size:24px;
+  font-weight:900;
+  letter-spacing:-.5px;
+}
+.detailStats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-top:12px;
+}
+.detailStat{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:15px;
+  padding:10px 7px;
+  text-align:center;
+}
+.detailStat b{
+  display:block;
+  font-size:21px;
+  margin-top:3px;
+}
+.detailRoles{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+  margin-top:12px;
+}
+.detailRole{
+  background:#0b1727;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:9px 4px;
+  text-align:center;
+}
+.detailRole b{
+  display:block;
+  font-size:17px;
+}
+.detailRole span{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+  margin-top:3px;
+}
+.detailSectionTitle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:18px 2px 9px;
+  font-size:16px;
+  font-weight:900;
+}
+.closeX{
+  width:38px;
+  height:38px;
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:50%;
+  font-size:22px;
+  line-height:1;
+}
+
 </style>
 </head>
 <body>
@@ -135,6 +220,18 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
   <button class="primary" onclick="saveSettings()">SALVA</button>
 </div></div>
 
+
+<div id="participantModal" class="modal" onclick="if(event.target===this)closeParticipant()">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <h3 style="margin:0">Scheda partecipante</h3>
+      <button class="closeX" onclick="closeParticipant()">×</button>
+    </div>
+    <div id="participantDetail" style="margin-top:14px"></div>
+  </div>
+</div>
+
 <script>
 const LIMITS={P:3,D:8,C:8,A:6};
 const INITIAL=600;
@@ -152,8 +249,51 @@ function render(){
  ['P','D','C','A'].forEach(r=>document.getElementById('cnt'+r).textContent=`${roleCount(me,r)}/${LIMITS[r]}`);
  const recent=[...state.purchases].slice(-6).reverse();document.getElementById('recent').innerHTML=recent.length?recent.map(itemHTML).join(''):'<div class="empty">Nessun acquisto registrato.</div>';
  const mr=roster(me);document.getElementById('myRoster').innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
- document.getElementById('managers').innerHTML=state.managers.map((n,i)=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card" style="padding:13px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">TU</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s}</div></div><div class="price">${b}</div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
+ document.getElementById('managers').innerHTML=state.managers.map((n,i)=>{const s=spent(i),b=budget(i),c=roster(i).length;return `<div class="card managerCard" style="padding:13px" onclick="openParticipant(${i})"><div style="display:flex;justify-content:space-between;align-items:center"><div style="min-width:0"><div class="name" style="font-weight:900">${esc(n)}${i===me?' <span class="tag good">TU</span>':''}</div><div class="meta">${c}/25 giocatori · spesi ${s} cr</div><div class="meta" style="margin-top:5px">P ${roleCount(i,'P')}/3 · D ${roleCount(i,'D')}/8 · C ${roleCount(i,'C')}/8 · A ${roleCount(i,'A')}/6</div></div><div style="display:flex;align-items:center"><div class="price">${b}<div class="meta">rimasti</div></div><div class="managerArrow">›</div></div></div><div class="progress"><i style="width:${Math.min(100,(s/INITIAL)*100)}%"></i></div></div>`}).join('');
 }
+
+function openParticipant(i){
+  const n=state.managers[i];
+  const r=roster(i);
+  const s=spent(i);
+  const b=budget(i);
+  const total=r.length;
+  const pct=Math.min(100,(s/INITIAL)*100);
+
+  const grouped=['P','D','C','A'].map(role=>{
+    const players=r.filter(x=>x.role===role);
+    if(!players.length) return '';
+    const totalRole=players.reduce((sum,x)=>sum+x.price,0);
+    return `<div class="detailSectionTitle"><span>${roleName(role)}</span><span class="tag">${players.length}/${LIMITS[role]} · ${totalRole} cr</span></div>`+
+      players.map(x=>`<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">Acquistato a ${x.price} crediti</div></div><div class="price">${x.price}</div></div>`).join('');
+  }).join('');
+
+  document.getElementById('participantDetail').innerHTML=`
+    <div class="detailHero">
+      <div class="detailName">${esc(n)} ${i===state.me?'<span class="tag good">TU</span>':''}</div>
+      <div class="meta" style="margin-top:4px">${total}/25 giocatori acquistati</div>
+
+      <div class="detailStats">
+        <div class="detailStat"><span class="k">Rimasti</span><b>${b}</b><span class="meta">crediti</span></div>
+        <div class="detailStat"><span class="k">Spesi</span><b>${s}</b><span class="meta">crediti</span></div>
+        <div class="detailStat"><span class="k">Rosa</span><b>${total}</b><span class="meta">su 25</span></div>
+      </div>
+
+      <div class="detailRoles">
+        ${['P','D','C','A'].map(role=>`<div class="detailRole"><b>${roleCount(i,role)}/${LIMITS[role]}</b><span>${roleName(role).toUpperCase()}</span></div>`).join('')}
+      </div>
+
+      <div class="progress" style="margin-top:13px"><i style="width:${pct}%"></i></div>
+    </div>
+
+    ${grouped || '<div class="empty" style="margin-top:14px">Nessun giocatore acquistato da questo partecipante.</div>'}
+  `;
+  document.getElementById('participantModal').classList.add('show');
+}
+function closeParticipant(){
+  document.getElementById('participantModal').classList.remove('show');
+}
+
 function roleName(r){return {P:'Portieri',D:'Difensori',C:'Centrocampisti',A:'Attaccanti'}[r]}
 function itemHTML(x){return `<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="delete" onclick="del('${x.id}')">×</button></div></div>`}
 function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
