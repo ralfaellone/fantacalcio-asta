@@ -4297,6 +4297,52 @@ body.top5-live-open #top5LiveModal{
 .strategy40Feedback.good{border-color:rgba(57,217,138,.25)}
 .strategy40Feedback.warn{border-color:rgba(242,201,76,.28)}
 
+
+/* V55 - Feedback AI chiaro e visivo */
+.strategy40Feedback{
+  margin-top:10px;
+  border-radius:13px;
+  padding:10px;
+  background:#0b1727;
+  border:1px solid rgba(142,164,189,.14);
+  font-size:8px;
+  line-height:1.4;
+}
+.strategy40Feedback.good{border-color:rgba(57,217,138,.30)}
+.strategy40Feedback.warn{border-color:rgba(242,201,76,.32)}
+.strategy40Feedback.danger{border-color:rgba(255,90,90,.36)}
+.aiFeedbackHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.aiFeedbackTitle{font-size:11px;font-weight:950}
+.aiFeedbackSub{margin-top:2px;color:var(--muted);font-size:7.5px}
+.aiFeedbackBadge{
+  border-radius:999px;padding:4px 7px;font-size:7px;font-weight:950;white-space:nowrap;
+  background:#111c2d;border:1px solid rgba(142,164,189,.18)
+}
+.aiFeedbackBadge.good{color:#55e6a4;border-color:rgba(57,217,138,.32);background:#08231a}
+.aiFeedbackBadge.warn{color:#f6d66d;border-color:rgba(242,201,76,.32);background:#2a230b}
+.aiFeedbackBadge.danger{color:#ff8e8e;border-color:rgba(255,90,90,.34);background:#2a1012}
+.aiFeedbackMetrics{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:9px}
+.aiFeedbackMetric{
+  background:#071321;border:1px solid rgba(142,164,189,.12);border-radius:9px;
+  padding:6px 4px;text-align:center
+}
+.aiFeedbackMetric span{display:block;font-size:6px;color:var(--muted)}
+.aiFeedbackMetric b{display:block;margin-top:2px;font-size:10px}
+.aiFeedbackReaction{
+  margin-top:8px;padding:8px;border-radius:9px;background:#091522;
+  border:1px solid rgba(142,164,189,.12)
+}
+.aiFeedbackReaction b{display:block;font-size:8px;margin-bottom:2px}
+.aiFeedbackReaction div{color:var(--muted);font-size:7.5px;line-height:1.45}
+.aiFeedbackImpact{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.aiFeedbackImpact span{
+  border-radius:999px;padding:4px 6px;font-size:6.5px;font-weight:850;
+  border:1px solid rgba(142,164,189,.15);background:#101b2a;color:#d5deea
+}
+.aiFeedbackImpact span.down{color:#ffb4b4;border-color:rgba(255,90,90,.22);background:#241014}
+.aiFeedbackImpact span.up{color:#8be8b7;border-color:rgba(57,217,138,.22);background:#092119}
+.buyStatus .buyAiBreak{display:block;margin-top:4px}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4306,7 +4352,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V54</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V55</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -4652,7 +4698,7 @@ body.top5-live-open #top5LiveModal{
     <div class="buySummaryBox"><span class="k">Posti ruolo</span><b id="buySlots">3</b></div>
     <div class="buySummaryBox"><span class="k">Max sicura</span><b id="safeBid">576</b></div>
   </div>
-  <div id="safeBidNote" class="safeBidNote">La max sicura lascia almeno 1 credito per ogni posto rosa ancora da riempire.</div>
+  <div id="safeBidNote" class="safeBidNote">MAX SICURA generale: lascia almeno 1 credito per ogni posto rosa ancora da riempire. Non è il tetto AI del singolo giocatore.</div>
 
   <div id="buyStatus" class="buyStatus">Inserisci giocatore e prezzo.</div>
   <button id="saveBuyBtn" class="primary" onclick="saveBuy()">SALVA ACQUISTO</button>
@@ -5348,43 +5394,52 @@ function strategy40RolePriority(role){
 function strategy40LastPurchaseFeedback(){
   const mine=state.purchases.filter(x=>x.buyer===state.me);
   if(!mine.length)return null;
+
   const last=mine[mine.length-1];
   const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(last.name));
   const paid=Number(last.price)||0;
   const snap=last.aiSnapshot||null;
   const ai=idx>=0?aiPlayerAnalysis(idx,state.me):null;
-  const strategicRef=Math.max(1,Number(snap?.slotTarget)||Number(snap?.ideal)||1);
-  const strategicCap=Math.max(strategicRef,Number(snap?.slotCap)||Number(snap?.aiMax)||strategicRef);
+
+  const ideal=Math.max(1,Number(snap?.ideal)||1);
+  const strategicRef=Math.max(1,Number(snap?.slotTarget)||ideal);
+  const strategicCap=Math.max(strategicRef,Number(snap?.slotCap)||strategicRef);
   const playerCap=Math.max(1,Number(snap?.aiMax)||Number(ai?.maxRec)||strategicCap);
-  const over=Math.max(0,paid-strategicCap);
+
+  const overPlan=Math.max(0,paid-strategicCap);
+  const overPlayer=Math.max(0,paid-playerCap);
+  const overIdeal=Math.max(0,paid-strategicRef);
 
   const before=snap?.roleBudgets||null;
   const changes=['P','D','C','A'].map(role=>{
     if(!before?.[role])return null;
     const now=liveRoleBudgetPlan(role,state.me);
     const oldMax=Number(before[role].max)||0;
-    const delta=(Number(now.max)||0)-oldMax;
-    return {role,oldMax,nowMax:Number(now.max)||0,delta};
+    const nowMax=Number(now.max)||0;
+    return {role,oldMax,nowMax,delta:nowMax-oldMax};
   }).filter(Boolean);
-  const changed=changes.filter(x=>x.delta!==0);
-  const impact=changed.length
-    ? ` Nuovo piano reparti: ${changed.map(x=>`${x.role} ${x.oldMax}→${x.nowMax} (${x.delta>0?'+':''}${x.delta})`).join(' · ')}.`
-    : '';
 
-  let cls='good',title='✅ Acquisto sostenibile',text='';
+  let level='good',title='✅ ACQUISTO SOSTENIBILE',short='Dentro il piano AI';
+  let reaction='La strategia può restare invariata: non serve abbassare la qualità dei prossimi obiettivi.';
+
   if(paid<=strategicRef){
-    text=`${last.name} a ${paid}: acquisto entro il budget ideale dello slot (${strategicRef}). Tetto strategico pre-acquisto ${strategicCap}; tetto AI giocatore ${playerCap}.${impact}`;
+    level='good'; title='✅ ACQUISTO SOSTENIBILE'; short='Dentro il piano AI';
   }else if(paid<=strategicCap){
-    cls='warn'; title='🟡 Caro ma gestibile';
-    text=`${last.name} a ${paid}: ${paid-strategicRef} crediti sopra l'ideale slot (${strategicRef}), ma entro il tetto strategico pre-acquisto (${strategicCap}).${impact}`;
-  }else if(paid<=Math.max(playerCap,Math.round(strategicCap*1.25))){
-    cls='warn'; title='🟠 Sovrapprezzo';
-    text=`${last.name} a ${paid}: ${over} crediti sopra il tetto strategico pre-acquisto (${strategicCap}). Tetto AI giocatore al momento dell'acquisto: ${playerCap}. L'AI abbassa le fasce future e redistribuisce il residuo.${impact}`;
+    level='warn'; title='🟡 CARO MA GESTIBILE'; short=`+${overIdeal} sopra l'ideale`;
+    reaction='Hai speso più dell’ideale dello slot, ma sei ancora entro il limite strategico. L’AI ricalcola leggermente i budget futuri.';
+  }else if(paid<=playerCap){
+    level='warn'; title='🟠 SOVRAPPREZZO'; short=`+${overPlan} oltre il piano`;
+    reaction='Il prezzo supera il piano dello slot, ma resta entro il tetto assoluto del giocatore. L’AI riduce la fascia dei prossimi acquisti.';
   }else{
-    cls='warn'; title='🔴 Errore strategico';
-    text=`${last.name} a ${paid}: ${over} crediti sopra il tetto strategico pre-acquisto (${strategicCap}); tetto AI giocatore ${playerCap}. L'AI protegge gli altri reparti e forza alternative più economiche.${impact}`;
+    level='danger'; title='🔴 FORTE SOVRAPPREZZO'; short=`+${overPlayer} oltre il limite`;
+    reaction='Hai superato sia il piano dello slot sia il tetto assoluto del giocatore. L’AI protegge gli altri reparti e forza alternative più economiche.';
   }
-  return {cls,title,text};
+
+  return {
+    level,title,short,
+    name:last.name,paid,ideal:strategicRef,strategicCap,playerCap,
+    overPlan,overPlayer,reaction,changes
+  };
 }
 
 function renderStrategy40(){
@@ -5423,7 +5478,41 @@ function renderStrategy40(){
         </div>`).join('')}
       </div>
       ${targets?`<div class="strategy40Targets">${targets}</div>`:''}
-      ${feedback?`<div class="strategy40Feedback ${feedback.cls}"><b>${feedback.title}</b><br>${feedback.text}</div>`:''}
+      ${feedback?`
+        <div class="strategy40Feedback ${feedback.level}">
+          <div class="aiFeedbackHead">
+            <div>
+              <div class="aiFeedbackTitle">${feedback.title}</div>
+              <div class="aiFeedbackSub">${esc(feedback.name)} acquistato a ${feedback.paid} crediti</div>
+            </div>
+            <div class="aiFeedbackBadge ${feedback.level}">${feedback.short}</div>
+          </div>
+
+          <div class="aiFeedbackMetrics">
+            <div class="aiFeedbackMetric">
+              <span>PREZZO PAGATO</span><b>${feedback.paid}</b>
+            </div>
+            <div class="aiFeedbackMetric">
+              <span>PIANO SLOT MAX</span><b>${feedback.strategicCap}</b>
+            </div>
+            <div class="aiFeedbackMetric">
+              <span>TETTO GIOCATORE</span><b>${feedback.playerCap}</b>
+            </div>
+          </div>
+
+          <div class="aiFeedbackReaction">
+            <b>🧠 Reazione AI</b>
+            <div>${feedback.reaction}</div>
+          </div>
+
+          ${feedback.changes.length?`
+            <div class="aiFeedbackImpact">
+              ${feedback.changes.map(x=>`
+                <span class="${x.delta<0?'down':x.delta>0?'up':''}">
+                  ${x.role} ${x.oldMax}→${x.nowMax} ${x.delta===0?'':`(${x.delta>0?'+':''}${x.delta})`}
+                </span>`).join('')}
+            </div>`:''}
+        </div>`:''}
       <div class="top5Actions" style="margin-top:8px">
         <button class="secondary" onclick="openTop5LivePage()">🎯 TOP 5 + ALTERNATIVE</button>
         <button class="primary" style="position:static" onclick="openBuyNowPage()">🤖 CHI COMPRO?</button>
@@ -9475,7 +9564,8 @@ function updateBuyPreview(){
     let aiText='';
     if(pidx>=0){
       const aiNow=aiPlayerAnalysis(pidx,buyer);
-      if(aiNow && price>aiNow.maxRec)aiText=` · ⚠️ ${price-aiNow.maxRec} cr sopra tetto AI giocatore (${aiNow.maxRec})`;
+      if(aiNow && price>aiNow.maxRec)aiText=` · ⚠️ ${price-aiNow.maxRec} cr oltre TETTO GIOCATORE (${aiNow.maxRec})`;
+      else if(aiNow)aiText=` · tetto giocatore ${aiNow.maxRec}`;
     }
     msg=`${name} → ${state.managers[buyer]} per ${price} cr · resteranno ${after} cr${safeText}${aiText}.`;
   }
