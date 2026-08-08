@@ -3974,6 +3974,260 @@ body.rose-pro-open{
   .rivalIntelSummary span{font-size:6px}
 }
 
+
+/* V50 - Top 5 AI Live per reparto */
+#top5LiveModal{
+  position:fixed;
+  inset:0;
+  display:none;
+  background:var(--bg);
+  z-index:8500;
+  overflow:hidden;
+}
+#top5LiveModal.show{display:block}
+.top5LiveShell{
+  position:absolute;
+  inset:0;
+  height:100dvh;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr);
+  background:var(--bg);
+}
+.top5LiveHeader{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background:rgba(7,17,31,.98);
+  border-bottom:1px solid var(--line);
+}
+.top5LiveBack{
+  flex:0 0 auto;
+  border:1px solid var(--line);
+  background:#0b1727;
+  color:var(--text);
+  border-radius:13px;
+  padding:9px 11px;
+  font-weight:900;
+}
+.top5LiveTitle{
+  font-size:18px;
+  font-weight:950;
+}
+.top5LiveSub{
+  margin-top:2px;
+  font-size:8px;
+  color:var(--muted);
+}
+.top5LiveBody{
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding:12px 14px calc(env(safe-area-inset-bottom) + 28px);
+}
+.top5Hero{
+  background:
+    radial-gradient(circle at 100% 0%,rgba(242,201,76,.11),transparent 34%),
+    linear-gradient(145deg,#11263c,#0a1727);
+  border:1px solid rgba(242,201,76,.28);
+  border-radius:17px;
+  padding:12px;
+}
+.top5HeroTitle{
+  font-size:17px;
+  font-weight:950;
+}
+.top5HeroText{
+  margin-top:4px;
+  font-size:9px;
+  line-height:1.45;
+  color:var(--muted);
+}
+.top5HeroKpis{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px;
+  margin-top:9px;
+}
+.top5HeroKpi{
+  background:#071321;
+  border:1px solid rgba(142,164,189,.14);
+  border-radius:9px;
+  text-align:center;
+  padding:6px 3px;
+}
+.top5HeroKpi span{
+  display:block;
+  font-size:6.5px;
+  color:var(--muted);
+}
+.top5HeroKpi b{
+  display:block;
+  margin-top:2px;
+  font-size:11px;
+}
+.top5RoleSection{
+  margin-top:14px;
+}
+.top5RoleHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin:0 2px 7px;
+}
+.top5RoleName{
+  font-size:16px;
+  font-weight:950;
+}
+.top5RoleStatus{
+  font-size:8px;
+  color:var(--muted);
+}
+.top5Target{
+  background:linear-gradient(145deg,#102238,#0a1727);
+  border:1px solid rgba(142,164,189,.15);
+  border-radius:14px;
+  padding:10px;
+  margin:6px 0;
+  box-shadow:0 7px 18px rgba(0,0,0,.10);
+}
+.top5Target.first{
+  border-color:rgba(242,201,76,.48);
+  box-shadow:0 0 0 1px rgba(242,201,76,.06) inset;
+}
+.top5TargetTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:8px;
+}
+.top5Rank{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:23px;
+  height:23px;
+  border-radius:8px;
+  background:#15304d;
+  font-size:9px;
+  font-weight:950;
+  margin-right:6px;
+}
+.top5Target.first .top5Rank{
+  background:var(--premium-gold);
+  color:#111;
+}
+.top5Name{
+  font-size:13px;
+  font-weight:950;
+}
+.top5Meta{
+  margin-top:2px;
+  font-size:8px;
+  color:var(--muted);
+}
+.top5Score{
+  text-align:right;
+  flex:0 0 auto;
+}
+.top5Score b{
+  display:block;
+  color:var(--ok);
+  font-size:14px;
+}
+.top5Score span{
+  display:block;
+  margin-top:1px;
+  font-size:7px;
+  color:var(--muted);
+}
+.top5Prices{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px;
+  margin-top:8px;
+}
+.top5Price{
+  background:#071321;
+  border:1px solid rgba(142,164,189,.14);
+  border-radius:9px;
+  text-align:center;
+  padding:6px 3px;
+}
+.top5Price span{
+  display:block;
+  font-size:6.5px;
+  color:var(--muted);
+}
+.top5Price b{
+  display:block;
+  margin-top:2px;
+  font-size:11px;
+}
+.top5Why{
+  margin-top:7px;
+  font-size:9px;
+  color:var(--muted);
+  line-height:1.4;
+}
+.top5Signals{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  margin-top:7px;
+}
+.top5Signals span{
+  border:1px solid rgba(57,217,138,.20);
+  background:#092119;
+  color:#8be8b7;
+  border-radius:999px;
+  padding:3px 6px;
+  font-size:6.5px;
+  font-weight:850;
+}
+.top5Actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px;
+  margin-top:8px;
+}
+.top5Actions button{
+  border-radius:9px;
+  padding:8px 5px;
+  font-size:8px;
+  font-weight:950;
+}
+.top5Empty{
+  background:#0b1727;
+  border:1px dashed var(--line);
+  border-radius:13px;
+  padding:14px;
+  text-align:center;
+  color:var(--muted);
+  font-size:10px;
+}
+body.top5-live-open{
+  overflow:hidden!important;
+  height:100dvh!important;
+}
+body.top5-live-open nav{
+  display:none!important;
+}
+body.top5-live-open .page{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+body.top5-live-open #top5LiveModal{
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+@media(max-width:390px){
+  .top5Prices{grid-template-columns:repeat(4,1fr)}
+  .top5Price span{font-size:6px}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -3983,7 +4237,7 @@ body.rose-pro-open{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V49</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V50</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -4023,6 +4277,7 @@ body.rose-pro-open{
       <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
       <button onclick="openPlanPage()">📊<span>Piano asta</span></button>
       <button onclick="openFormationPage()">🧩<span>Costruisci Rosa AI</span></button>
+      <button onclick="openTop5LivePage()">🎯<span>Top 5 AI Live</span></button>
     </div>
   </div>
 
@@ -4066,6 +4321,7 @@ body.rose-pro-open{
         <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
         <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
         <button onclick="openPlanPage()">📊<span>Piano asta</span></button>
+        <button onclick="openTop5LivePage()">🎯<span>Top 5 AI Live</span></button>
       </div>
     </div>
 
@@ -4115,6 +4371,7 @@ body.rose-pro-open{
       <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
       <button onclick="openPlanPage()">📊<span>Piano</span></button>
       <button id="compareOpenBtn" onclick="openComparePage()" disabled>⚖️<span id="compareMiniText">Confronta 0/3</span></button>
+      <button onclick="openTop5LivePage()">🎯<span>Top 5 Live</span></button>
     </div>
 
     <div id="favSummary" class="favSummary playersFavSummary"></div>
@@ -4198,6 +4455,20 @@ body.rose-pro-open{
 
 
 
+
+
+<div id="top5LiveModal">
+  <div class="top5LiveShell">
+    <div class="top5LiveHeader">
+      <button class="top5LiveBack" onclick="closeTop5LivePage()">← Indietro</button>
+      <div>
+        <div class="top5LiveTitle">🎯 Top 5 AI Live</div>
+        <div class="top5LiveSub">I 5 obiettivi migliori per ogni reparto, aggiornati con l’asta.</div>
+      </div>
+    </div>
+    <div id="top5LiveBody" class="top5LiveBody"></div>
+  </div>
+</div>
 
 <div id="formationModal">
   <div class="formationShell">
@@ -4542,6 +4813,7 @@ function load(){
 function persist(){
   localStorage.setItem('astaFantaV1',JSON.stringify(state));
   setTimeout(refreshAIRosterIfOpen,0);
+  setTimeout(refreshTop5LiveIfOpen,0);
 }
 
 function loadPlayerStats(){
@@ -5661,6 +5933,200 @@ function closeFormationPage(){
   document.body.classList.remove('formation-page-open');
   document.body.style.overflow='';
 }
+
+
+function liveTop5RoleNeed(role,buyerIndex=state.me){
+  const missing=Math.max(0,LIMITS[role]-roleCount(buyerIndex,role));
+  if(!missing)return 0;
+  const totalMissing=remainingRosterSlots(buyerIndex);
+  const roleShare=missing/Math.max(1,totalMissing);
+  const fillShare=missing/Math.max(1,LIMITS[role]);
+  return Math.round(clamp(fillShare*62+roleShare*38,0,100));
+}
+
+function liveTop5Candidate(index,role){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p || p.role!==role)return null;
+  if(purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))return null;
+  if(roleCount(state.me,role)>=LIMITS[role])return null;
+
+  const ai=aiPlayerAnalysis(index,state.me);
+  if(!ai)return null;
+
+  const fit=rosterFitScore(p,ai,state.me);
+  const afford=affordabilityScore(ai,state.me);
+  const formation=formationRoleFit(role,state.me);
+  const need=liveTop5RoleNeed(role,state.me);
+  const cash=budget(state.me);
+  const slots=remainingRosterSlots(state.me);
+
+  // Protect the rest of the roster: a suggestion must be strong AND sustainable.
+  const reserve=Math.max(0,slots-1);
+  const spendable=Math.max(1,cash-reserve);
+  const costLoad=ai.ideal/spendable;
+  const sustainability=Math.round(clamp(100-costLoad*75,0,100));
+
+  let score=Math.round(clamp(
+    ai.score*.44 +
+    fit*.16 +
+    afford*.12 +
+    formation*.10 +
+    need*.08 +
+    ai.confidence*.04 +
+    ai.scarcity100*.03 +
+    (100-ai.rivalPressure)*.01 +
+    sustainability*.02
+  ,1,99));
+
+  // If a role is still empty, preserve top-level options; if already heavily invested,
+  // reward sustainable profiles more.
+  const owned=roleCount(state.me,role);
+  if(owned===0 && ai.score>=80)score=Math.min(99,score+3);
+  if(owned>=Math.ceil(LIMITS[role]*.6) && afford<50)score=Math.max(1,score-8);
+
+  let action='PUNTA';
+  if(score>=86)action='PRIORITÀ';
+  else if(score>=76)action='PUNTA';
+  else if(score>=66)action='BUONA SCELTA';
+  else if(score>=54)action='SOLO AL PREZZO';
+
+  return {
+    index,p,ai,fit,afford,formation,need,sustainability,score,action
+  };
+}
+
+function liveTop5Rows(role){
+  return PLAYER_ARCHIVE
+    .map((p,index)=>liveTop5Candidate(index,role))
+    .filter(Boolean)
+    .sort((a,b)=>
+      b.score-a.score ||
+      b.ai.score-a.ai.score ||
+      b.fit-a.fit ||
+      b.ai.confidence-a.ai.confidence
+    )
+    .slice(0,5);
+}
+
+function liveTop5Reason(x){
+  const bits=[];
+  if(x.need>=70)bits.push('reparto prioritario');
+  if(x.fit>=78)bits.push('ottimo incastro con la tua rosa');
+  else if(x.fit>=60)bits.push('buon fit rosa');
+  if(x.afford>=78)bits.push('molto sostenibile');
+  else if(x.afford>=58)bits.push('costo gestibile');
+  if(x.ai.scarcity100>=70)bits.push('poche alternative comparabili');
+  if(x.ai.rivalPressure>=70)bits.push('forte pressione rivali');
+  if(x.ai.confidence>=65)bits.push(`stima AI affidabile ${x.ai.confidence}%`);
+  if(x.formation>=72)bits.push(`adatto al piano ${activeFormationPlan().name}`);
+  if(!bits.length)bits.push('buon equilibrio tra qualità, prezzo e situazione della rosa');
+  return bits.slice(0,3).join(' · ');
+}
+
+function renderTop5LivePage(){
+  const body=document.getElementById('top5LiveBody');
+  if(!body)return;
+
+  const cash=budget(state.me);
+  const slots=remainingRosterSlots(state.me);
+  const plan=activeFormationPlan(state.me);
+  const stage=aiCore3AuctionStage();
+
+  body.innerHTML=`
+    <div class="top5Hero">
+      <div class="top5HeroTitle">I tuoi obiettivi, reparto per reparto</div>
+      <div class="top5HeroText">
+        La classifica cambia automaticamente quando un giocatore viene acquistato.
+        L’AI combina qualità, prezzo, budget residuo, composizione della tua rosa, modulo,
+        scarsità e pressione dei rivali.
+      </div>
+      <div class="top5HeroKpis">
+        <div class="top5HeroKpi"><span>CREDITI</span><b>${cash}</b></div>
+        <div class="top5HeroKpi"><span>POSTI</span><b>${slots}</b></div>
+        <div class="top5HeroKpi"><span>PIANO</span><b>${plan?plan.name:'—'}</b></div>
+        <div class="top5HeroKpi"><span>FASE</span><b>${stage.label}</b></div>
+      </div>
+    </div>
+
+    ${['P','D','C','A'].map(role=>{
+      const rows=liveTop5Rows(role);
+      const owned=roleCount(state.me,role);
+      const missing=Math.max(0,LIMITS[role]-owned);
+
+      return `
+        <div class="top5RoleSection">
+          <div class="top5RoleHead">
+            <div class="top5RoleName">${roleName(role)}</div>
+            <div class="top5RoleStatus">${owned}/${LIMITS[role]} presi · ${missing} mancanti</div>
+          </div>
+
+          ${missing===0
+            ? `<div class="top5Empty">✅ Reparto completo. L’AI non ti consiglia altri ${roleName(role).toLowerCase()}.</div>`
+            : rows.length
+              ? rows.map((x,n)=>`
+                <div class="top5Target ${n===0?'first':''}">
+                  <div class="top5TargetTop">
+                    <div style="min-width:0">
+                      <div>
+                        <span class="top5Rank">${n+1}</span>
+                        <span class="top5Name">${esc(x.p.name)}</span>
+                      </div>
+                      <div class="top5Meta">${esc(x.p.team)} · FVM ${x.p.fvm} · QI ${x.p.qi} · ${x.action}</div>
+                    </div>
+                    <div class="top5Score">
+                      <b>${x.score}/99</b>
+                      <span>TOP 5 LIVE</span>
+                    </div>
+                  </div>
+
+                  <div class="top5Prices">
+                    <div class="top5Price"><span>MIN</span><b>${x.ai.low}</b></div>
+                    <div class="top5Price"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
+                    <div class="top5Price"><span>MAX</span><b>${x.ai.high}</b></div>
+                    <div class="top5Price"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+                  </div>
+
+                  <div class="top5Why">${liveTop5Reason(x)}</div>
+
+                  <div class="top5Signals">
+                    <span>Conf. ${x.ai.confidence}%</span>
+                    <span>Scarsità ${x.ai.scarcity100}/100</span>
+                    <span>Rivali ${x.ai.rivalPressure}/100</span>
+                    <span>Fit ${x.fit}/100</span>
+                  </div>
+
+                  <div class="top5Actions">
+                    <button class="secondary" onclick="closeTop5LivePage();openAIForPlayer(${x.index})">🤖 ANALISI</button>
+                    <button class="primary" style="position:static" onclick="closeTop5LivePage();buyFromListone(${x.index})">ASTA</button>
+                  </div>
+                </div>`).join('')
+              : `<div class="top5Empty">Nessun giocatore libero adatto disponibile in questo reparto.</div>`}
+        </div>`;
+    }).join('')}
+  `;
+}
+
+function openTop5LivePage(){
+  renderTop5LivePage();
+  document.body.classList.add('top5-live-open');
+  document.getElementById('top5LiveModal').classList.add('show');
+  const b=document.getElementById('top5LiveBody');
+  if(b)b.scrollTop=0;
+}
+
+function closeTop5LivePage(){
+  document.getElementById('top5LiveModal').classList.remove('show');
+  document.body.classList.remove('top5-live-open');
+  document.body.style.overflow='';
+}
+
+function refreshTop5LiveIfOpen(){
+  const modal=document.getElementById('top5LiveModal');
+  if(modal && modal.classList.contains('show')){
+    renderTop5LivePage();
+  }
+}
+
 
 function rivalInterestForPlayer(managerIndex,playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
