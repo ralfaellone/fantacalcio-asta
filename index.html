@@ -4271,7 +4271,7 @@ body.top5-live-open #top5LiveModal{
 }
 
 
-/* V52 - AI Strategia d'Asta 4.0 */
+/* V53 - AI Strategia d'Asta 4.0 */
 .strategy40{
   background:linear-gradient(145deg,#102238,#091624);
   border:1px solid rgba(242,201,76,.22);
@@ -4306,7 +4306,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V52</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V53</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5354,15 +5354,21 @@ function strategy40LastPurchaseFeedback(){
   const ai=aiPlayerAnalysis(idx,state.me);
   if(!ai)return null;
   const paid=Number(last.price)||0;
+  const slot=strategySlotPlan(last.role,state.me);
+  const strategicRef=Math.max(1,slot.target||Math.round(ai.ideal*.65));
+  const strategicCap=Math.max(strategicRef,slot.cap||ai.maxRec);
   let cls='good',title='✅ Acquisto sostenibile',text='';
-  if(paid<=ai.ideal){
-    text=`${last.name} a ${paid}: prezzo sotto/in linea con l'ideale AI (${ai.ideal}). La strategia può restare aggressiva sugli obiettivi prioritari.`;
-  }else if(paid<=ai.maxRec){
-    cls='warn'; title='🟡 Acquisto nella fascia alta';
-    text=`${last.name} a ${paid}: ancora entro il NON OLTRE AI (${ai.maxRec}), ma i budget dei reparti restanti sono stati ricalibrati.`;
+  if(paid<=strategicRef){
+    text=`${last.name} a ${paid}: costo coerente con il piano del singolo slot (riferimento ${strategicRef}). Puoi mantenere aggressività sugli obiettivi prioritari.`;
+  }else if(paid<=strategicCap){
+    cls='warn'; title='🟡 Caro ma gestibile';
+    text=`${last.name} a ${paid}: sopra il budget ideale del singolo slot (${strategicRef}), ma ancora gestibile. L'AI ridistribuisce subito il residuo.`;
+  }else if(paid<=Math.max(ai.maxRec,Math.round(strategicCap*1.25))){
+    cls='warn'; title='🟠 Sovrapprezzo';
+    text=`${last.name} a ${paid}: investimento superiore al piano slot (tetto strategico ${strategicCap}). I prossimi obiettivi dello stesso reparto scendono di fascia.`;
   }else{
-    cls='warn'; title='⚠️ Spesa sopra il piano';
-    text=`${last.name} a ${paid}: supera il tetto AI attuale (${ai.maxRec}). L'AI abbassa automaticamente la fascia economica dei prossimi obiettivi.`;
+    cls='warn'; title='🔴 Errore strategico';
+    text=`${last.name} a ${paid}: spesa troppo alta rispetto al piano del singolo slot (tetto ${strategicCap}). L'AI protegge gli altri reparti e cerca alternative economiche.`;
   }
   return {cls,title,text};
 }
@@ -5384,7 +5390,7 @@ function renderStrategy40(){
         <div class="strategy40TargetName">${x.role} · ${esc(t.p.name)}</div>
         <div class="strategy40TargetMeta">${liveTargetTier(t,x.plan)} · priorità reparto ${x.score}/99${alts.length?` · alternative: ${alts.map(a=>esc(a.p.name)).join(', ')}`:''}</div>
       </div>
-      <div class="strategy40TargetPrice">${t.ai.low}-${t.ai.maxRec} cr</div>
+      <div class="strategy40TargetPrice">${liveTop5StrategicPrices(t).low}-${liveTop5StrategicPrices(t).maxRec} cr</div>
     </div>`;
   }).join('');
 
@@ -5457,9 +5463,9 @@ function renderDashboardControlRaw(){
         </div>
         <div class="dashMoveWhy">${buyNowReason(x)}</div>
         <div class="dashMoveMetrics">
-          <div class="dashMoveMetric"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
-          <div class="dashMoveMetric"><span>RANGE</span><b>${x.ai.low}-${x.ai.high}</b></div>
-          <div class="dashMoveMetric"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+          <div class="dashMoveMetric"><span>IDEALE</span><b>${x.px.ideal}</b></div>
+          <div class="dashMoveMetric"><span>RANGE</span><b>${x.px.low}-${x.px.high}</b></div>
+          <div class="dashMoveMetric"><span>NON OLTRE</span><b>${x.px.maxRec}</b></div>
         </div>
         <div class="dashMoveActions">
           <button class="secondary" onclick="openAIForPlayer(${x.index})">🤖 ANALIZZA</button>
@@ -6316,10 +6322,16 @@ function liveTop5Candidate(index,role){
   // V51: as a department fills, expensive profiles lose priority and
   // sustainable complementary profiles rise.
   const rolePlan=liveRoleBudgetPlan(role,state.me);
+  const slotPlan=strategySlotPlan(role,state.me);
   if(rolePlan.missing){
     const avgTarget=rolePlan.avg;
     if(owned>0 && ai.ideal>avgTarget*1.75)score-=Math.min(16,Math.round((ai.ideal/Math.max(1,avgTarget)-1.75)*12));
     if(owned>=Math.ceil(LIMITS[role]*.5) && ai.ideal<=avgTarget*1.15)score+=4;
+  }
+  // V53: judge every target against the NEXT SLOT, not against the whole department budget.
+  if(slotPlan.cap>0){
+    if(ai.ideal>slotPlan.cap)score-=Math.min(30,Math.round((ai.ideal/slotPlan.cap-1)*28));
+    else if(ai.ideal<=slotPlan.target*1.08)score+=6;
   }
   score=Math.round(clamp(score,1,99));
 
@@ -6330,7 +6342,7 @@ function liveTop5Candidate(index,role){
   else if(score>=54)action='SOLO AL PREZZO';
 
   return {
-    index,p,ai,fit,afford,formation,need,sustainability,score,action
+    index,p,ai,fit,afford,formation,need,sustainability,slotPlan,score,action
   };
 }
 
@@ -6349,6 +6361,16 @@ function liveTop5Rows(role){
     .slice(0,5);
   PERF_CACHE.top5.set(key,rows);
   return rows;
+}
+
+function liveTop5StrategicPrices(x){
+  const sp=x.slotPlan||strategySlotPlan(x.p.role,state.me);
+  if(!sp || !sp.cap)return {low:x.ai.low,ideal:x.ai.ideal,high:x.ai.high,maxRec:x.ai.maxRec};
+  const maxRec=Math.max(1,Math.min(Number(x.ai.maxRec||sp.cap),sp.cap));
+  const ideal=Math.max(1,Math.min(Number(x.ai.ideal||sp.target),sp.target,maxRec));
+  const low=Math.max(1,Math.min(Number(x.ai.low||ideal),ideal));
+  const high=Math.max(low,Math.min(Number(x.ai.high||maxRec),maxRec));
+  return {low,ideal,high,maxRec};
 }
 
 function liveTop5Reason(x){
@@ -6425,6 +6447,7 @@ function renderTop5LivePage(){
               ? rows.map((x,n)=>{
                   const tier=liveTargetTier(x,strat);
                   const alts=liveStrategicAlternatives(x.index,3);
+                  const px=liveTop5StrategicPrices(x);
                   return `
                 <div class="top5Target ${n===0?'first':''}">
                   <div class="top5TargetTop">
@@ -6443,10 +6466,10 @@ function renderTop5LivePage(){
                   </div>
 
                   <div class="top5Prices">
-                    <div class="top5Price"><span>MIN</span><b>${x.ai.low}</b></div>
-                    <div class="top5Price"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
-                    <div class="top5Price"><span>MAX</span><b>${x.ai.high}</b></div>
-                    <div class="top5Price"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+                    <div class="top5Price"><span>MIN</span><b>${px.low}</b></div>
+                    <div class="top5Price"><span>IDEALE</span><b>${px.ideal}</b></div>
+                    <div class="top5Price"><span>MAX</span><b>${px.high}</b></div>
+                    <div class="top5Price"><span>NON OLTRE</span><b>${px.maxRec}</b></div>
                   </div>
 
                   <div class="top5Why">${liveTop5Reason(x)}</div>
@@ -7043,8 +7066,15 @@ function buyNowCandidate(index){
   const afford=affordabilityScore(ai,state.me);
   const urgency=roleUrgencyScore(p.role,state.me);
   const formation=formationRoleFit(p.role,state.me);
-  const score=ai2DirectionalScore(index,state.me);
-  return {index,p,ai,st,fit,afford,urgency,formation,score};
+  const slotPlan=strategySlotPlan(p.role,state.me);
+  let score=ai2DirectionalScore(index,state.me);
+  if(slotPlan.cap>0){
+    if(ai.ideal>slotPlan.cap)score-=Math.min(34,Math.round((ai.ideal/slotPlan.cap-1)*30));
+    else if(ai.ideal<=slotPlan.target*1.08)score+=6;
+  }
+  score=Math.round(clamp(score,1,99));
+  const px=liveTop5StrategicPrices({p,ai,slotPlan});
+  return {index,p,ai,st,fit,afford,urgency,formation,slotPlan,px,score};
 }
 function buyNowCandidates(){
   return PLAYER_ARCHIVE
@@ -7059,8 +7089,9 @@ function buyNowReason(x){
   if(x.urgency>=75)bits.push('reparto prioritario');
   else if(x.urgency>=50)bits.push('reparto da completare');
   if(x.fit>=75)bits.push('ottimo fit con la rosa');
-  if(x.afford>=80)bits.push('prezzo molto sostenibile');
-  else if(x.afford>=55)bits.push('prezzo compatibile col budget');
+  if(x.slotPlan && x.ai.ideal<=x.slotPlan.target*1.08)bits.push('prezzo coerente col prossimo slot');
+  else if(x.slotPlan && x.ai.ideal<=x.slotPlan.cap)bits.push('costo gestibile per questo slot');
+  else if(x.afford>=55)bits.push('budget generale sufficiente, ma occhio al piano slot');
   if(x.formation>=70)bits.push(`molto adatto al piano ${activeFormationPlan().name}`);
   if(x.ai.score>=82)bits.push('profilo AI di fascia alta');
   if(x.st && Number(x.st.fm)>=6.5)bits.push('buon rendimento statistico');
@@ -7099,9 +7130,9 @@ function renderBuyNowPage(){
           <span class="tag">${x.score}/99</span>
         </div>
         <div class="buyNowMetrics">
-          <div class="buyNowMetric"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
-          <div class="buyNowMetric"><span>RANGE</span><b>${x.ai.low}-${x.ai.high}</b></div>
-          <div class="buyNowMetric"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+          <div class="buyNowMetric"><span>IDEALE</span><b>${x.px.ideal}</b></div>
+          <div class="buyNowMetric"><span>RANGE</span><b>${x.px.low}-${x.px.high}</b></div>
+          <div class="buyNowMetric"><span>NON OLTRE</span><b>${x.px.maxRec}</b></div>
           <div class="buyNowMetric"><span>FM</span><b>${x.st?Number(x.st.fm).toFixed(2):'—'}</b></div>
           <div class="buyNowMetric"><span>FIT ROSA</span><b>${x.fit}</b></div>
           <div class="buyNowMetric"><span>BUDGET</span><b>${x.afford}</b></div>
@@ -7643,8 +7674,9 @@ function renderNextMove(){
 
   roleEl.textContent=`REPARTO: ${role}`;
   let advice=`${roleName(role)}: ${move.missing} posti ancora da coprire. `;
-  advice+=`Per il prossimo acquisto starei intorno a ${move.nextComfort} crediti`;
-  if(cap>move.nextComfort)advice+=`, con tetto dinamico circa ${cap}`;
+  const slotPlan=strategySlotPlan(role,state.me);
+  advice+=`Per il prossimo acquisto starei intorno a ${slotPlan.target} crediti`;
+  if(cap>slotPlan.target)advice+=`, con NON OLTRE dinamico ${cap}`;
   advice+=`. `;
 
   if(move.status==='Sopra budget'){
@@ -8050,31 +8082,44 @@ function renderAudit(){
     : '<div class="auditItem"><strong>✅ Nessuna anomalia</strong><span>Budget, limiti e struttura rosa risultano coerenti.</span></div>';
 }
 
+function strategyRoleShare(role,buyerIndex=state.me){
+  // The user's chosen formation is the primary plan for his team.
+  // Other managers keep the neutral historical shares.
+  if(buyerIndex===state.me && AI_ROSTER_MODULE){
+    const fp=FORMATION_PLANS.find(x=>x.id===AI_ROSTER_MODULE);
+    if(fp && fp.budget && Number(fp.budget[role])>0)return Number(fp.budget[role]);
+  }
+  return Number(ROLE_BUDGET_SHARE[role]||.25);
+}
+
 function strategyData(buyerIndex=state.me){
   const available=budget(buyerIndex);
-  const totalSpent=spent(buyerIndex);
   const totalMissing=remainingRosterSlots(buyerIndex);
-  const reserveMinimum=Math.max(0,totalMissing); // almeno 1 credito per posto
   return ['P','D','C','A'].map(role=>{
     const buys=state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===role);
-    const roleSpent=buys.reduce((s,x)=>s+x.price,0);
+    const roleSpent=buys.reduce((s,x)=>s+Number(x.price||0),0);
     const filled=buys.length;
     const missing=Math.max(0,LIMITS[role]-filled);
-    const plan=Math.round(INITIAL*ROLE_BUDGET_SHARE[role]);
+    const share=strategyRoleShare(role,buyerIndex);
+    const plan=Math.round(INITIAL*share);
 
     const otherMissing=['P','D','C','A'].filter(r=>r!==role)
       .reduce((s,r)=>s+Math.max(0,LIMITS[r]-roleCount(buyerIndex,r)),0);
-    const hardMax=Math.max(0,available-otherMissing);
+    const hardMax=Math.max(0,available-otherMissing); // always protect 1 credit for every other open slot
 
-    // Dynamic remaining target: original plan minus spent, with a proportional
-    // share of unallocated/overspent budget redistributed among open roles.
     const baseRemaining=Math.max(0,plan-roleSpent);
     const openRoles=['P','D','C','A'].filter(r=>Math.max(0,LIMITS[r]-roleCount(buyerIndex,r))>0);
-    const plannedRemaining=openRoles.reduce((s,r)=>s+Math.max(0,Math.round(INITIAL*ROLE_BUDGET_SHARE[r])-state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===r).reduce((a,b)=>a+b.price,0)),0);
-    const freeExtra=Math.max(0,available-plannedRemaining);
-    const weightDen=openRoles.reduce((s,r)=>s+ROLE_BUDGET_SHARE[r],0)||1;
-    const extraShare=missing>0?Math.round(freeExtra*(ROLE_BUDGET_SHARE[role]/weightDen)):0;
-    const recommendedRemaining=missing>0?Math.min(available,baseRemaining+extraShare):0;
+    const plannedRemaining=openRoles.reduce((s,r)=>{
+      const rp=Math.round(INITIAL*strategyRoleShare(r,buyerIndex));
+      const rs=state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===r).reduce((a,b)=>a+Number(b.price||0),0);
+      return s+Math.max(0,rp-rs);
+    },0);
+    const protectedReserve=Math.max(0,totalMissing); // one credit per still-open slot
+    const distributable=Math.max(0,available-protectedReserve);
+    const freeExtra=Math.max(0,Math.min(distributable,available-plannedRemaining));
+    const weightDen=openRoles.reduce((s,r)=>s+strategyRoleShare(r,buyerIndex),0)||1;
+    const extraShare=missing>0?Math.round(freeExtra*(share/weightDen)):0;
+    const recommendedRemaining=missing>0?Math.min(hardMax,Math.max(missing,baseRemaining+extraShare)):0;
     const nextComfort=missing>0?Math.max(1,Math.floor(recommendedRemaining/missing)):0;
 
     const pct=plan?Math.round(roleSpent/plan*100):0;
@@ -8083,14 +8128,29 @@ function strategyData(buyerIndex=state.me){
     else if(roleSpent>plan*1.15)status='Sopra budget';
     else if(roleSpent<plan*.55&&filled>=Math.ceil(LIMITS[role]/2))status='Budget disponibile';
 
-    return {role,plan,roleSpent,filled,missing,available,hardMax,recommendedRemaining,nextComfort,pct,status};
+    return {role,share,plan,roleSpent,filled,missing,available,hardMax,recommendedRemaining,nextComfort,pct,status};
   });
 }
-function strategyCapForRole(role,buyerIndex=state.me){
+
+function strategySlotPlan(role,buyerIndex=state.me){
   const d=strategyData(buyerIndex).find(x=>x.role===role);
-  if(!d||d.missing<=0)return 0;
-  // Allow a premium for a top target, but protect all remaining slots.
-  return Math.max(1,Math.min(d.hardMax,Math.round(d.nextComfort*1.65)));
+  if(!d||d.missing<=0)return {target:0,cap:0,min:0,tier:'COMPLETO'};
+  const fp=(buyerIndex===state.me && AI_ROSTER_MODULE)
+    ? (FORMATION_PLANS.find(x=>x.id===AI_ROSTER_MODULE)||activeFormationPlan(buyerIndex))
+    : activeFormationPlan(buyerIndex);
+  const startersLeft=Math.max(0,Math.ceil(Number(fp.xi?.[role]||0))-d.filled);
+  const weights=aiRosterSlotWeights(role,d.missing,startersLeft);
+  const firstWeight=weights[0]||1/Math.max(1,d.missing);
+  const target=Math.max(1,Math.min(d.hardMax,Math.round(d.recommendedRemaining*firstWeight)));
+  const tier=startersLeft>0?'TITOLARE':d.missing<=2?'RISERVA':'ALTERNATIVA';
+  const premium=tier==='TITOLARE'?1.22:1.12;
+  const cap=Math.max(1,Math.min(d.hardMax,Math.round(target*premium)));
+  const min=Math.max(1,Math.round(target*(tier==='TITOLARE'?.78:.72)));
+  return {target,cap,min,tier,roleRemaining:d.recommendedRemaining,missing:d.missing};
+}
+
+function strategyCapForRole(role,buyerIndex=state.me){
+  return strategySlotPlan(role,buyerIndex).cap;
 }
 function openStrategy(){
   renderStrategy();
@@ -8109,7 +8169,7 @@ function renderStrategy(){
     const bar=Math.min(100,d.pct);
     const msg=d.missing===0
       ? `Hai completato il reparto con ${d.roleSpent} crediti.`
-      : `Per i ${d.missing} posti rimasti suggerisco di riservare circa ${d.recommendedRemaining} crediti. Sul prossimo ${roleName(d.role).toLowerCase()} una spesa confortevole è circa ${d.nextComfort}; per un top non supererei circa ${strategyCapForRole(d.role)} salvo scelta strategica.`;
+      : `Per i ${d.missing} posti rimasti suggerisco di riservare circa ${d.recommendedRemaining} crediti. Sul prossimo ${roleName(d.role).toLowerCase()} il piano SLOT indica circa ${strategySlotPlan(d.role).target} crediti; NON OLTRE ${strategyCapForRole(d.role)}. Il resto resta protetto per gli altri ${Math.max(0,d.missing-1)} slot del reparto.`;
     return `<div class="strategyCard">
       <div class="strategyTop"><div class="strategyRole">${d.role} · ${roleName(d.role)}</div><div class="strategyMoney">${d.roleSpent}/${d.plan}</div></div>
       <div class="strategyBar"><i style="width:${bar}%"></i></div>
@@ -8117,7 +8177,7 @@ function renderStrategy(){
       <div class="strategyGrid">
         <div class="strategyMetric"><span>SPESO</span><b>${d.roleSpent}</b></div>
         <div class="strategyMetric"><span>DA RISERVARE</span><b>${d.recommendedRemaining}</b></div>
-        <div class="strategyMetric"><span>PROSSIMO</span><b>${d.nextComfort}</b></div>
+        <div class="strategyMetric"><span>PROSSIMO SLOT</span><b>${strategySlotPlan(d.role).target}</b></div>
       </div>
       <div class="strategyAlert">${msg}</div>
     </div>`;
