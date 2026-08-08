@@ -4902,7 +4902,7 @@ body.top5-live-open nav{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V61.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V61.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6531,7 +6531,7 @@ function renderRivalLiveBox(playerIndex,currentBid=0){
 
 function refreshRivalLiveBox(){
   if(ASTA_LIVE_PLAYER==null)return;
-  const input=document.getElementById('astaLiveBid');
+  const input=document.getElementById('astaLivePrice');
   const bid=Math.max(0,Number(input?.value)||0);
   const box=document.getElementById('rivalLiveDynamicBox');
   if(box)box.outerHTML=renderRivalLiveBox(ASTA_LIVE_PLAYER,bid);
@@ -7753,40 +7753,47 @@ function rivalInterestForPlayer(managerIndex,playerIndex,currentBid=0){
   const p=PLAYER_ARCHIVE[playerIndex];
   if(!p || managerIndex===state.me)return null;
 
-  const cash=managerCash(managerIndex);
+  // IMPORTANTE: qui usiamo solo l'analisi BASE.
+  // La full aiPlayerAnalysis() richiama a sua volta la pressione rivali:
+  // usarla qui creerebbe ricorsione e bloccherebbe Dashboard/tasti.
+  const cash=budget(managerIndex);
   const missing=Math.max(0,LIMITS[p.role]-roleCount(managerIndex,p.role));
   if(missing<=0 || cash<=0)return null;
 
   const safe=Math.max(1,safeMaxBid(managerIndex));
-  const ai=aiPlayerAnalysis(playerIndex,managerIndex);
-  const fit=rosterFitScore(p,ai,managerIndex);
-  const formation=formationRoleFit(p.role,managerIndex);
+  const ai=aiPlayerAnalysisBase(playerIndex,managerIndex);
+  if(!ai)return null;
+
   const urgency=roleUrgencyScore(p.role,managerIndex);
+  const formation=formationRoleFit(p.role,managerIndex);
 
-  // Quanto il giocatore è davvero interessante per QUEL rivale.
-  const quality=ai?.score||50;
+  // Fit rivale calcolato senza richiamare AI full.
+  const afford=clamp((safe/Math.max(1,ai.ideal))*60,0,100);
+  const fit=Math.round(clamp(urgency*.58+afford*.42,0,100));
+
+  const quality=Number(ai.score)||50;
   const fvm=clamp((Number(p.fvm)||0)/260,0,1)*100;
-  const needRatio=missing/Math.max(1,LIMITS[p.role]);
-  const needScore=clamp(needRatio*100,0,100);
+  const needScore=clamp((missing/Math.max(1,LIMITS[p.role]))*100,0,100);
 
-  // Budget reparto residuo: se il rivale ha già investito molto nel ruolo,
-  // l'interesse per un'altra spesa alta scende.
   const roleSpent=state.purchases
     .filter(x=>x.buyer===managerIndex && x.role===p.role)
     .reduce((s,x)=>s+(Number(x.price)||0),0);
-  const roleBudgetBase=Math.max(1,Math.round((state.startCredits||600)*(
+
+  const initial=Number(state.initialBudget)||600;
+  const roleBudgetBase=Math.max(1,Math.round(initial*(
     p.role==='P'?.09:p.role==='D'?.19:p.role==='C'?.27:.45
   )));
   const roleBudgetLeft=Math.max(0,roleBudgetBase-roleSpent);
   const budgetRoom=clamp(roleBudgetLeft/roleBudgetBase,0,1)*100;
 
-  // Alternative comparabili disponibili: più ce ne sono, meno è probabile
-  // che il rivale insegua proprio questo nome.
-  const comparable=PLAYER_ARCHIVE.filter((q,qi)=>{
-    if(qi===playerIndex || q.role!==p.role)return false;
+  // Alternative comparabili: confronto leggero su FVM/QI, senza fare analisi AI
+  // di centinaia di giocatori e senza ricorsione.
+  const targetComposite=(Number(p.fvm)||0)*0.70 + (Number(p.qa)||Number(p.qi)||0)*3;
+  const comparable=PLAYER_ARCHIVE.filter(q=>{
+    if(q===p || q.role!==p.role)return false;
     if(purchaseForArchivePlayer(q.name)||isUnavailablePlayer(q.name))return false;
-    const qa=aiPlayerAnalysis(qi,managerIndex);
-    return qa && Math.abs((qa.score||50)-quality)<=7;
+    const v=(Number(q.fvm)||0)*0.70 + (Number(q.qa)||Number(q.qi)||0)*3;
+    return v>=targetComposite*.88 && v<=targetComposite*1.12;
   }).length;
   const scarcity=clamp(100-comparable*6,18,100);
 
@@ -7800,49 +7807,39 @@ function rivalInterestForPlayer(managerIndex,playerIndex,currentBid=0){
     scarcity*.07 +
     fvm*.05;
 
-  // Stima del tetto individuale del rivale, non solo del suo max sicuro.
   let estimatedMax=Math.round(
     Math.min(
       safe,
-      Math.max(1,
-        (ai?.ideal||ai?.high||1)*(.72 + base/250)
-      )
+      cash,
+      Math.max(1,(Number(ai.ideal)||1)*(.72+base/250))
     )
   );
 
-  // Un rivale non dovrebbe spendere quasi tutto il budget reparto su un profilo
-  // medio quando ha ancora molti slot da coprire.
   if(missing>=2){
     const perSlot=Math.max(1,Math.floor(Math.max(roleBudgetLeft,missing)/missing));
     const stretch=quality>=82?1.65:quality>=72?1.38:1.18;
     estimatedMax=Math.min(estimatedMax,Math.max(1,Math.round(perSlot*stretch)));
   }
 
-  // Il prezzo corrente filtra progressivamente i rivali.
   const bid=Math.max(0,Number(currentBid)||0);
   let pricePressure=100;
   if(bid>0){
     const ratio=bid/Math.max(1,estimatedMax);
-    if(ratio<=.55) pricePressure=100;
-    else if(ratio<=.75) pricePressure=88;
-    else if(ratio<=.90) pricePressure=70;
-    else if(ratio<=1.00) pricePressure=48;
-    else if(ratio<=1.10) pricePressure=20;
+    if(ratio<=.55)pricePressure=100;
+    else if(ratio<=.75)pricePressure=88;
+    else if(ratio<=.90)pricePressure=70;
+    else if(ratio<=1.00)pricePressure=48;
+    else if(ratio<=1.10)pricePressure=20;
     else pricePressure=3;
   }
 
   let score=Math.round(clamp(base*.72+pricePressure*.28,1,99));
-
-  // All'inizio assoluto dell'asta evitiamo falsi 95-99 solo perché tutti
-  // hanno crediti e slot liberi.
-  const totalBought=state.purchases.length;
-  if(totalBought===0 && bid===0)score=Math.min(score,82);
+  if(state.purchases.length===0 && bid===0)score=Math.min(score,82);
 
   let label='BASSO';
   if(score>=78)label='ALTO';
   else if(score>=55)label='MEDIO';
 
-  // Se il prezzo ha già superato il tetto stimato, il rivale è quasi fuori.
   if(bid>estimatedMax){
     label='QUASI FUORI';
     score=Math.min(score,24);
