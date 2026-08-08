@@ -1,4 +1,4 @@
-const CACHE='asta-fanta-v87';
+const CACHE='asta-fanta-v88';
 const STATIC_ASSETS=[
   './manifest.json',
   './icon-180.png',
