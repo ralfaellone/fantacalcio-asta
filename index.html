@@ -4228,6 +4228,35 @@ body.top5-live-open #top5LiveModal{
   .top5Price span{font-size:6px}
 }
 
+
+/* V51 - Top 5 AI Live strategico + alternative */
+.top5StrategyBox{
+  background:linear-gradient(145deg,#101f34,#0a1727);
+  border:1px solid rgba(242,201,76,.24);
+  border-radius:12px;
+  padding:9px;
+  margin:0 0 7px;
+}
+.top5StrategyTitle{font-size:10px;font-weight:950}
+.top5StrategyText{margin-top:3px;font-size:8px;line-height:1.4;color:var(--muted)}
+.top5StrategyKpis{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px}
+.top5StrategyKpis div{background:#071321;border:1px solid rgba(142,164,189,.14);border-radius:8px;padding:5px 3px;text-align:center}
+.top5StrategyKpis span{display:block;font-size:6px;color:var(--muted)}
+.top5StrategyKpis b{display:block;margin-top:2px;font-size:9px}
+.top5Tier{
+  display:inline-flex;align-items:center;border-radius:999px;padding:3px 6px;
+  font-size:6.5px;font-weight:950;margin-left:4px;border:1px solid rgba(242,201,76,.22);
+  background:#241f0d;color:#f6d66d
+}
+.top5Alternatives{margin-top:8px;border-top:1px solid rgba(142,164,189,.12);padding-top:7px}
+.top5AltTitle{font-size:7px;color:var(--muted);font-weight:900;margin-bottom:5px}
+.top5AltRow{display:flex;gap:5px;flex-wrap:wrap}
+.top5AltChip{
+  border:1px solid rgba(180,120,255,.20);background:#151026;color:#d7bdff;
+  border-radius:9px;padding:5px 7px;font-size:7px;font-weight:850
+}
+.top5AltChip b{color:#fff}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4237,7 +4266,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V50.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V51</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6015,6 +6044,79 @@ function liveTop5RoleNeed(role,buyerIndex=state.me){
   return Math.round(clamp(fillShare*62+roleShare*38,0,100));
 }
 
+
+function liveRoleBudgetPlan(role,buyerIndex=state.me){
+  const missing=Math.max(0,LIMITS[role]-roleCount(buyerIndex,role));
+  const cash=budget(buyerIndex);
+  const totalMissing=remainingRosterSlots(buyerIndex);
+  if(!missing)return {min:0,max:0,avg:0,owned:LIMITS[role],missing:0,label:'COMPLETO'};
+
+  const reserveOther=Math.max(0,totalMissing-missing);
+  const spendable=Math.max(0,cash-reserveOther);
+  const weights={P:.10,D:.18,C:.29,A:.43};
+  const still=['P','D','C','A'].filter(r=>Math.max(0,LIMITS[r]-roleCount(buyerIndex,r))>0);
+  const denom=still.reduce((s,r)=>s+weights[r],0)||1;
+  const share=weights[role]/denom;
+  const target=Math.max(missing,Math.round(spendable*share));
+  const min=Math.max(missing,Math.round(target*.84));
+  const max=Math.max(min,Math.min(spendable,Math.round(target*1.16)));
+  return {min,max,avg:Math.max(1,Math.round(target/missing)),owned:roleCount(buyerIndex,role),missing,label:''};
+}
+
+function liveTargetTier(x,rolePlan){
+  const p=x.p, ai=x.ai;
+  const fvm=Number(p.fvm)||0;
+  const pct=ai.scarcityPct||0;
+  if(fvm<=3 || ai.score<35)return 'RIEMPITIVO';
+  if(ai.score>=86 || pct>=.90)return 'TOP';
+  if(ai.score>=76 || pct>=.78)return 'SEMITOP';
+  if(ai.score>=60)return 'TITOLARE';
+  return 'SCOMMESSA';
+}
+
+function liveRoleStrategy(role){
+  const plan=liveRoleBudgetPlan(role,state.me);
+  if(!plan.missing)return {...plan,text:'Reparto completo: conserva il budget per gli altri ruoli.'};
+
+  const owned=plan.owned;
+  const purchases=state.purchases.filter(x=>x.buyer===state.me && x.role===role);
+  const spent=purchases.reduce((s,x)=>s+(Number(x.price)||0),0);
+  const avgPaid=purchases.length?Math.round(spent/purchases.length):0;
+
+  let text='';
+  if(owned===0){
+    text=`Nessuno slot coperto: cerca prima un profilo ${role==='A'?'TOP/SEMITOP':'forte'} senza compromettere gli altri reparti.`;
+  }else if(owned<Math.ceil(LIMITS[role]*.4)){
+    text=`Primi slot coperti: alterna qualità e sostenibilità. Evita di concentrare troppo budget sul prossimo acquisto.`;
+  }else if(owned<Math.ceil(LIMITS[role]*.75)){
+    text=`Reparto a metà: privilegia TITOLARI e occasioni coerenti con il budget residuo.`;
+  }else{
+    text=`Ultimi ${plan.missing} slot: cerca soprattutto valore, scommesse e riempitivi sostenibili.`;
+  }
+  if(avgPaid>plan.avg*1.25)text+=` Hai speso molto sui primi slot: l'AI abbassa la fascia economica dei prossimi obiettivi.`;
+  return {...plan,spent,avgPaid,text};
+}
+
+function liveStrategicAlternatives(sourceIndex,limit=3){
+  const source=PLAYER_ARCHIVE[sourceIndex];
+  const sourceAI=aiPlayerAnalysis(sourceIndex,state.me);
+  if(!source||!sourceAI)return [];
+
+  const candidates=bestComparableAlternatives(sourceIndex,8)
+    .map(x=>{
+      const fit=rosterFitScore(x.p,x.ai,state.me);
+      const afford=affordabilityScore(x.ai,state.me);
+      const saving=sourceAI.ideal-x.ai.ideal;
+      const score=Math.round(clamp(x.score*.55+fit*.20+afford*.20+(saving>0?5:0),0,99));
+      return {...x,fit,afford,saving,strategicScore:score};
+    })
+    .filter(x=>x.ai.ideal<=Math.max(sourceAI.maxRec,Math.round(sourceAI.ideal*1.20)))
+    .sort((a,b)=>b.strategicScore-a.strategicScore || b.saving-a.saving)
+    .slice(0,limit);
+
+  return candidates;
+}
+
 function liveTop5Candidate(index,role){
   const p=PLAYER_ARCHIVE[index];
   if(!p || p.role!==role)return null;
@@ -6054,6 +6156,16 @@ function liveTop5Candidate(index,role){
   const owned=roleCount(state.me,role);
   if(owned===0 && ai.score>=80)score=Math.min(99,score+3);
   if(owned>=Math.ceil(LIMITS[role]*.6) && afford<50)score=Math.max(1,score-8);
+
+  // V51: as a department fills, expensive profiles lose priority and
+  // sustainable complementary profiles rise.
+  const rolePlan=liveRoleBudgetPlan(role,state.me);
+  if(rolePlan.missing){
+    const avgTarget=rolePlan.avg;
+    if(owned>0 && ai.ideal>avgTarget*1.75)score-=Math.min(16,Math.round((ai.ideal/Math.max(1,avgTarget)-1.75)*12));
+    if(owned>=Math.ceil(LIMITS[role]*.5) && ai.ideal<=avgTarget*1.15)score+=4;
+  }
+  score=Math.round(clamp(score,1,99));
 
   let action='PUNTA';
   if(score>=86)action='PRIORITÀ';
@@ -6109,11 +6221,10 @@ function renderTop5LivePage(){
 
   body.innerHTML=`
     <div class="top5Hero">
-      <div class="top5HeroTitle">I tuoi obiettivi, reparto per reparto</div>
+      <div class="top5HeroTitle">I tuoi obiettivi strategici LIVE</div>
       <div class="top5HeroText">
-        La classifica cambia automaticamente quando un giocatore viene acquistato.
-        L’AI combina qualità, prezzo, budget residuo, composizione della tua rosa, modulo,
-        scarsità e pressione dei rivali.
+        Dopo ogni acquisto l’AI ricalcola fascia dei giocatori, budget del reparto e 5 obiettivi.
+        Ogni obiettivo include anche alternative realmente comparabili.
       </div>
       <div class="top5HeroKpis">
         <div class="top5HeroKpi"><span>CREDITI</span><b>${cash}</b></div>
@@ -6125,6 +6236,7 @@ function renderTop5LivePage(){
 
     ${['P','D','C','A'].map(role=>{
       const rows=liveTop5Rows(role);
+      const strat=liveRoleStrategy(role);
       const owned=roleCount(state.me,role);
       const missing=Math.max(0,LIMITS[role]-owned);
 
@@ -6135,16 +6247,30 @@ function renderTop5LivePage(){
             <div class="top5RoleStatus">${owned}/${LIMITS[role]} presi · ${missing} mancanti</div>
           </div>
 
+          <div class="top5StrategyBox">
+            <div class="top5StrategyTitle">🧠 Strategia AI reparto</div>
+            <div class="top5StrategyText">${strat.text}</div>
+            <div class="top5StrategyKpis">
+              <div><span>BUDGET REPARTO</span><b>${strat.missing?`${strat.min}-${strat.max}`:'0'}</b></div>
+              <div><span>MEDIA / SLOT</span><b>${strat.missing?strat.avg:0}</b></div>
+              <div><span>GIÀ SPESO</span><b>${strat.spent||0}</b></div>
+            </div>
+          </div>
+
           ${missing===0
             ? `<div class="top5Empty">✅ Reparto completo. L’AI non ti consiglia altri ${roleName(role).toLowerCase()}.</div>`
             : rows.length
-              ? rows.map((x,n)=>`
+              ? rows.map((x,n)=>{
+                  const tier=liveTargetTier(x,strat);
+                  const alts=liveStrategicAlternatives(x.index,3);
+                  return `
                 <div class="top5Target ${n===0?'first':''}">
                   <div class="top5TargetTop">
                     <div style="min-width:0">
                       <div>
                         <span class="top5Rank">${n+1}</span>
                         <span class="top5Name">${esc(x.p.name)}</span>
+                        <span class="top5Tier">${tier}</span>
                       </div>
                       <div class="top5Meta">${esc(x.p.team)} · FVM ${x.p.fvm} · QI ${x.p.qi} · ${x.action}</div>
                     </div>
@@ -6170,11 +6296,20 @@ function renderTop5LivePage(){
                     <span>Fit ${x.fit}/100</span>
                   </div>
 
+                  <div class="top5Alternatives">
+                    <div class="top5AltTitle">ALTERNATIVE SE SALE TROPPO</div>
+                    <div class="top5AltRow">
+                      ${alts.length
+                        ? alts.map(a=>`<button class="top5AltChip" onclick="closeTop5LivePage();openAIForPlayer(${a.index})"><b>${esc(a.p.name)}</b> · ${a.ai.low}-${a.ai.maxRec}${a.saving>0?` · risp. ${a.saving}`:''}</button>`).join('')
+                        : `<span class="top5Meta">Nessuna alternativa realmente comparabile disponibile.</span>`}
+                    </div>
+                  </div>
+
                   <div class="top5Actions">
                     <button class="secondary" onclick="closeTop5LivePage();openAIForPlayer(${x.index})">🤖 ANALISI</button>
                     <button class="primary" style="position:static" onclick="closeTop5LivePage();buyFromListone(${x.index})">ASTA</button>
                   </div>
-                </div>`).join('')
+                </div>`}).join('')
               : `<div class="top5Empty">Nessun giocatore libero adatto disponibile in questo reparto.</div>`}
         </div>`;
     }).join('')}
