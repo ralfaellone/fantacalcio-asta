@@ -4257,6 +4257,19 @@ body.top5-live-open #top5LiveModal{
 }
 .top5AltChip b{color:#fff}
 
+
+/* V51.1 - Modulo scelto dall'utente */
+.top5ModuleChooser{margin-top:9px;padding-top:8px;border-top:1px solid rgba(142,164,189,.12)}
+.top5ModuleLabel{font-size:6.5px;color:var(--muted);font-weight:900;margin-bottom:5px}
+.top5ModuleButtons{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.top5ModuleButtons button{
+  border:1px solid rgba(142,164,189,.18);background:#071321;color:var(--text);
+  border-radius:9px;padding:7px 3px;font-size:8px;font-weight:900
+}
+.top5ModuleButtons button.active{
+  border-color:rgba(242,201,76,.60);background:#2b240c;color:#f6d66d
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4266,7 +4279,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V51</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V51.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5783,11 +5796,15 @@ function renderListone(){
 
 
 
-let AI_ROSTER_MODULE='433';
+let AI_ROSTER_MODULE=localStorage.getItem('astaFantaFormationModule')||'';
 
 function setAIRosterModule(id){
+  if(!FORMATION_PLANS.some(x=>x.id===id))return;
   AI_ROSTER_MODULE=id;
+  localStorage.setItem('astaFantaFormationModule',id);
+  clearPerformanceCaches();
   renderFormationPage();
+  refreshTop5LiveIfOpen();
 }
 
 function aiRosterTier(role,slot,plan){
@@ -5932,7 +5949,19 @@ function renderFormationPage(){
   const body=document.getElementById('formationBody');
   if(!body)return;
 
-  const plan=FORMATION_PLANS.find(x=>x.id===AI_ROSTER_MODULE)||FORMATION_PLANS[1];
+  const plan=FORMATION_PLANS.find(x=>x.id===AI_ROSTER_MODULE);
+  if(!plan){
+    body.innerHTML=`
+      <div class="formationHero">
+        <div style="font-size:18px;font-weight:950">Scegli il modulo della tua strategia</div>
+        <div class="playerMetaLine">Il modulo lo decidi tu. L'AI non imposta più automaticamente il 4-3-3.</div>
+        <div class="aiRosterSelector">
+          ${FORMATION_PLANS.map(x=>`<button onclick="setAIRosterModule('${x.id}')">${x.name}</button>`).join('')}
+        </div>
+        <div class="formationWhy"><b>Nessun modulo selezionato</b><br>Scegli un modulo: verrà usato da Costruisci Rosa AI, Top 5 AI Live, fit giocatori e strategia reparto.</div>
+      </div>`;
+    return;
+  }
   const built=buildAIRosterPlan(plan);
   const rows=built.rows;
   const currentCash=budget(state.me);
@@ -6205,7 +6234,7 @@ function liveTop5Reason(x){
   if(x.ai.scarcity100>=70)bits.push('poche alternative comparabili');
   if(x.ai.rivalPressure>=70)bits.push('forte pressione rivali');
   if(x.ai.confidence>=65)bits.push(`stima AI affidabile ${x.ai.confidence}%`);
-  if(x.formation>=72)bits.push(`adatto al piano ${activeFormationPlan().name}`);
+  if(AI_ROSTER_MODULE && x.formation>=72)bits.push(`adatto al modulo ${activeFormationPlan().name}`);
   if(!bits.length)bits.push('buon equilibrio tra qualità, prezzo e situazione della rosa');
   return bits.slice(0,3).join(' · ');
 }
@@ -6229,8 +6258,14 @@ function renderTop5LivePage(){
       <div class="top5HeroKpis">
         <div class="top5HeroKpi"><span>CREDITI</span><b>${cash}</b></div>
         <div class="top5HeroKpi"><span>POSTI</span><b>${slots}</b></div>
-        <div class="top5HeroKpi"><span>PIANO</span><b>${plan?plan.name:'—'}</b></div>
+        <div class="top5HeroKpi"><span>MODULO</span><b>${AI_ROSTER_MODULE?plan.name:'SCEGLI'}</b></div>
         <div class="top5HeroKpi"><span>FASE</span><b>${stage.label}</b></div>
+      </div>
+      <div class="top5ModuleChooser">
+        <div class="top5ModuleLabel">MODULO STRATEGIA — LO SCEGLI TU</div>
+        <div class="top5ModuleButtons">
+          ${FORMATION_PLANS.map(x=>`<button class="${AI_ROSTER_MODULE===x.id?'active':''}" onclick="setTop5FormationModule('${x.id}')">${x.name}</button>`).join('')}
+        </div>
       </div>
     </div>
 
@@ -6314,6 +6349,15 @@ function renderTop5LivePage(){
         </div>`;
     }).join('')}
   `;
+}
+
+
+function setTop5FormationModule(id){
+  if(!FORMATION_PLANS.some(x=>x.id===id))return;
+  AI_ROSTER_MODULE=id;
+  localStorage.setItem('astaFantaFormationModule',id);
+  clearPerformanceCaches();
+  renderTop5LivePage();
 }
 
 function openTop5LivePage(){
@@ -6786,7 +6830,18 @@ function rankedFormationPlans(buyerIndex=state.me){
     .sort((a,b)=>b.score-a.score);
 }
 function activeFormationPlan(buyerIndex=state.me){
-  return rankedFormationPlans(buyerIndex)[0];
+  if(AI_ROSTER_MODULE){
+    const selected=FORMATION_PLANS.find(x=>x.id===AI_ROSTER_MODULE);
+    if(selected)return selected;
+  }
+  // Neutral planning until the user explicitly chooses a module.
+  return {
+    id:'neutral',
+    name:'DA SCEGLIERE',
+    style:'Seleziona il tuo modulo',
+    xi:{P:1,D:3.5,C:4,A:2.5},
+    budget:{P:.085,D:.195,C:.305,A:.415}
+  };
 }
 function formationRoleFit(role,buyerIndex=state.me){
   const plan=activeFormationPlan(buyerIndex);
