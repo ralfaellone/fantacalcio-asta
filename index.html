@@ -4237,7 +4237,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V50</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V50.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -4798,6 +4798,31 @@ let simPlanKey='A';
 let simAltOpenKey='';
 let COMPARE_PLAYERS=[];
 let ROSE_FILTER='ALL';
+
+let PERF_REV=0;
+const PERF_CACHE={
+  ai:new Map(),
+  base:new Map(),
+  roleMarket:new Map(),
+  comparable:new Map(),
+  globalMarket:null,
+  top5:new Map()
+};
+function clearPerformanceCaches(){
+  PERF_REV++;
+  PERF_CACHE.ai.clear();
+  PERF_CACHE.base.clear();
+  PERF_CACHE.roleMarket.clear();
+  PERF_CACHE.comparable.clear();
+  PERF_CACHE.globalMarket=null;
+  PERF_CACHE.top5.clear();
+  const move=document.getElementById('dashboardNextMove');
+  if(move)delete move.dataset.ready;
+}
+function perfKey(index,buyerIndex){
+  return `${PERF_REV}:${buyerIndex}:${index}`;
+}
+
 function defaultState(){return {favorites:[],favoriteMeta:{},initialBudget:600,managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[],releases:[],unavailablePlayers:[]}}
 function load(){
   try{
@@ -4812,6 +4837,7 @@ function load(){
 }
 function persist(){
   localStorage.setItem('astaFantaV1',JSON.stringify(state));
+  clearPerformanceCaches();
   setTimeout(refreshAIRosterIfOpen,0);
   setTimeout(refreshTop5LiveIfOpen,0);
 }
@@ -5226,7 +5252,7 @@ function renderPremiumDashboardHero(){
     </div>`;
 }
 
-function renderDashboardControl(){
+function renderDashboardControlRaw(){
   renderPremiumDashboardHero();
   const me=state.me;
   const team=document.getElementById('dashboardTeamName');
@@ -5298,6 +5324,29 @@ function renderDashboardControl(){
   }
 }
 
+
+
+let DASH_RENDER_TOKEN=0;
+function renderDashboardControl(){
+  const token=++DASH_RENDER_TOKEN;
+  renderPremiumDashboardHero();
+
+  const me=state.me;
+  const team=document.getElementById('dashboardTeamName');
+  if(team)team.textContent=state.managers[me]||'—';
+
+  const move=document.getElementById('dashboardNextMove');
+  if(move && !move.dataset.ready){
+    move.innerHTML='<div class="empty" style="padding:12px">🤖 Aggiorno il consiglio AI…</div>';
+  }
+
+  setTimeout(()=>{
+    if(token!==DASH_RENDER_TOKEN || activePageId()!=='home')return;
+    renderDashboardControlRaw();
+    const m=document.getElementById('dashboardNextMove');
+    if(m)m.dataset.ready='1';
+  },20);
+}
 
 let ASTA_LIVE_PLAYER=-1;
 
@@ -5498,24 +5547,32 @@ function renderRosesPage(){
     :'<div class="empty">Nessuna rosa trovata.</div>';
 }
 
+function renderCommonHeader(){
+  const me=state.me;
+  const leaguePill=document.getElementById('leagueBudgetPill');
+  if(leaguePill)leaguePill.textContent=INITIAL;
+  const myNameEl=document.getElementById('myNameLabel');
+  if(myNameEl)myNameEl.textContent=state.managers[me];
+}
+function activePageId(){
+  const active=document.querySelector('.page.active');
+  return active?active.id:'home';
+}
 function render(){
-  setTimeout(()=>{renderAuctionPage();renderDashboardControl();},0);
- const me=state.me;
- const leaguePill=document.getElementById('leagueBudgetPill'); if(leaguePill)leaguePill.textContent=INITIAL;
- const myBudgetEl=document.getElementById('myBudget'); if(myBudgetEl)myBudgetEl.textContent=budget(me);
- const myCountEl=document.getElementById('myCount'); if(myCountEl)myCountEl.innerHTML=`${roster(me).length} <small>/ 25</small>`;
- const myNameEl=document.getElementById('myNameLabel'); if(myNameEl)myNameEl.textContent=state.managers[me];
- ['P','D','C','A'].forEach(r=>{const el=document.getElementById('cnt'+r);if(el)el.textContent=`${roleCount(me,r)}/${LIMITS[r]}`});
- const recent=[...state.purchases].slice(-6).reverse();const recentEl=document.getElementById('recent');if(recentEl)recentEl.innerHTML=recent.length?recent.map(itemHTML).join(''):'<div class="empty">Nessun acquisto registrato.</div>';
- const mr=roster(me);
- const myRosterEl=document.getElementById('myRoster');
- if(myRosterEl){
-   myRosterEl.innerHTML=mr.length?['P','D','C','A'].map(r=>{let a=mr.filter(x=>x.role===r);return a.length?`<div class="item"><div><div class="name">${roleName(r)}</div><div class="meta">${a.length}/${LIMITS[r]}</div></div><div class="price">${a.reduce((s,x)=>s+x.price,0)} cr</div></div>`+a.map(itemHTML).join(''):''}).join(''):'<div class="empty">La tua rosa è ancora vuota.</div>';
- }
- renderRosesPage();
- renderListone();
- renderHistory();
- renderStatsImportInfo();
+  renderCommonHeader();
+  const id=activePageId();
+  if(id==='home'){
+    renderDashboardControl();
+  }else if(id==='rosa'){
+    renderAuctionPage();
+  }else if(id==='listone'){
+    renderListone();
+  }else if(id==='players'){
+    renderRosesPage();
+  }else if(id==='more'){
+    renderHistory();
+    renderStatsImportInfo();
+  }
 }
 
 
@@ -5628,6 +5685,17 @@ function purchaseForArchivePlayer(name){
   const key=normalizePlayerText(name);
   return state.purchases.find(x=>normalizePlayerText(x.name)===key);
 }
+
+let PERF_STATUS_INDEX={rev:-1,bought:new Map(),unavailable:new Set()};
+function performanceStatusIndex(){
+  if(PERF_STATUS_INDEX.rev===PERF_REV)return PERF_STATUS_INDEX;
+  const bought=new Map();
+  state.purchases.forEach(x=>bought.set(normalizePlayerText(x.name),x));
+  const unavailable=new Set(state.unavailablePlayers||[]);
+  PERF_STATUS_INDEX={rev:PERF_REV,bought,unavailable};
+  return PERF_STATUS_INDEX;
+}
+
 function renderListone(){
   renderArchiveInfo();
   updateCompareButton();
@@ -5635,9 +5703,12 @@ function renderListone(){
   if(!box) return;
   const input=document.getElementById('listoneSearch');
   const q=normalizePlayerText(input?input.value:'');
+  const perfStatus=performanceStatusIndex();
+  const isBoughtFast=name=>perfStatus.bought.has(normalizePlayerText(name));
+  const isUnavailableFast=name=>perfStatus.unavailable.has(normalizePlayerText(name));
   let rows=PLAYER_ARCHIVE.filter(p=>{
-    const bought=!!purchaseForArchivePlayer(p.name);
-    const unavailable=isUnavailablePlayer(p.name);
+    const bought=isBoughtFast(p.name);
+    const unavailable=isUnavailableFast(p.name);
     const text=normalizePlayerText(`${p.name} ${p.team}`);
     if(q && !text.includes(q)) return false;
     if(['P','D','C','A'].includes(listoneFilter) && p.role!==listoneFilter) return false;
@@ -5647,14 +5718,14 @@ function renderListone(){
     return true;
   });
   rows.sort((a,b)=>a.role.localeCompare(b.role)||b.fvm-a.fvm||a.name.localeCompare(b.name));
-  document.getElementById('listoneCount').textContent=`${rows.length} giocatori visualizzati · ${PLAYER_ARCHIVE.filter(p=>!purchaseForArchivePlayer(p.name)).length} disponibili`;
+  document.getElementById('listoneCount').textContent=`${rows.length} giocatori visualizzati · ${PLAYER_ARCHIVE.filter(p=>!isBoughtFast(p.name)&&!isUnavailableFast(p.name)).length} disponibili`;
   const favTotal=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)).length;
-  const favFree=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!purchaseForArchivePlayer(p.name)&&!isUnavailablePlayer(p.name)).length;
+  const favFree=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!isBoughtFast(p.name)&&!isUnavailableFast(p.name)).length;
   const favEl=document.getElementById('favSummary');
   if(favEl)favEl.textContent=`⭐ Obiettivi: ${favTotal} totali · ${favFree} ancora disponibili`;
   box.innerHTML=rows.length?rows.map(p=>{
-    const bought=purchaseForArchivePlayer(p.name);
-    const unavailable=isUnavailablePlayer(p.name);
+    const bought=perfStatus.bought.get(normalizePlayerText(p.name));
+    const unavailable=isUnavailableFast(p.name);
     const idx=PLAYER_ARCHIVE.indexOf(p);
     return `<div class="playerCard ${bought||unavailable?'taken':''}" onclick="openPlayerDetail(${idx})">
       <div class="playerCardInner">
@@ -5996,7 +6067,9 @@ function liveTop5Candidate(index,role){
 }
 
 function liveTop5Rows(role){
-  return PLAYER_ARCHIVE
+  const key=`${PERF_REV}:${state.me}:${role}`;
+  if(PERF_CACHE.top5.has(key))return PERF_CACHE.top5.get(key);
+  const rows=PLAYER_ARCHIVE
     .map((p,index)=>liveTop5Candidate(index,role))
     .filter(Boolean)
     .sort((a,b)=>
@@ -6006,6 +6079,8 @@ function liveTop5Rows(role){
       b.ai.confidence-a.ai.confidence
     )
     .slice(0,5);
+  PERF_CACHE.top5.set(key,rows);
+  return rows;
 }
 
 function liveTop5Reason(x){
@@ -6146,34 +6221,44 @@ function rivalInterestForPlayer(managerIndex,playerIndex){
     };
   }
 
-  // Use the pre-Core model here to avoid recursion while still getting a
-  // personalized price ceiling for this rival.
-  const base=aiPlayerAnalysisBase(playerIndex,managerIndex);
-  const estimatedMax=base?Math.max(1,Number(base.maxRec)||1):Math.max(1,Math.round((Number(p.fvm)||1)*(INITIAL/1000)));
-  const ideal=base?Math.max(1,Number(base.ideal)||1):estimatedMax;
+  const qi=Math.max(1,Number(p.qa)||Number(p.qi)||1);
+  const fvm=Math.max(0,Number(p.fvm)||0);
+  const roleFree=PLAYER_ARCHIVE.filter(x=>x.role===p.role&&!purchaseForArchivePlayer(x.name)&&!isUnavailablePlayer(x.name));
+  const target=playerMarketComposite(p);
+  const values=roleFree.map(playerMarketComposite).sort((a,b)=>a-b);
+  const qualityPct=values.length?values.filter(v=>v<target).length/values.length:.5;
+  const comparable=roleFree.filter(x=>playerMarketComposite(x)>=target*.88).length;
+  const scarcity=clamp(1-comparable/Math.max(3,LIMITS[p.role]*3),0,1);
+
+  let inflation=1.20;
+  if(qualityPct>=.90)inflation=1.65;
+  else if(qualityPct>=.80)inflation=1.48;
+  else if(qualityPct>=.65)inflation=1.34;
+  else if(qualityPct>=.45)inflation=1.25;
+
+  let rolePremium=1;
+  if(p.role==='P'&&qualityPct>=.70)rolePremium=1.16;
+  if(p.role==='A'&&qualityPct>=.75)rolePremium=1.13;
+  if(p.role==='C'&&qualityPct>=.80)rolePremium=1.07;
+
+  const market=auctionMarketLearning(p.role);
+  const fvmBase=fvm*(INITIAL/1000);
+  let expected=Math.max(fvmBase,qi*inflation*rolePremium);
+  expected*=market.count?market.factor:1;
+  if(comparable<=2)expected*=1.10;
+  else if(comparable<=4)expected*=1.05;
+
+  const ideal=Math.max(1,Math.round(expected));
+  const estimatedMax=Math.max(1,Math.min(safe,cash,Math.round(ideal*(qualityPct>=.80?1.22:1.16))));
 
   const roleNeed=missing/Math.max(1,LIMITS[p.role]);
   const urgency=totalMissing>0?clamp(missing/Math.max(1,totalMissing),0,1):0;
   const liquidity=clamp(cash/Math.max(1,INITIAL),0,1);
   const bidPower=clamp(safe/Math.max(1,estimatedMax),0,1.35);
 
-  // Player-specific desirability percentile among currently free players in the same role.
-  const freeRole=PLAYER_ARCHIVE.filter(x=>x.role===p.role&&!purchaseForArchivePlayer(x.name)&&!isUnavailablePlayer(x.name));
-  const values=freeRole.map(playerMarketComposite).sort((a,b)=>a-b);
-  const target=playerMarketComposite(p);
-  const qualityPct=values.length?values.filter(v=>v<target).length/values.length:.5;
-
-  // Scarcity of genuinely similar players.
-  const comparable=freeRole.filter(x=>playerMarketComposite(x)>=target*.88).length;
-  const scarcity=clamp(1-comparable/Math.max(3,LIMITS[p.role]*3),0,1);
-
-  // Cheap fillers should not create artificial "high rival pressure" even if everyone needs the role.
-  const lowValue=(Number(p.fvm)||0)<=3 && (Number(p.qa)||Number(p.qi)||0)<=2;
-  const qualityPull=lowValue?0.10:clamp(.18+qualityPct*.82,0,1);
+  const lowValue=fvm<=3 && qi<=2;
+  const qualityPull=lowValue?.10:clamp(.18+qualityPct*.82,0,1);
   const scarcityPull=lowValue?0:scarcity;
-
-  // Can the rival realistically contest this player's expected closing zone?
-  const affordability=clamp((Math.min(cash,safe)-ideal)/Math.max(1,ideal),-.75,1);
   const affordable=Math.min(cash,safe)>=Math.max(1,Math.round(ideal*.82));
 
   let score=
@@ -6186,21 +6271,20 @@ function rivalInterestForPlayer(managerIndex,playerIndex){
 
   if(!affordable)score-=18;
   if(lowValue)score*=.42;
-  if(qualityPct>=.90 && affordable)score+=7;
-  if(scarcity>=.75 && affordable)score+=6;
-
+  if(qualityPct>=.90&&affordable)score+=7;
+  if(scarcity>=.75&&affordable)score+=6;
   score=Math.round(clamp(score,0,99));
 
-  let level='low', label='BASSO';
+  let level='low',label='BASSO';
   if(score>=72){level='high';label='ALTO';}
   else if(score>=46){level='med';label='MEDIO';}
 
   let reason='';
   if(score>=72)reason='Rivale molto credibile: bisogno reale del ruolo, liquidità sufficiente e forte interesse per questa fascia di giocatore.';
-  else if(score>=46)reason='Può partecipare all’asta, ma la pressione dipende dal prezzo raggiunto e dalle alternative ancora disponibili.';
+  else if(score>=46)reason='Può partecipare all’asta, ma la pressione dipende dal prezzo e dalle alternative ancora disponibili.';
   else if(!affordable)reason='Pressione bassa: il prezzo atteso è poco compatibile con la sua capacità di rilancio.';
-  else if(lowValue)reason='Pressione bassa: profilo economico e facilmente sostituibile, anche se il reparto è ancora incompleto.';
-  else reason='Pressione ridotta: priorità, qualità del profilo o scarsità non sono abbastanza elevate.';
+  else if(lowValue)reason='Pressione bassa: profilo economico e facilmente sostituibile.';
+  else reason='Pressione ridotta: priorità o scarsità non sono abbastanza elevate.';
 
   return {
     managerIndex,cash,missing,totalMissing,safe,score,level,label,
@@ -7721,7 +7805,7 @@ function renderStrategy(){
 }
 
 
-function auctionMarketLearning(role){
+function auctionMarketLearningRaw(role){
   const rows=state.purchases
     .filter(x=>x.role===role && Number(x.price)>0)
     .map(x=>{
@@ -7751,7 +7835,16 @@ function auctionMarketLearning(role){
 
   return {count:rows.length,factor,confidence,medianRatio:cleanMedian};
 }
-function globalAuctionLearning(){
+
+function auctionMarketLearning(role){
+  const key=`${PERF_REV}:${role}`;
+  if(PERF_CACHE.roleMarket.has(key))return PERF_CACHE.roleMarket.get(key);
+  const value=auctionMarketLearningRaw(role);
+  PERF_CACHE.roleMarket.set(key,value);
+  return value;
+}
+
+function globalAuctionLearningRaw(){
   const all=['P','D','C','A'].map(auctionMarketLearning).filter(x=>x.count>0);
   if(!all.length)return {count:0,factor:1};
   const count=all.reduce((s,x)=>s+x.count,0);
@@ -7760,10 +7853,20 @@ function globalAuctionLearning(){
 }
 
 
+
+function globalAuctionLearning(){
+  if(PERF_CACHE.globalMarket && PERF_CACHE.globalMarket.rev===PERF_REV){
+    return PERF_CACHE.globalMarket.value;
+  }
+  const value=globalAuctionLearningRaw();
+  PERF_CACHE.globalMarket={rev:PERF_REV,value};
+  return value;
+}
+
 function playerMarketComposite(p){
   return (Number(p.fvm)||0)*0.7 + (Number(p.qa)||Number(p.qi)||0)*3;
 }
-function comparableAuctionLearning(player){
+function comparableAuctionLearningRaw(player){
   const role=player.role;
   const target=playerMarketComposite(player);
   const sold=state.purchases
@@ -7793,6 +7896,16 @@ function comparableAuctionLearning(player){
     names:sample.map(x=>x.name)
   };
 }
+
+function comparableAuctionLearning(player){
+  const index=PLAYER_ARCHIVE.indexOf(player);
+  const key=`${PERF_REV}:${index}`;
+  if(PERF_CACHE.comparable.has(key))return PERF_CACHE.comparable.get(key);
+  const value=comparableAuctionLearningRaw(player);
+  PERF_CACHE.comparable.set(key,value);
+  return value;
+}
+
 function auctionPhaseForRole(role){
   const total=PLAYER_ARCHIVE.filter(p=>p.role===role).length;
   const sold=state.purchases.filter(x=>x.role===role).length;
@@ -7812,7 +7925,7 @@ function rivalRoleDemand(role,buyerIndex=state.me){
   return {active:active.length,strong:strong.length};
 }
 
-function aiPlayerAnalysisBase(index,buyerIndex=state.me){
+function aiPlayerAnalysisBaseRaw(index,buyerIndex=state.me){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return null;
 
@@ -8016,6 +8129,15 @@ function aiPlayerAnalysisBase(index,buyerIndex=state.me){
 }
 
 
+
+function aiPlayerAnalysisBase(index,buyerIndex=state.me){
+  const key=perfKey(index,buyerIndex);
+  if(PERF_CACHE.base.has(key))return PERF_CACHE.base.get(key);
+  const value=aiPlayerAnalysisBaseRaw(index,buyerIndex);
+  PERF_CACHE.base.set(key,value);
+  return value;
+}
+
 function aiCore3AuctionStage(){
   const totalSlots=state.managers.length*(LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A);
   const sold=state.purchases.length;
@@ -8166,7 +8288,7 @@ function aiCore3Probabilities(ideal,low,high,maxRec,confidence){
   };
 }
 
-function aiPlayerAnalysis(index,buyerIndex=state.me){
+function aiPlayerAnalysisRaw(index,buyerIndex=state.me){
   const base=aiPlayerAnalysisBase(index,buyerIndex);
   if(!base)return null;
   const p=base.p;
@@ -8293,6 +8415,15 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
 }
 
 
+
+
+function aiPlayerAnalysis(index,buyerIndex=state.me){
+  const key=perfKey(index,buyerIndex);
+  if(PERF_CACHE.ai.has(key))return PERF_CACHE.ai.get(key);
+  const value=aiPlayerAnalysisRaw(index,buyerIndex);
+  PERF_CACHE.ai.set(key,value);
+  return value;
+}
 
 function comparableAlternativeScore(sourceIndex,candidateIndex){
   const src=PLAYER_ARCHIVE[sourceIndex];
