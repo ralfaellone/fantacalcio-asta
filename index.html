@@ -4376,6 +4376,10 @@ body.top5-live-open #top5LiveModal{
   }
 }
 
+
+/* V56.1 - Performance 2.0 */
+.listoneLoadMore{width:100%;margin:10px 0 4px;padding:11px 8px;border-radius:11px}
+.top5AltRow .top5Meta{opacity:.75}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4385,7 +4389,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V56</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V56.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -4960,7 +4964,9 @@ const PERF_CACHE={
   roleMarket:new Map(),
   comparable:new Map(),
   globalMarket:null,
-  top5:new Map()
+  top5:new Map(),
+  alternatives:new Map(),
+  formation:new Map()
 };
 function clearPerformanceCaches(){
   PERF_REV++;
@@ -4970,6 +4976,8 @@ function clearPerformanceCaches(){
   PERF_CACHE.comparable.clear();
   PERF_CACHE.globalMarket=null;
   PERF_CACHE.top5.clear();
+  PERF_CACHE.alternatives.clear();
+  PERF_CACHE.formation.clear();
   const move=document.getElementById('dashboardNextMove');
   if(move)delete move.dataset.ready;
 }
@@ -4992,8 +5000,10 @@ function load(){
 function persist(){
   localStorage.setItem('astaFantaV1',JSON.stringify(state));
   clearPerformanceCaches();
-  setTimeout(refreshAIRosterIfOpen,0);
-  setTimeout(refreshTop5LiveIfOpen,0);
+  requestAnimationFrame(()=>{
+    refreshAIRosterIfOpen();
+    refreshTop5LiveIfOpen();
+  });
 }
 
 function loadPlayerStats(){
@@ -5280,7 +5290,8 @@ function tab(id,btn){
   document.body.classList.toggle('players-pro-open',id==='listone');
   document.body.classList.toggle('rose-pro-open',id==='players');
   document.body.classList.toggle('asta-live-open',id==='rosa');
-  render();
+  if(typeof renderCommonHeader==='function')renderCommonHeader();
+  requestAnimationFrame(()=>render());
 }
 
 function homePlayerMatches(){
@@ -5979,6 +5990,7 @@ function toggleFavorite(name,event){
 }
 
 function setListoneFilter(filter,btn){
+  resetListoneRenderLimit();
   listoneFilter=filter;
   document.querySelectorAll('.filterBtn').forEach(x=>x.classList.remove('active'));
   if(btn) btn.classList.add('active');
@@ -5998,6 +6010,10 @@ function performanceStatusIndex(){
   PERF_STATUS_INDEX={rev:PERF_REV,bought,unavailable};
   return PERF_STATUS_INDEX;
 }
+
+let LISTONE_RENDER_LIMIT=60;
+function resetListoneRenderLimit(){LISTONE_RENDER_LIMIT=60}
+function loadMoreListone(){LISTONE_RENDER_LIMIT+=60;renderListone()}
 
 function renderListone(){
   renderArchiveInfo();
@@ -6021,12 +6037,14 @@ function renderListone(){
     return true;
   });
   rows.sort((a,b)=>a.role.localeCompare(b.role)||b.fvm-a.fvm||a.name.localeCompare(b.name));
-  document.getElementById('listoneCount').textContent=`${rows.length} giocatori visualizzati · ${PLAYER_ARCHIVE.filter(p=>!isBoughtFast(p.name)&&!isUnavailableFast(p.name)).length} disponibili`;
+  const totalRows=rows.length;
+  const visibleRows=rows.slice(0,LISTONE_RENDER_LIMIT);
+  document.getElementById('listoneCount').textContent=`${visibleRows.length}/${totalRows} visualizzati · ${PLAYER_ARCHIVE.filter(p=>!isBoughtFast(p.name)&&!isUnavailableFast(p.name)).length} disponibili`;
   const favTotal=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)).length;
   const favFree=PLAYER_ARCHIVE.filter(p=>isFavorite(p.name)&&!isBoughtFast(p.name)&&!isUnavailableFast(p.name)).length;
   const favEl=document.getElementById('favSummary');
   if(favEl)favEl.textContent=`⭐ Obiettivi: ${favTotal} totali · ${favFree} ancora disponibili`;
-  box.innerHTML=rows.length?rows.map(p=>{
+  box.innerHTML=visibleRows.length?visibleRows.map(p=>{
     const bought=perfStatus.bought.get(normalizePlayerText(p.name));
     const unavailable=isUnavailableFast(p.name);
     const idx=PLAYER_ARCHIVE.indexOf(p);
@@ -6045,7 +6063,7 @@ function renderListone(){
         ${bought?`<div class="statusTaken">ACQUISTATO · ${esc(state.managers[bought.buyer])} · ${bought.price} cr</div>`:'<div class="statusAvailable">DISPONIBILE</div>'}
       </div>
     </div>`;
-  }).join(''):'<div class="empty">Nessun giocatore trovato con questi filtri.</div>';
+  }).join('')+(totalRows>visibleRows.length?`<button class="secondary listoneLoadMore" onclick="loadMoreListone()">MOSTRA ALTRI ${Math.min(60,totalRows-visibleRows.length)} · ${totalRows-visibleRows.length} RIMASTI</button>`:''):'<div class="empty">Nessun giocatore trovato con questi filtri.</div>';
 }
 
 
@@ -6134,7 +6152,7 @@ function aiRosterCandidatePool(role,slotBudget,tier){
     .sort((a,b)=>b.score-a.score || b.dir-a.dir || b.ai.score-a.ai.score);
 }
 
-function buildAIRosterPlan(plan){
+function buildAIRosterPlanRaw(plan){
   const result=[];
   const used=new Set();
   const displayedOptions=new Set();
@@ -6209,6 +6227,14 @@ function buildAIRosterPlan(plan){
 function formationBudgetText(plan){
   const b=['P','D','C','A'].map(r=>`${r} ${Math.round(aiRosterRolePlanningBudget(plan,r))}`).join(' · ');
   return b;
+}
+
+function buildAIRosterPlan(plan){
+  const key=`${PERF_REV}:${state.me}:${plan?.id||'none'}`;
+  if(PERF_CACHE.formation.has(key))return PERF_CACHE.formation.get(key);
+  const value=buildAIRosterPlanRaw(plan);
+  PERF_CACHE.formation.set(key,value);
+  return value;
 }
 
 function renderFormationPage(){
@@ -6395,7 +6421,7 @@ function liveRoleStrategy(role){
   return {...plan,spent,avgPaid,text};
 }
 
-function liveStrategicAlternatives(sourceIndex,limit=3){
+function liveStrategicAlternativesRaw(sourceIndex,limit=3){
   const source=PLAYER_ARCHIVE[sourceIndex];
   const sourceAI=aiPlayerAnalysis(sourceIndex,state.me);
   if(!source||!sourceAI)return [];
@@ -6413,6 +6439,14 @@ function liveStrategicAlternatives(sourceIndex,limit=3){
     .slice(0,limit);
 
   return candidates;
+}
+
+function liveStrategicAlternatives(sourceIndex,limit=3){
+  const key=`${PERF_REV}:${state.me}:${sourceIndex}:${limit}`;
+  if(PERF_CACHE.alternatives.has(key))return PERF_CACHE.alternatives.get(key);
+  const value=liveStrategicAlternativesRaw(sourceIndex,limit);
+  PERF_CACHE.alternatives.set(key,value);
+  return value;
 }
 
 function liveTop5Candidate(index,role){
@@ -6527,6 +6561,25 @@ function liveTop5Reason(x){
 
 let TOP5_ROLE_FILTER='ALL';
 
+let TOP5_ALT_TOKEN=0;
+function hydrateTop5Alternatives(){
+  const token=++TOP5_ALT_TOKEN;
+  const roles=TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER];
+  const indexes=[];
+  roles.forEach(role=>liveTop5Rows(role).forEach(x=>indexes.push(x.index)));
+  indexes.forEach((idx,n)=>{
+    setTimeout(()=>{
+      if(token!==TOP5_ALT_TOKEN)return;
+      const el=document.getElementById(`top5Alt_${idx}`);
+      if(!el)return;
+      const alts=liveStrategicAlternatives(idx,3);
+      el.outerHTML=alts.length
+        ? alts.map(a=>`<button class="top5AltChip" onclick="closeTop5LivePage();openAIForPlayer(${a.index})"><b>${esc(a.p.name)}</b> · ${a.ai.low}-${a.ai.maxRec}${a.saving>0?` · risp. ${a.saving}`:''}</button>`).join('')
+        : `<span class="top5Meta">Nessuna alternativa realmente comparabile disponibile.</span>`;
+    },40+n*20);
+  });
+}
+
 function setTop5RoleFilter(role){
   TOP5_ROLE_FILTER=role;
   renderTop5LivePage();
@@ -6605,7 +6658,7 @@ function renderTop5LivePage(){
             : rows.length
               ? rows.map((x,n)=>{
                   const tier=liveTargetTier(x,strat);
-                  const alts=liveStrategicAlternatives(x.index,3);
+                  const alts=[];
                   const px=liveTop5StrategicPrices(x);
                   return `
                 <div class="top5Target ${n===0?'first':''}">
@@ -6643,9 +6696,7 @@ function renderTop5LivePage(){
                   <div class="top5Alternatives">
                     <div class="top5AltTitle">ALTERNATIVE SE SALE TROPPO</div>
                     <div class="top5AltRow">
-                      ${alts.length
-                        ? alts.map(a=>`<button class="top5AltChip" onclick="closeTop5LivePage();openAIForPlayer(${a.index})"><b>${esc(a.p.name)}</b> · ${a.ai.low}-${a.ai.maxRec}${a.saving>0?` · risp. ${a.saving}`:''}</button>`).join('')
-                        : `<span class="top5Meta">Nessuna alternativa realmente comparabile disponibile.</span>`}
+                      <span id="top5Alt_${x.index}" class="top5Meta">Calcolo alternative…</span>
                     </div>
                   </div>
 
@@ -6658,6 +6709,7 @@ function renderTop5LivePage(){
         </div>`;
     }).join('')}
   `;
+  setTimeout(hydrateTop5Alternatives,25);
 }
 
 
