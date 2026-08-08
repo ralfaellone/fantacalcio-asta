@@ -4858,6 +4858,40 @@ body.top5-live-open nav{
 .dsAiPlan.warn{background:#2a230b;border-color:rgba(242,201,76,.22);color:#f6d66d}
 .dsAiPlan.danger{background:#2a1012;border-color:rgba(255,90,90,.22);color:#ff9d9d}
 
+
+/* V60 - Rosa Forte AI + Pressione Avversari */
+.strongScore{
+  display:inline-flex;align-items:center;gap:3px;
+  border-radius:999px;padding:3px 6px;
+  background:#10243b;border:1px solid rgba(142,164,189,.18);
+  font-size:6.5px;font-weight:950;color:#d9e7f8
+}
+.strongScore.hot{background:#0b2b20;border-color:rgba(57,217,138,.28);color:#8be8b7}
+.strongScore.top{background:#2a230b;border-color:rgba(242,201,76,.30);color:#f6d66d}
+.strongBreakdown{
+  margin-top:4px;font-size:6.5px;color:var(--muted);line-height:1.4
+}
+.rivalLiveBox{
+  margin-top:10px;padding:8px;border-radius:11px;
+  background:#091522;border:1px solid rgba(142,164,189,.14)
+}
+.rivalLiveHead{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.rivalLiveTitle{font-size:8px;font-weight:950}
+.rivalLivePressure{font-size:8px;font-weight:950}
+.rivalLiveRow{
+  display:grid;grid-template-columns:minmax(0,1fr) auto auto;
+  gap:6px;align-items:center;padding:6px 0;border-top:1px solid rgba(142,164,189,.09)
+}
+.rivalLiveRow:first-of-type{margin-top:5px}
+.rivalLiveName{font-size:8px;font-weight:900}
+.rivalLiveMeta{font-size:6.5px;color:var(--muted);margin-top:1px}
+.rivalLiveRisk{font-size:7px;font-weight:950}
+.rivalLiveMax{font-size:7px;font-weight:950;color:#f6d66d}
+.dsStrongLegend{
+  margin-top:7px;padding:7px;border-radius:9px;background:#0a1727;
+  border:1px solid rgba(142,164,189,.12);font-size:6.5px;color:var(--muted);line-height:1.45
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4868,7 +4902,7 @@ body.top5-live-open nav{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V59</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V60</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6171,7 +6205,7 @@ function directorRoleSnapshot(role){
   const owned=roleCount(state.me,role);
   const missing=Math.max(0,LIMITS[role]-owned);
   const plan=liveRoleBudgetPlan(role,state.me);
-  const rows=missing?liveTop5Rows(role):[];
+  const rows=missing?strongRosterCandidates(role,5):[];
   const top=rows[0]||null;
   const fillRatio=LIMITS[role]?owned/LIMITS[role]:1;
   const topQuality=top?top.score:0;
@@ -6234,13 +6268,14 @@ function directorSportivoPlan(){
 
 function directorTargetReason(x,priority){
   const bits=[];
-  if(x.fit>=75)bits.push('fit rosa alto');
+  if(x.raw && Number(x.raw.fm)>=6.8)bits.push(`FM ${Number(x.raw.fm).toFixed(2)}`);
+  if(x.bonusScore>=72)bits.push('bonus alto');
+  if(x.disciplineScore>=82)bits.push('pochi malus');
+  if(x.availabilityScore>=80)bits.push('continuità');
+  if(x.fit>=75)bits.push('fit rosa');
   if(x.afford>=70)bits.push('sostenibile');
-  if(x.ai?.scarcity100>=70)bits.push('scarsità alta');
-  if(x.formation>=70)bits.push(`adatto ${activeFormationPlan().name}`);
-  if(x.ai?.score>=82)bits.push('profilo AI forte');
-  if(!bits.length)bits.push('equilibrio qualità/prezzo');
-  return bits.slice(0,2).join(' · ');
+  if(!bits.length)bits.push('profilo equilibrato');
+  return bits.slice(0,3).join(' · ');
 }
 
 function renderDirectorSportivoAI(){
@@ -6284,8 +6319,9 @@ function renderDirectorSportivoAI(){
           return `<div class="dsAiTarget" onclick="openAIForPlayer(${x.index})">
             <div class="dsAiRank">${n+1}</div>
             <div>
-              <div class="dsAiTargetName">${esc(x.p.name)}</div>
+              <div class="dsAiTargetName">${esc(x.p.name)} <span class="strongScore ${strongScoreClass(x.score)}">FORZA ${x.score}/99</span></div>
               <div class="dsAiTargetMeta">${x.p.role} · ${esc(x.p.team)} · ${directorTargetReason(x,p)}</div>
+              <div class="strongBreakdown">${x.label} · Bonus ${Math.round(x.bonusScore)} · Malus ${Math.round(x.disciplineScore)} · Continuità ${Math.round(x.availabilityScore)}</div>
             </div>
             <div class="dsAiPrice">${px.low}-${px.maxRec}<small>MAX ${px.maxRec}</small></div>
           </div>`;
@@ -6294,6 +6330,9 @@ function renderDirectorSportivoAI(){
 
       <div class="dsAiPlan ${d.level==='good'?'':d.level}">
         <b>${planLabel}</b> · ${d.message}
+      </div>
+      <div class="dsStrongLegend">
+        <b>FORZA ROSA</b>: combina rendimento reale disponibile, bonus, malus, continuità, FVM/QI, qualità AI, prezzo, fit con la tua rosa e modulo. Se mancano statistiche reali, l'AI riduce il peso statistico senza inventare dati.
       </div>
 
       <div class="top5Actions" style="margin-top:8px">
@@ -6490,7 +6529,10 @@ function renderAstaLiveSelected(){
           <div class="astaDecisionTitle">🤖 Asta Live Smart</div>
           <div class="astaDecisionText">${marketModeText()} · decisione basata su prezzo, piano ${activeFormationPlan().name}, budget, mercato e alternative ancora libere.</div>
         </div>
-        <span class="tag good">${a.score}/99</span>
+        <div style="display:flex;gap:4px;align-items:center">
+          ${(()=>{const sr=strongRosterProfile(ASTA_LIVE_PLAYER,state.me);return sr?`<span class="strongScore ${strongScoreClass(sr.score)}">ROSA ${sr.score}/99</span>`:''})()}
+          <span class="tag good">${a.score}/99</span>
+        </div>
       </div>
 
       <div class="astaAiGrid">
@@ -6523,6 +6565,24 @@ function renderAstaLiveSelected(){
       <div id="astaLiveDecisionBadge" class="astaLiveDecisionBadge">INSERISCI PREZZO</div>
       <div id="astaLiveDelta" class="astaLiveDelta">L'AI aggiorna la decisione mentre rilanci.</div>
       <div id="astaLiveVerdict" class="astaVerdict">Inserisci il prezzo attuale per sapere se rilanciare.</div>
+
+      ${(()=>{
+        const rv=rivalLiveSummary(ASTA_LIVE_PLAYER);
+        return `<div class="rivalLiveBox">
+          <div class="rivalLiveHead">
+            <div class="rivalLiveTitle">👥 PRESSIONE AVVERSARI</div>
+            <div class="rivalLivePressure">${rv.pressure}/99 · ${rv.strong} forti</div>
+          </div>
+          ${rv.rows.length?rv.rows.map(r=>`<div class="rivalLiveRow">
+            <div>
+              <div class="rivalLiveName">${esc(state.managers[r.managerIndex])}</div>
+              <div class="rivalLiveMeta">${r.missing} ${p.role} mancanti · ${r.cash} cr disponibili</div>
+            </div>
+            <div class="rivalLiveRisk">${r.label}</div>
+            <div class="rivalLiveMax">≈ ${r.estimatedMax}</div>
+          </div>`).join(''):`<div class="playerMetaLine" style="margin-top:6px">Nessun rivale con pressione significativa.</div>`}
+        </div>`;
+      })()}
 
       ${alts.length?`
         <div class="astaLiveAlternatives">
@@ -6565,6 +6625,8 @@ function evaluateAstaLiveBid(){
 
   const price=Number(el.value||0);
   const safe=safeMaxBid(state.me);
+  const strong=strongRosterProfile(ASTA_LIVE_PLAYER,state.me);
+  const rivals=rivalLiveSummary(ASTA_LIVE_PLAYER);
   const stop=Math.max(1,Math.min(a.maxRec,safe));
 
   if(marker){
@@ -6593,10 +6655,10 @@ function evaluateAstaLiveBid(){
     text=`Sei nella fascia alta. Rilancia soltanto se il giocatore è davvero prioritario e resta entro ${stop}.`;
   }else if(price>=a.low){
     action='RILANCIA'; cls='go'; verdictClass='good';
-    text=`Prezzo ancora corretto. Sei nel range AI ${a.low}-${a.high}.`;
+    text=`Prezzo ancora corretto. Sei nel range AI ${a.low}-${a.high}.${strong&&strong.score>=82?' Profilo molto forte per la tua rosa.':''}${rivals.strong>=2?' Attenzione: più rivali possono spingere il prezzo.':''}`;
   }else{
     action='RILANCIA'; cls='go'; verdictClass='good';
-    text=`Ottimo prezzo: sei sotto il minimo stimato ${a.low}. Hai ancora molto margine.`;
+    text=`Ottimo prezzo: sei sotto il minimo stimato ${a.low}. Hai ancora molto margine.${strong&&strong.score>=82?' Per FORZA ROSA è un obiettivo da provare a prendere.':''}`;
   }
 
   if(badge){
@@ -8191,13 +8253,15 @@ function buyNowCandidate(index){
   const formation=formationRoleFit(p.role,state.me);
   const slotPlan=strategySlotPlan(p.role,state.me);
   let score=ai2DirectionalScore(index,state.me);
+  const strong=strongRosterProfile(index,state.me);
+  if(strong)score=score*.52+strong.score*.48;
   if(slotPlan.cap>0){
     if(ai.ideal>slotPlan.cap)score-=Math.min(34,Math.round((ai.ideal/slotPlan.cap-1)*30));
     else if(ai.ideal<=slotPlan.target*1.08)score+=6;
   }
   score=Math.round(clamp(score,1,99));
   const px=liveTop5StrategicPrices({p,ai,slotPlan});
-  return {index,p,ai,st,fit,afford,urgency,formation,slotPlan,px,score};
+  return {index,p,ai,st,fit,afford,urgency,formation,slotPlan,px,strong,score};
 }
 function buyNowCandidates(){
   return PLAYER_ARCHIVE
@@ -8250,7 +8314,7 @@ function renderBuyNowPage(){
             <div class="buyNowName">${esc(x.p.name)}</div>
             <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
           </div>
-          <span class="tag">${x.score}/99</span>
+          <div style="display:flex;gap:4px;align-items:center"><span class="strongScore ${strongScoreClass(x.strong?.score||0)}">ROSA ${x.strong?.score||x.score}/99</span><span class="tag">${x.score}/99</span></div>
         </div>
         <div class="buyNowMetrics">
           <div class="buyNowMetric"><span>IDEALE</span><b>${x.px.ideal}</b></div>
@@ -8644,6 +8708,102 @@ function statScoreForPlayer(p){
     ].filter(Boolean)
   };
 }
+
+function strongRosterProfile(index,buyerIndex=state.me){
+  const p=PLAYER_ARCHIVE[index];
+  if(!p)return null;
+  const ai=aiPlayerAnalysis(index,buyerIndex);
+  if(!ai)return null;
+
+  const st=statScoreForPlayer(p);
+  const raw=statsFor(p.name);
+  const fit=rosterFitScore(p,ai,buyerIndex);
+  const afford=affordabilityScore(ai,buyerIndex);
+  const formation=formationRoleFit(p.role,buyerIndex);
+  const urgency=roleUrgencyScore(p.role,buyerIndex);
+
+  const fvmScore=clamp((Number(p.fvm)||0)/220,0,1)*100;
+  const quality=ai.score||50;
+
+  // Bonus offensivi / partecipazione ai bonus.
+  let bonusScore=50, disciplineScore=65, availabilityScore=55;
+  if(raw && raw.pv){
+    const bonusRate=((Number(raw.gol)||0)*3+(Number(raw.ass)||0))/Math.max(1,Number(raw.pv)||1);
+    bonusScore=clamp(bonusRate/1.05,0,1)*100;
+    if(Number(raw.rigTaken)>0)bonusScore=Math.min(100,bonusScore+Math.min(18,Number(raw.rigTaken)*3));
+    const malus=((Number(raw.amm)||0)*0.5+(Number(raw.esp)||0)*1.2)/Math.max(1,Number(raw.pv)||1);
+    disciplineScore=clamp(100-malus*185,0,100);
+    availabilityScore=clamp((Number(raw.pv)||0)/38,0,1)*100;
+  }
+
+  const statQuality=st.has?st.score:Math.round(fvmScore*.72+quality*.28);
+  let score=
+    statQuality*.28 +
+    bonusScore*.18 +
+    disciplineScore*.07 +
+    availabilityScore*.08 +
+    quality*.17 +
+    fit*.09 +
+    afford*.06 +
+    formation*.04 +
+    urgency*.03;
+
+  // Role nuance: do not punish defenders/keepers for naturally lower attacking bonus.
+  if(p.role==='P'){
+    score=statQuality*.34+disciplineScore*.10+availabilityScore*.13+quality*.22+fit*.10+afford*.07+formation*.04;
+  }else if(p.role==='D'){
+    score=statQuality*.30+bonusScore*.10+disciplineScore*.10+availabilityScore*.11+quality*.19+fit*.09+afford*.07+formation*.04;
+  }
+
+  score=Math.round(clamp(score,1,99));
+  let label='BUONO';
+  if(score>=88)label='TOP ROSA';
+  else if(score>=80)label='FORTE';
+  else if(score>=70)label='TITOLARE';
+  else if(score>=58)label='UTILE';
+  else label='RISERVA';
+
+  const strengths=[];
+  if(st.has && raw?.fm>=6.8)strengths.push(`FM ${Number(raw.fm).toFixed(2)}`);
+  if(bonusScore>=72)strengths.push('bonus alto');
+  if(disciplineScore>=82)strengths.push('pochi malus');
+  if(availabilityScore>=80)strengths.push('continuità');
+  if(fit>=75)strengths.push('fit rosa');
+  if(afford>=70)strengths.push('prezzo sostenibile');
+  if(!strengths.length)strengths.push('equilibrio complessivo');
+
+  const slotPlan=strategySlotPlan(p.role,buyerIndex);
+  return {index,p,ai,st,raw,fit,afford,formation,urgency,fvmScore,bonusScore,disciplineScore,availabilityScore,slotPlan,score,label,strengths};
+}
+
+function strongRosterCandidates(role,limit=5){
+  return PLAYER_ARCHIVE
+    .map((p,index)=>({p,index}))
+    .filter(x=>(!role||x.p.role===role) && marketRoleAllowed(x.p.role))
+    .filter(x=>!purchaseForArchivePlayer(x.p.name)&&!isUnavailablePlayer(x.p.name))
+    .filter(x=>roleCount(state.me,x.p.role)<LIMITS[x.p.role])
+    .map(x=>strongRosterProfile(x.index,state.me))
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score || b.ai.score-a.ai.score || b.fit-a.fit)
+    .slice(0,limit);
+}
+
+function strongScoreClass(score){
+  return score>=88?'top':score>=80?'hot':'';
+}
+
+function rivalLiveSummary(playerIndex){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p)return {pressure:0,strong:0,rows:[]};
+  const rows=state.managers
+    .map((_,i)=>i===state.me?null:rivalInterestForPlayer(i,playerIndex))
+    .filter(Boolean)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,4);
+  const pressure=rows.length?Math.round(rows.reduce((s,x)=>s+x.score,0)/rows.length):0;
+  return {pressure,strong:rows.filter(x=>x.score>=72).length,rows};
+}
+
 function advisorScore(p,index){
   const st=statScoreForPlayer(p);
   const fvmScore=clamp((Number(p.fvm)||0)/220,0,1)*100;
