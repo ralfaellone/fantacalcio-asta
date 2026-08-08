@@ -4306,7 +4306,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V53</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V54</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5350,25 +5350,39 @@ function strategy40LastPurchaseFeedback(){
   if(!mine.length)return null;
   const last=mine[mine.length-1];
   const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(last.name));
-  if(idx<0)return null;
-  const ai=aiPlayerAnalysis(idx,state.me);
-  if(!ai)return null;
   const paid=Number(last.price)||0;
-  const slot=strategySlotPlan(last.role,state.me);
-  const strategicRef=Math.max(1,slot.target||Math.round(ai.ideal*.65));
-  const strategicCap=Math.max(strategicRef,slot.cap||ai.maxRec);
+  const snap=last.aiSnapshot||null;
+  const ai=idx>=0?aiPlayerAnalysis(idx,state.me):null;
+  const strategicRef=Math.max(1,Number(snap?.slotTarget)||Number(snap?.ideal)||1);
+  const strategicCap=Math.max(strategicRef,Number(snap?.slotCap)||Number(snap?.aiMax)||strategicRef);
+  const playerCap=Math.max(1,Number(snap?.aiMax)||Number(ai?.maxRec)||strategicCap);
+  const over=Math.max(0,paid-strategicCap);
+
+  const before=snap?.roleBudgets||null;
+  const changes=['P','D','C','A'].map(role=>{
+    if(!before?.[role])return null;
+    const now=liveRoleBudgetPlan(role,state.me);
+    const oldMax=Number(before[role].max)||0;
+    const delta=(Number(now.max)||0)-oldMax;
+    return {role,oldMax,nowMax:Number(now.max)||0,delta};
+  }).filter(Boolean);
+  const changed=changes.filter(x=>x.delta!==0);
+  const impact=changed.length
+    ? ` Nuovo piano reparti: ${changed.map(x=>`${x.role} ${x.oldMax}→${x.nowMax} (${x.delta>0?'+':''}${x.delta})`).join(' · ')}.`
+    : '';
+
   let cls='good',title='✅ Acquisto sostenibile',text='';
   if(paid<=strategicRef){
-    text=`${last.name} a ${paid}: costo coerente con il piano del singolo slot (riferimento ${strategicRef}). Puoi mantenere aggressività sugli obiettivi prioritari.`;
+    text=`${last.name} a ${paid}: acquisto entro il budget ideale dello slot (${strategicRef}). Tetto strategico pre-acquisto ${strategicCap}; tetto AI giocatore ${playerCap}.${impact}`;
   }else if(paid<=strategicCap){
     cls='warn'; title='🟡 Caro ma gestibile';
-    text=`${last.name} a ${paid}: sopra il budget ideale del singolo slot (${strategicRef}), ma ancora gestibile. L'AI ridistribuisce subito il residuo.`;
-  }else if(paid<=Math.max(ai.maxRec,Math.round(strategicCap*1.25))){
+    text=`${last.name} a ${paid}: ${paid-strategicRef} crediti sopra l'ideale slot (${strategicRef}), ma entro il tetto strategico pre-acquisto (${strategicCap}).${impact}`;
+  }else if(paid<=Math.max(playerCap,Math.round(strategicCap*1.25))){
     cls='warn'; title='🟠 Sovrapprezzo';
-    text=`${last.name} a ${paid}: investimento superiore al piano slot (tetto strategico ${strategicCap}). I prossimi obiettivi dello stesso reparto scendono di fascia.`;
+    text=`${last.name} a ${paid}: ${over} crediti sopra il tetto strategico pre-acquisto (${strategicCap}). Tetto AI giocatore al momento dell'acquisto: ${playerCap}. L'AI abbassa le fasce future e redistribuisce il residuo.${impact}`;
   }else{
     cls='warn'; title='🔴 Errore strategico';
-    text=`${last.name} a ${paid}: spesa troppo alta rispetto al piano del singolo slot (tetto ${strategicCap}). L'AI protegge gli altri reparti e cerca alternative economiche.`;
+    text=`${last.name} a ${paid}: ${over} crediti sopra il tetto strategico pre-acquisto (${strategicCap}); tetto AI giocatore ${playerCap}. L'AI protegge gli altri reparti e forza alternative più economiche.${impact}`;
   }
   return {cls,title,text};
 }
@@ -9461,7 +9475,7 @@ function updateBuyPreview(){
     let aiText='';
     if(pidx>=0){
       const aiNow=aiPlayerAnalysis(pidx,buyer);
-      if(aiNow && price>aiNow.maxRec)aiText=` · ⚠️ ${price-aiNow.maxRec} cr sopra MAX AI (${aiNow.maxRec})`;
+      if(aiNow && price>aiNow.maxRec)aiText=` · ⚠️ ${price-aiNow.maxRec} cr sopra tetto AI giocatore (${aiNow.maxRec})`;
     }
     msg=`${name} → ${state.managers[buyer]} per ${price} cr · resteranno ${after} cr${safeText}${aiText}.`;
   }
@@ -9525,18 +9539,35 @@ function saveBuy(){
   if(pidx>=0){
     const aiNow=aiPlayerAnalysis(pidx,buyer);
     if(aiNow && price>aiNow.maxRec){
-      warning+=`\n\n🤖 ATTENZIONE AI: stai pagando ${price-aiNow.maxRec} crediti oltre il MAX AI di ${aiNow.maxRec}.`;
+      warning+=`\n\n🤖 ATTENZIONE AI: stai pagando ${price-aiNow.maxRec} crediti oltre il tetto AI del giocatore (${aiNow.maxRec}). La MAX SICURA generale resta un limite diverso.`;
     }
   }
   const confirmed=confirm(`Confermi l'acquisto?\n\n${name}\nRuolo: ${role}\nSquadra: ${state.managers[buyer]}\nPrezzo: ${price} crediti\nCrediti dopo l'acquisto: ${remaining}${warning}`);
   if(!confirmed)return;
+
+  // Fotografia del piano AI PRIMA dell'acquisto: evita che il feedback
+  // confronti il prezzo con valori già ricalcolati dopo la spesa.
+  const aiBefore=pidx>=0?aiPlayerAnalysis(pidx,buyer):null;
+  const slotBefore=strategySlotPlan(role,buyer);
+  const roleBudgetsBefore={};
+  ['P','D','C','A'].forEach(r=>{ const rp=liveRoleBudgetPlan(r,buyer); roleBudgetsBefore[r]={min:rp.min,max:rp.max,avg:rp.avg}; });
 
   state.purchases.push({
     id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     name,role,price,buyer,ts:Date.now(),
     team:selectedArchivePlayer?selectedArchivePlayer.team:'',
     qi:selectedArchivePlayer?selectedArchivePlayer.qi:null,
-    fvm:selectedArchivePlayer?selectedArchivePlayer.fvm:null
+    fvm:selectedArchivePlayer?selectedArchivePlayer.fvm:null,
+    aiSnapshot:{
+      ideal:aiBefore?aiBefore.ideal:null,
+      aiMax:aiBefore?aiBefore.maxRec:null,
+      safeMax:safe,
+      slotTarget:slotBefore.target||null,
+      slotCap:slotBefore.cap||null,
+      roleBudgets:roleBudgetsBefore,
+      cashBefore:budget(buyer),
+      rosterBefore:roster(buyer).length
+    }
   });
   persist();
   closeBuy();
