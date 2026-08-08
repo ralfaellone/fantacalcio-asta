@@ -4902,7 +4902,7 @@ body.top5-live-open nav{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V61</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V61.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6269,11 +6269,15 @@ function directorSportivoPlan(){
 function directorTargetReason(x,priority){
   const bits=[];
   if(x.raw && Number(x.raw.fm)>=6.8)bits.push(`FM ${Number(x.raw.fm).toFixed(2)}`);
-  if(x.bonusScore>=72)bits.push('bonus alto');
-  if(x.disciplineScore>=82)bits.push('pochi malus');
-  if(x.availabilityScore>=80)bits.push('continuità');
-  if(x.fit>=75)bits.push('fit rosa');
-  if(x.afford>=70)bits.push('sostenibile');
+  if(Number(x.bonusScore)>=72)bits.push('bonus alto');
+  if(Number(x.disciplineScore)>=82)bits.push('pochi malus');
+  if(Number(x.availabilityScore)>=80)bits.push('continuità');
+  if(Number(x.fit)>=75)bits.push('fit rosa');
+  if(Number(x.afford)>=70)bits.push('sostenibile');
+  if(!bits.length){
+    if(Number(x.fit)>=60)bits.push('buon fit rosa');
+    if(x.ai?.reason)bits.push(String(x.ai.reason).slice(0,45));
+  }
   if(!bits.length)bits.push('profilo equilibrato');
   return bits.slice(0,3).join(' · ');
 }
@@ -6400,8 +6404,20 @@ function renderDashboardControlRaw(){
       :`<div class="empty">Nessun consiglio disponibile: la rosa potrebbe essere completa.</div>`;
   }
 
-  renderDirectorSportivoAI();
-  renderStrategy40();
+  try{
+    renderDirectorSportivoAI();
+  }catch(err){
+    console.error('Direttore Sportivo AI',err);
+    const el=document.getElementById('dashboardDirectorAI');
+    if(el)el.innerHTML='<div class="empty">AI in aggiornamento. Riapri la Dashboard.</div>';
+  }
+  try{
+    renderStrategy40();
+  }catch(err){
+    console.error('Strategia AI 4.0',err);
+    const el=document.getElementById('dashboardStrategy40');
+    if(el)el.innerHTML='<div class="empty">Strategia AI in aggiornamento. Riapri la Dashboard.</div>';
+  }
 
   const recent=document.getElementById('dashboardRecent');
   if(recent){
@@ -8806,15 +8822,25 @@ function strongRosterProfile(index,buyerIndex=state.me){
 }
 
 function strongRosterCandidates(role,limit=5){
-  return PLAYER_ARCHIVE
-    .map((p,index)=>({p,index}))
-    .filter(x=>(!role||x.p.role===role) && marketRoleAllowed(x.p.role))
-    .filter(x=>!purchaseForArchivePlayer(x.p.name)&&!isUnavailablePlayer(x.p.name))
-    .filter(x=>roleCount(state.me,x.p.role)<LIMITS[x.p.role])
-    .map(x=>strongRosterProfile(x.index,state.me))
-    .filter(Boolean)
-    .sort((a,b)=>b.score-a.score || b.ai.score-a.ai.score || b.fit-a.fit)
-    .slice(0,limit);
+  const baseRows=liveTop5Rows(role)||[];
+  return baseRows.map(x=>{
+    try{
+      const s=strongRosterProfile(x.index,state.me);
+      if(!s)return x;
+      return Object.assign({},x,s,{
+        // preserve strategic fields from the stable live Top5 row
+        ai:x.ai||s.ai,
+        slotPlan:x.slotPlan||s.slotPlan
+      });
+    }catch(err){
+      console.warn('FORZA ROSA fallback',err);
+      return Object.assign({},x,{
+        bonusScore:50,disciplineScore:65,availabilityScore:55,
+        label:'PROFILO AI',strengths:['valutazione strategica'],
+        score:Number(x.score||x.ai?.score||50)
+      });
+    }
+  }).sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0)).slice(0,limit);
 }
 
 function strongScoreClass(score){
