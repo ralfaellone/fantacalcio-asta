@@ -4343,6 +4343,39 @@ body.top5-live-open #top5LiveModal{
 .aiFeedbackImpact span.up{color:#8be8b7;border-color:rgba(57,217,138,.22);background:#092119}
 .buyStatus .buyAiBreak{display:block;margin-top:4px}
 
+
+/* V56 - Filtro reparto Top 5 AI Live */
+.top5RoleFilterWrap{
+  margin-top:9px;
+  padding-top:8px;
+  border-top:1px solid rgba(142,164,189,.12);
+}
+.top5RoleFilterButtons{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:5px;
+}
+.top5RoleFilterButtons button{
+  border:1px solid rgba(142,164,189,.18);
+  background:#071321;
+  color:var(--text);
+  border-radius:9px;
+  padding:7px 3px;
+  font-size:7px;
+  font-weight:900;
+  min-width:0;
+}
+.top5RoleFilterButtons button.active{
+  border-color:rgba(242,201,76,.60);
+  background:#2b240c;
+  color:#f6d66d;
+}
+@media(max-width:390px){
+  .top5RoleFilterButtons{
+    grid-template-columns:repeat(3,1fr);
+  }
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4352,7 +4385,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V55</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V56</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6491,6 +6524,16 @@ function liveTop5Reason(x){
   return bits.slice(0,3).join(' · ');
 }
 
+
+let TOP5_ROLE_FILTER='ALL';
+
+function setTop5RoleFilter(role){
+  TOP5_ROLE_FILTER=role;
+  renderTop5LivePage();
+  const body=document.getElementById('top5LiveBody');
+  if(body)body.scrollTop=0;
+}
+
 function renderTop5LivePage(){
   const body=document.getElementById('top5LiveBody');
   if(!body)return;
@@ -6519,9 +6562,22 @@ function renderTop5LivePage(){
           ${FORMATION_PLANS.map(x=>`<button class="${AI_ROSTER_MODULE===x.id?'active':''}" onclick="setTop5FormationModule('${x.id}')">${x.name}</button>`).join('')}
         </div>
       </div>
+
+      <div class="top5RoleFilterWrap">
+        <div class="top5ModuleLabel">VISUALIZZA REPARTO</div>
+        <div class="top5RoleFilterButtons">
+          ${[
+            ['ALL','Tutti'],
+            ['P','Portieri'],
+            ['D','Difensori'],
+            ['C','Centrocampisti'],
+            ['A','Attaccanti']
+          ].map(([id,label])=>`<button class="${TOP5_ROLE_FILTER===id?'active':''}" onclick="setTop5RoleFilter('${id}')">${label}</button>`).join('')}
+        </div>
+      </div>
     </div>
 
-    ${['P','D','C','A'].map(role=>{
+    ${(TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER]).map(role=>{
       const rows=liveTop5Rows(role);
       const strat=liveRoleStrategy(role);
       const owned=roleCount(state.me,role);
