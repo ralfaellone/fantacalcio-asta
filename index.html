@@ -4279,7 +4279,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V51.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V51.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5279,7 +5279,7 @@ function renderPremiumDashboardHero(){
   const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
   const spentNow=spent(me);
   const maxSafe=safeMaxBid(me);
-  const plan=typeof activeFormationPlan==='function'?activeFormationPlan(me):null;
+  const plan=getSelectedFormationPlan();
   el.innerHTML=`
     <div class="dashPremiumEyebrow">PARMENSE · CENTRO DI CONTROLLO</div>
     <div class="dashPremiumMain">
@@ -5805,6 +5805,7 @@ function setAIRosterModule(id){
   clearPerformanceCaches();
   renderFormationPage();
   refreshTop5LiveIfOpen();
+  if(typeof renderPremiumDashboardHero==='function')renderPremiumDashboardHero();
 }
 
 function aiRosterTier(role,slot,plan){
