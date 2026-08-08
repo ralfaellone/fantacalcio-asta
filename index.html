@@ -4710,6 +4710,112 @@ body.top5-live-open nav{
   color:var(--muted);
 }
 
+
+/* V58 - Gestione mercati stagionali + Direttore Sportivo AI */
+.marketContextBar{
+  margin:0 0 10px;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid rgba(242,201,76,.24);
+  background:linear-gradient(145deg,#151d2c,#0a1625);
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+}
+.marketContextMain{font-size:9px;font-weight:950}
+.marketContextSub{font-size:7px;color:var(--muted);margin-top:2px}
+.marketContextBadge{
+  flex:0 0 auto;
+  border-radius:999px;
+  padding:4px 7px;
+  font-size:6.5px;
+  font-weight:950;
+  color:#f6d66d;
+  border:1px solid rgba(242,201,76,.28);
+  background:#27210c;
+}
+.astaMarketContext{
+  margin-top:7px;
+  padding:7px 8px;
+  border-radius:10px;
+  background:#0a1727;
+  border:1px solid rgba(142,164,189,.14);
+}
+.marketPhaseRow{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:4px;
+  margin-top:5px;
+}
+.marketPhaseRow button{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:5px 2px;
+  background:#081321;
+  color:var(--muted);
+  font-size:7px;
+  font-weight:950;
+}
+.marketPhaseRow button.active{
+  background:#2b240c;
+  color:#f6d66d;
+  border-color:rgba(242,201,76,.52);
+}
+.marketSeasonHero{
+  border:1px solid rgba(242,201,76,.25);
+  border-radius:14px;
+  padding:10px;
+  background:linear-gradient(145deg,#122439,#0a1727);
+}
+.marketSeasonTitle{font-size:12px;font-weight:950}
+.marketSeasonText{font-size:8px;color:var(--muted);line-height:1.45;margin-top:4px}
+.marketSeasonActions{display:grid;grid-template-columns:1fr;gap:5px;margin-top:8px}
+.marketSeasonList{margin-top:8px}
+.marketSessionCard{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  padding:8px 9px;
+  margin-top:5px;
+  border:1px solid rgba(142,164,189,.14);
+  border-radius:10px;
+  background:#081321;
+}
+.marketSessionCard.active{
+  border-color:rgba(57,217,138,.35);
+  background:#092119;
+}
+.marketSessionName{font-size:9px;font-weight:900}
+.marketSessionMeta{font-size:7px;color:var(--muted);margin-top:2px}
+.marketSessionCard button{
+  width:auto;
+  padding:6px 8px;
+  border-radius:8px;
+  font-size:7px;
+}
+.marketDirectorNote{
+  margin-top:7px;
+  padding:7px 8px;
+  border-radius:9px;
+  border:1px solid rgba(57,217,138,.20);
+  background:#082118;
+  color:#8be8b7;
+  font-size:7.5px;
+  line-height:1.4;
+}
+.historyMarketTag{
+  display:inline-block;
+  margin-top:3px;
+  padding:2px 5px;
+  border-radius:999px;
+  background:#111d2e;
+  border:1px solid rgba(142,164,189,.14);
+  color:var(--muted);
+  font-size:6.5px;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4720,10 +4826,11 @@ body.top5-live-open nav{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V57</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V58</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
+  <div id="dashboardMarketContext" class="marketContextBar"></div>
 
   <div class="section" style="margin-top:0">
     <h2>Dashboard</h2>
@@ -4790,6 +4897,7 @@ body.top5-live-open nav{
     </div>
 
     <div id="astaLiveKpis" class="astaLiveKpis"></div>
+    <div id="astaMarketContext" class="astaMarketContext"></div>
 
     <div class="astaLiveSearchWrap">
       <input id="astaLiveSearch" class="astaLiveSearch" placeholder="🔎 Cerca il giocatore chiamato..." autocomplete="off"
@@ -4888,6 +4996,10 @@ body.top5-live-open nav{
     <div class="hint">Puoi cambiare i nomi dei 12 partecipanti e scegliere quale squadra è la tua.</div>
   </div>
   <div class="section"><button class="secondary" onclick="openSettings()">⚙️ Impostazioni partecipanti</button></div>
+  <div class="section">
+    <h2>🗓️ Stagione & Mercati</h2>
+    <div id="marketSeasonPanel"></div>
+  </div>
   <div class="section">
     <h2>📋 Cronologia acquisti</h2>
     <div class="historyTools">
@@ -5306,7 +5418,14 @@ function perfKey(index,buyerIndex){
   return `${PERF_REV}:${buyerIndex}:${index}`;
 }
 
-function defaultState(){return {favorites:[],favoriteMeta:{},initialBudget:600,managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],me:0,purchases:[],releases:[],unavailablePlayers:[]}}
+function defaultState(){return {
+  favorites:[],favoriteMeta:{},initialBudget:600,
+  managers:['Parmense','Squadra 2','Squadra 3','Squadra 4','Squadra 5','Squadra 6','Squadra 7','Squadra 8','Squadra 9','Squadra 10','Squadra 11','Squadra 12'],
+  me:0,purchases:[],releases:[],unavailablePlayers:[],
+  marketSessions:[{id:'initial',type:'initial',name:'Asta iniziale',createdAt:Date.now()}],
+  activeMarketSessionId:'initial',
+  initialAuctionPhase:'P'
+}}
 function load(){
   try{
     const s=JSON.parse(localStorage.getItem('astaFantaV1'))||defaultState();
@@ -5315,9 +5434,120 @@ function load(){
     if(!Number.isFinite(Number(s.initialBudget)) || Number(s.initialBudget)<1)s.initialBudget=600;
     if(!Array.isArray(s.releases))s.releases=[];
     if(!Array.isArray(s.unavailablePlayers))s.unavailablePlayers=[];
+
+    if(!Array.isArray(s.marketSessions) || !s.marketSessions.length){
+      s.marketSessions=[{id:'initial',type:'initial',name:'Asta iniziale',createdAt:Date.now()}];
+    }
+    if(!s.marketSessions.some(x=>x.id==='initial')){
+      s.marketSessions.unshift({id:'initial',type:'initial',name:'Asta iniziale',createdAt:Date.now()});
+    }
+    if(!s.activeMarketSessionId || !s.marketSessions.some(x=>x.id===s.activeMarketSessionId)){
+      s.activeMarketSessionId='initial';
+    }
+    if(!['P','D','C','A'].includes(s.initialAuctionPhase))s.initialAuctionPhase='P';
+
+    // Migrazione trasparente: i vecchi acquisti restano nello storico.
+    s.purchases=(s.purchases||[]).map(x=>({
+      ...x,
+      marketSessionId:x.marketSessionId||'initial',
+      marketSessionName:x.marketSessionName||'Asta iniziale',
+      marketType:x.marketType||'initial',
+      marketPhase:x.marketPhase||x.role
+    }));
+    s.releases=(s.releases||[]).map(x=>({
+      ...x,
+      marketSessionId:x.marketSessionId||'initial',
+      marketSessionName:x.marketSessionName||'Asta iniziale'
+    }));
     return s;
   }catch(e){return defaultState()}
 }
+
+function activeMarketSession(){
+  return state.marketSessions.find(x=>x.id===state.activeMarketSessionId)
+    || state.marketSessions[0]
+    || {id:'initial',type:'initial',name:'Asta iniziale'};
+}
+function isInitialMarket(){
+  return activeMarketSession().type==='initial';
+}
+function currentInitialPhase(){
+  return ['P','D','C','A'].includes(state.initialAuctionPhase)?state.initialAuctionPhase:'P';
+}
+function marketRoleAllowed(role){
+  return !isInitialMarket() || role===currentInitialPhase();
+}
+function marketModeText(){
+  const s=activeMarketSession();
+  return s.type==='initial'
+    ? `${s.name} · fase ${currentInitialPhase()}`
+    : `${s.name} · mercato libero`;
+}
+function marketSessionShort(){
+  const s=activeMarketSession();
+  return s.type==='initial'?`INIZIALE · ${currentInitialPhase()}`:`RIPARAZIONE #${s.number||1}`;
+}
+function marketPurchaseMeta(){
+  const s=activeMarketSession();
+  return {
+    marketSessionId:s.id,
+    marketSessionName:s.name,
+    marketType:s.type,
+    marketPhase:s.type==='initial'?currentInitialPhase():'FREE'
+  };
+}
+function setInitialAuctionPhase(role){
+  if(!['P','D','C','A'].includes(role))return;
+  state.initialAuctionPhase=role;
+  nextMoveSelectedRole=role;
+  TOP5_ROLE_FILTER=role;
+  BUY_NOW_ROLE=role;
+  persist();
+  render();
+}
+function createRepairMarket(){
+  const repairs=state.marketSessions.filter(x=>x.type==='repair');
+  const number=repairs.reduce((m,x)=>Math.max(m,Number(x.number)||0),0)+1;
+  const session={
+    id:`repair_${Date.now().toString(36)}`,
+    type:'repair',
+    number,
+    name:`Mercato riparazione #${number}`,
+    createdAt:Date.now()
+  };
+  state.marketSessions.push(session);
+  state.activeMarketSessionId=session.id;
+  nextMoveSelectedRole='';
+  TOP5_ROLE_FILTER='ALL';
+  BUY_NOW_ROLE='ALL';
+  persist();
+  renderMarketSeasonPanel();
+  render();
+}
+function activateMarketSession(id){
+  if(!state.marketSessions.some(x=>x.id===id))return;
+  state.activeMarketSessionId=id;
+  if(isInitialMarket()){
+    nextMoveSelectedRole=currentInitialPhase();
+    TOP5_ROLE_FILTER=currentInitialPhase();
+    BUY_NOW_ROLE=currentInitialPhase();
+  }else{
+    nextMoveSelectedRole='';
+    TOP5_ROLE_FILTER='ALL';
+    BUY_NOW_ROLE='ALL';
+  }
+  persist();
+  renderMarketSeasonPanel();
+  render();
+}
+function marketSessionForRecord(x){
+  return state.marketSessions.find(s=>s.id===x.marketSessionId)
+    || {id:x.marketSessionId||'initial',type:x.marketType||'initial',name:x.marketSessionName||'Asta iniziale'};
+}
+function marketSessionCount(id){
+  return state.purchases.filter(x=>(x.marketSessionId||'initial')===id).length;
+}
+
 function persist(){
   localStorage.setItem('astaFantaV1',JSON.stringify(state));
   clearPerformanceCaches();
@@ -5743,6 +5973,9 @@ function renderPremiumDashboardHero(){
 
 function strategy40RolePriority(role){
   const missing=Math.max(0,LIMITS[role]-roleCount(state.me,role));
+  if(isInitialMarket() && role!==currentInitialPhase()){
+    return {role,score:0,missing,plan:liveRoleBudgetPlan(role,state.me),top:null,locked:true};
+  }
   if(!missing)return {role,score:0,missing,plan:liveRoleBudgetPlan(role,state.me),top:null};
   const plan=liveRoleBudgetPlan(role,state.me);
   const rows=liveTop5Rows(role);
@@ -5952,7 +6185,7 @@ function renderDashboardControlRaw(){
       <div class="dashRecent">
         <div>
           <div class="dashRecentName">${esc(x.name)}</div>
-          <div class="dashRecentMeta">${x.role} · ${esc(state.managers[x.buyer]||'')}</div>
+          <div class="dashRecentMeta">${x.role} · ${esc(state.managers[x.buyer]||'')} · ${esc(x.marketSessionName||'Asta iniziale')}</div>
         </div>
         <b>${x.price} cr</b>
       </div>`).join(''):`<div class="empty">Nessun acquisto registrato.</div>`;
@@ -5986,6 +6219,7 @@ function renderDashboardControl(){
 let ASTA_LIVE_PLAYER=-1;
 
 function renderAstaLive(){
+  renderMarketContextBars();
   const kpis=document.getElementById('astaLiveKpis');
   if(!kpis)return;
   const me=state.me, cash=budget(me), slots=remainingRosterSlots(me);
@@ -6004,6 +6238,7 @@ function renderAstaLiveSuggestions(){
   if(q.length<2){box.classList.remove('show');box.innerHTML='';return;}
   const rows=PLAYER_ARCHIVE.map((p,index)=>({p,index}))
     .filter(x=>!purchaseForArchivePlayer(x.p.name) && !isUnavailablePlayer(x.p.name))
+    .filter(x=>marketRoleAllowed(x.p.role))
     .filter(x=>normalizePlayerText(x.p.name+' '+x.p.team).includes(q))
     .slice(0,10);
   box.innerHTML=rows.length?rows.map(x=>`
@@ -6014,6 +6249,11 @@ function renderAstaLiveSuggestions(){
   box.classList.add('show');
 }
 function selectAstaLivePlayer(index){
+  const chosen=PLAYER_ARCHIVE[index];
+  if(chosen && !marketRoleAllowed(chosen.role)){
+    alert(`Asta iniziale: siamo nella fase ${currentInitialPhase()}. Puoi chiamare solo ${roleName(currentInitialPhase()).toLowerCase()}.`);
+    return;
+  }
   ASTA_LIVE_PLAYER=index;
   const input=document.getElementById('astaLiveSearch');
   if(input)input.value='';
@@ -6062,7 +6302,7 @@ function renderAstaLiveSelected(){
       <div class="astaDecisionHead">
         <div>
           <div class="astaDecisionTitle">🤖 Asta Live Smart</div>
-          <div class="astaDecisionText">Decisione immediata basata su prezzo, piano ${activeFormationPlan().name}, budget, mercato e alternative ancora libere.</div>
+          <div class="astaDecisionText">${marketModeText()} · decisione basata su prezzo, piano ${activeFormationPlan().name}, budget, mercato e alternative ancora libere.</div>
         </div>
         <span class="tag good">${a.score}/99</span>
       </div>
@@ -6271,12 +6511,83 @@ function renderRosesPage(){
     :'<div class="empty">Nessuna rosa trovata.</div>';
 }
 
+
+function renderMarketContextBars(){
+  const s=activeMarketSession();
+  const dash=document.getElementById('dashboardMarketContext');
+  if(dash){
+    dash.innerHTML=`
+      <div>
+        <div class="marketContextMain">🗓️ ${esc(s.name)}</div>
+        <div class="marketContextSub">${s.type==='initial'
+          ? `Asta iniziale a reparti · fase attuale ${currentInitialPhase()} · l'AI consiglia solo ${roleName(currentInitialPhase()).toLowerCase()}`
+          : `Mercato libero · l'AI può scegliere il reparto con il miglior upgrade`}</div>
+      </div>
+      <span class="marketContextBadge">${marketSessionShort()}</span>`;
+  }
+
+  const asta=document.getElementById('astaMarketContext');
+  if(asta){
+    asta.innerHTML=s.type==='initial'
+      ? `<div class="marketContextMain">FASE ASTA INIZIALE · ${currentInitialPhase()}</div>
+         <div class="marketContextSub">Le chiamate sono limitate al reparto corrente. Cambia fase quando la lega passa al reparto successivo.</div>
+         <div class="marketPhaseRow">
+           ${['P','D','C','A'].map(r=>`<button class="${currentInitialPhase()===r?'active':''}" onclick="setInitialAuctionPhase('${r}')">${r}</button>`).join('')}
+         </div>`
+      : `<div class="marketContextMain">${esc(s.name)} · MERCATO LIBERO</div>
+         <div class="marketContextSub">Puoi chiamare P, D, C o A in qualsiasi ordine. Il Direttore Sportivo AI sceglie la priorità in base alla rosa attuale.</div>`;
+  }
+}
+
+function renderMarketSeasonPanel(){
+  const el=document.getElementById('marketSeasonPanel');
+  if(!el)return;
+  const active=activeMarketSession();
+
+  el.innerHTML=`
+    <div class="marketSeasonHero">
+      <div class="marketSeasonTitle">${esc(active.name)}</div>
+      <div class="marketSeasonText">
+        ${active.type==='initial'
+          ? `Modalità a reparti P → D → C → A. Fase corrente: ${currentInitialPhase()}.`
+          : `Modalità libera: tutti i ruoli possono essere chiamati. Questa è la sessione di riparazione attiva.`}
+      </div>
+
+      ${active.type==='initial'?`
+        <div class="marketPhaseRow">
+          ${['P','D','C','A'].map(r=>`<button class="${currentInitialPhase()===r?'active':''}" onclick="setInitialAuctionPhase('${r}')">${r}</button>`).join('')}
+        </div>`:''}
+
+      <div class="marketSeasonActions">
+        <button class="secondary" onclick="createRepairMarket()">＋ NUOVO MERCATO DI RIPARAZIONE</button>
+      </div>
+      <div class="marketDirectorNote">
+        🧠 Gli acquisti vengono salvati nella sessione attiva. Puoi creare Mercato riparazione #1, #2, #3… senza limite.
+      </div>
+    </div>
+
+    <div class="marketSeasonList">
+      ${state.marketSessions.map(s=>`
+        <div class="marketSessionCard ${s.id===state.activeMarketSessionId?'active':''}">
+          <div>
+            <div class="marketSessionName">${esc(s.name)}</div>
+            <div class="marketSessionMeta">${s.type==='initial'?'Asta a reparti':'Mercato libero'} · ${marketSessionCount(s.id)} acquisti attualmente in rosa</div>
+          </div>
+          ${s.id===state.activeMarketSessionId
+            ? `<span class="tag good">ATTIVO</span>`
+            : `<button class="secondary" onclick="activateMarketSession('${s.id}')">ATTIVA</button>`}
+        </div>`).join('')}
+    </div>`;
+}
+
+
 function renderCommonHeader(){
   const me=state.me;
   const leaguePill=document.getElementById('leagueBudgetPill');
   if(leaguePill)leaguePill.textContent=INITIAL;
   const myNameEl=document.getElementById('myNameLabel');
   if(myNameEl)myNameEl.textContent=state.managers[me];
+  renderMarketContextBars();
 }
 function activePageId(){
   const active=document.querySelector('.page.active');
@@ -6294,6 +6605,7 @@ function render(){
   }else if(id==='players'){
     renderRosesPage();
   }else if(id==='more'){
+    renderMarketSeasonPanel();
     renderHistory();
     renderStatsImportInfo();
   }
@@ -6862,6 +7174,7 @@ function liveStrategicAlternatives(sourceIndex,limit=3){
 function liveTop5Candidate(index,role){
   const p=PLAYER_ARCHIVE[index];
   if(!p || p.role!==role)return null;
+  if(!marketRoleAllowed(role))return null;
   if(purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))return null;
   if(roleCount(state.me,role)>=LIMITS[role])return null;
 
@@ -6974,7 +7287,7 @@ let TOP5_ROLE_FILTER='ALL';
 let TOP5_ALT_TOKEN=0;
 function hydrateTop5Alternatives(){
   const token=++TOP5_ALT_TOKEN;
-  const roles=TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER];
+  const roles=isInitialMarket()?[currentInitialPhase()]:(TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER]);
   const indexes=[];
   roles.forEach(role=>liveTop5Rows(role).forEach(x=>indexes.push(x.index)));
   indexes.forEach((idx,n)=>{
@@ -6991,7 +7304,11 @@ function hydrateTop5Alternatives(){
 }
 
 function setTop5RoleFilter(role){
-  TOP5_ROLE_FILTER=role;
+  if(isInitialMarket()){
+    TOP5_ROLE_FILTER=currentInitialPhase();
+  }else{
+    TOP5_ROLE_FILTER=role;
+  }
   renderTop5LivePage();
   const body=document.getElementById('top5LiveBody');
   if(body)body.scrollTop=0;
@@ -7005,6 +7322,7 @@ function renderTop5LivePage(){
   const slots=remainingRosterSlots(state.me);
   const plan=activeFormationPlan(state.me);
   const stage=aiCore3AuctionStage();
+  if(isInitialMarket())TOP5_ROLE_FILTER=currentInitialPhase();
 
   body.innerHTML=`
     <div class="top5Hero">
@@ -7029,18 +7347,15 @@ function renderTop5LivePage(){
       <div class="top5RoleFilterWrap">
         <div class="top5ModuleLabel">VISUALIZZA REPARTO</div>
         <div class="top5RoleFilterButtons">
-          ${[
-            ['ALL','Tutti'],
-            ['P','Portieri'],
-            ['D','Difensori'],
-            ['C','Centrocampisti'],
-            ['A','Attaccanti']
-          ].map(([id,label])=>`<button class="${TOP5_ROLE_FILTER===id?'active':''}" onclick="setTop5RoleFilter('${id}')">${label}</button>`).join('')}
+          ${(isInitialMarket()
+            ? [[currentInitialPhase(),roleName(currentInitialPhase())]]
+            : [['ALL','Tutti'],['P','Portieri'],['D','Difensori'],['C','Centrocampisti'],['A','Attaccanti']]
+          ).map(([id,label])=>`<button class="${TOP5_ROLE_FILTER===id?'active':''}" onclick="setTop5RoleFilter('${id}')">${label}</button>`).join('')}
         </div>
       </div>
     </div>
 
-    ${(TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER]).map(role=>{
+    ${(isInitialMarket()?[currentInitialPhase()]:(TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER])).map(role=>{
       const rows=liveTop5Rows(role);
       const strat=liveRoleStrategy(role);
       const owned=roleCount(state.me,role);
@@ -7678,6 +7993,7 @@ function formationPlanWhy(plan){
 function buyNowCandidate(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p || purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))return null;
+  if(!marketRoleAllowed(p.role))return null;
   if(roleCount(state.me,p.role)>=LIMITS[p.role])return null;
 
   const ai=aiPlayerAnalysis(index,state.me);
@@ -7734,7 +8050,7 @@ function renderBuyNowPage(){
       <div style="font-size:17px;font-weight:950">La tua situazione adesso</div>
       <div class="playerMetaLine">${cash} crediti · ${slots} posti mancanti · P ${roleCount(state.me,'P')}/${LIMITS.P} · D ${roleCount(state.me,'D')}/${LIMITS.D} · C ${roleCount(state.me,'C')}/${LIMITS.C} · A ${roleCount(state.me,'A')}/${LIMITS.A}</div>
       <div class="buyNowRoles">
-        ${['ALL','P','D','C','A'].map(r=>`<button class="buyNowRole ${BUY_NOW_ROLE===r?'on':''}" onclick="setBuyNowRole('${r}')">${r==='ALL'?'TUTTI':r}</button>`).join('')}
+        ${(isInitialMarket()?[currentInitialPhase()]:['ALL','P','D','C','A']).map(r=>`<button class="buyNowRole ${BUY_NOW_ROLE===r?'on':''}" onclick="setBuyNowRole('${r}')">${r==='ALL'?'TUTTI':r}</button>`).join('')}
       </div>
     </div>
 
@@ -7770,7 +8086,7 @@ function renderBuyNowPage(){
   `;
 }
 function openBuyNowPage(){
-  BUY_NOW_ROLE='ALL';
+  BUY_NOW_ROLE=isInitialMarket()?currentInitialPhase():'ALL';
   renderBuyNowPage();
   document.body.classList.add('buy-now-page-open');
   document.getElementById('buyNowModal').classList.add('show');
@@ -8159,6 +8475,7 @@ function advisorScore(p,index){
   return {score:clamp(score,1,99),stats:st,price};
 }
 function defaultAdvisorRole(){
+  if(isInitialMarket())return currentInitialPhase();
   const order=['P','D','C','A']
     .map(r=>({r,need:Math.max(0,LIMITS[r]-roleCount(state.me,r))/LIMITS[r]}))
     .sort((a,b)=>b.need-a.need);
@@ -8172,6 +8489,10 @@ function openAdvisor(){
 }
 function closeAdvisor(){leaveSubPage('advisorModal')}
 function setAdvisorRole(role,btn){
+  if(isInitialMarket() && role!==currentInitialPhase()){
+    alert(`Asta iniziale: l'AI sta lavorando solo sui ${roleName(currentInitialPhase()).toLowerCase()}.`);
+    return;
+  }
   advisorRole=role;
   document.querySelectorAll('.advisorRoleBtn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
@@ -8245,12 +8566,20 @@ function firstIncompleteRole(){
   return ['P','D','C','A'].find(r=>roleCount(state.me,r)<LIMITS[r])||'';
 }
 function ensureNextMoveRole(){
+  if(isInitialMarket()){
+    nextMoveSelectedRole=currentInitialPhase();
+    return nextMoveSelectedRole;
+  }
   if(!nextMoveSelectedRole || roleCount(state.me,nextMoveSelectedRole)>=LIMITS[nextMoveSelectedRole]){
     nextMoveSelectedRole=firstIncompleteRole();
   }
   return nextMoveSelectedRole;
 }
 function setNextMoveRole(role,btn){
+  if(isInitialMarket() && role!==currentInitialPhase()){
+    alert(`Asta iniziale: la fase corrente è ${currentInitialPhase()}.`);
+    return;
+  }
   nextMoveSelectedRole=role;
   document.querySelectorAll('.nextMoveRoleBtn').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
@@ -9765,6 +10094,10 @@ function closePlayerDetail(){
 function buyFromListone(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p || alreadyBoughtPlayer(p.name) || isUnavailablePlayer(p.name)) return;
+  if(!marketRoleAllowed(p.role)){
+    alert(`Asta iniziale: fase ${currentInitialPhase()}. In questo momento puoi acquistare solo ${roleName(currentInitialPhase()).toLowerCase()}.`);
+    return;
+  }
   openBuy();
   setTimeout(()=>selectArchivePlayer(index),0);
 }
@@ -9789,6 +10122,7 @@ function quickRelease(purchaseId,managerIndex){
     refund:x.price,
     reason:'Rimosso dalla rosa',
     backToMarket:true,
+    ...marketPurchaseMeta(),
     ts:Date.now()
   });
 
@@ -9863,6 +10197,7 @@ function confirmRelease(){
     refund,
     reason,
     backToMarket,
+    ...marketPurchaseMeta(),
     ts:Date.now()
   });
 
@@ -9941,7 +10276,7 @@ function closeParticipant(){
 }
 
 function roleName(r){return {P:'Portieri',D:'Difensori',C:'Centrocampisti',A:'Attaccanti'}[r]}
-function itemHTML(x){return `<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="delete" onclick="del('${x.id}')">×</button></div></div>`}
+function itemHTML(x){return `<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div><span class="historyMarketTag">${esc(x.marketSessionName||'Asta iniziale')}${x.marketType==='initial'&&x.marketPhase?` · ${x.marketPhase}`:''}</span></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="delete" onclick="del('${x.id}')">×</button></div></div>`}
 function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
 
 function normalizePlayerText(s){
@@ -10136,6 +10471,12 @@ function saveBuy(){
   const hint=document.getElementById('buyHint');
 
   if(!name||!price||price<1){hint.textContent='Inserisci nome e prezzo.';hint.className='hint danger';updateBuyPreview();return}
+  if(!marketRoleAllowed(role)){
+    hint.textContent=`Asta iniziale: fase ${currentInitialPhase()}. Puoi registrare solo ${roleName(currentInitialPhase()).toLowerCase()}.`;
+    hint.className='hint danger';
+    updateBuyPreview();
+    return;
+  }
   if(alreadyBoughtPlayer(name)){hint.textContent='Questo giocatore risulta già acquistato.';hint.className='hint danger';updateBuyPreview();return}
   if(price>budget(buyer)){hint.textContent='Crediti insufficienti.';hint.className='hint danger';updateBuyPreview();return}
   if(roleCount(buyer,role)>=LIMITS[role]){hint.textContent=`${state.managers[buyer]} ha già completato il reparto ${roleName(role)}.`;hint.className='hint danger';updateBuyPreview();return}
@@ -10163,6 +10504,7 @@ function saveBuy(){
   state.purchases.push({
     id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     name,role,price,buyer,ts:Date.now(),
+    ...marketPurchaseMeta(),
     team:selectedArchivePlayer?selectedArchivePlayer.team:'',
     qi:selectedArchivePlayer?selectedArchivePlayer.qi:null,
     fvm:selectedArchivePlayer?selectedArchivePlayer.fvm:null,
