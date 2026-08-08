@@ -4816,6 +4816,48 @@ body.top5-live-open nav{
   font-size:6.5px;
 }
 
+
+/* V59 - Direttore Sportivo AI */
+.dsAiCard{
+  border:1px solid rgba(242,201,76,.24);
+  border-radius:14px;
+  padding:10px;
+  background:linear-gradient(145deg,#101f31,#081522);
+}
+.dsAiHead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.dsAiTitle{font-size:13px;font-weight:950}
+.dsAiText{font-size:7.5px;line-height:1.45;color:var(--muted);margin-top:3px}
+.dsAiPriority{
+  margin-top:8px;padding:8px;border-radius:10px;background:#0a1727;
+  border:1px solid rgba(142,164,189,.14)
+}
+.dsAiPriorityTop{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.dsAiPriorityName{font-size:11px;font-weight:950}
+.dsAiBudget{font-size:16px;font-weight:950;color:#f6d66d}
+.dsAiRoles{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:7px}
+.dsAiRole{padding:5px 3px;text-align:center;border-radius:8px;background:#081321;border:1px solid var(--line)}
+.dsAiRole span{display:block;font-size:6px;color:var(--muted)}
+.dsAiRole b{font-size:9px}
+.dsAiTargets{margin-top:8px;display:grid;gap:5px}
+.dsAiTarget{
+  display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:7px;align-items:center;
+  padding:7px;border-radius:9px;background:#081321;border:1px solid rgba(142,164,189,.12)
+}
+.dsAiRank{
+  width:24px;height:24px;border-radius:8px;display:grid;place-items:center;
+  font-size:9px;font-weight:950;background:#152337;color:#f6d66d
+}
+.dsAiTargetName{font-size:9px;font-weight:900}
+.dsAiTargetMeta{font-size:6.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+.dsAiPrice{text-align:right;font-size:9px;font-weight:950}
+.dsAiPrice small{display:block;font-size:5.5px;color:var(--muted);font-weight:700}
+.dsAiPlan{
+  margin-top:8px;padding:7px 8px;border-radius:9px;background:#082118;
+  border:1px solid rgba(57,217,138,.20);font-size:7.5px;line-height:1.45;color:#8be8b7
+}
+.dsAiPlan.warn{background:#2a230b;border-color:rgba(242,201,76,.22);color:#f6d66d}
+.dsAiPlan.danger{background:#2a1012;border-color:rgba(255,90,90,.22);color:#ff9d9d}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4826,7 +4868,7 @@ body.top5-live-open nav{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V58</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V59</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -4857,6 +4899,12 @@ body.top5-live-open nav{
   <div class="section" style="margin-top:14px">
     <h2>🤖 Prossima mossa AI</h2>
     <div id="dashboardNextMove"></div>
+  </div>
+
+  <div class="section" style="margin-top:14px">
+    <h2>🧠 Direttore Sportivo AI</h2>
+    <div class="hint">Piano dinamico: priorità, budget e 5 obiettivi cambiano automaticamente mentre costruisci la rosa.</div>
+    <div id="dashboardDirectorAI" style="margin-top:8px"></div>
   </div>
 
   <div class="section" style="margin-top:14px">
@@ -6118,6 +6166,143 @@ function renderStrategy40(){
     </div>`;
 }
 
+
+function directorRoleSnapshot(role){
+  const owned=roleCount(state.me,role);
+  const missing=Math.max(0,LIMITS[role]-owned);
+  const plan=liveRoleBudgetPlan(role,state.me);
+  const rows=missing?liveTop5Rows(role):[];
+  const top=rows[0]||null;
+  const fillRatio=LIMITS[role]?owned/LIMITS[role]:1;
+  const topQuality=top?top.score:0;
+  const scarcity=top?Number(top.ai?.scarcity100||0):0;
+  const need=Math.round(clamp(
+    (missing/LIMITS[role])*62 +
+    (1-fillRatio)*18 +
+    (topQuality/99)*12 +
+    (scarcity/100)*8,0,99
+  ));
+  return {role,owned,missing,plan,rows,top,need};
+}
+
+function directorSportivoPlan(){
+  const cash=budget(state.me);
+  const slots=remainingRosterSlots(state.me);
+  const snapshots=['P','D','C','A'].map(directorRoleSnapshot);
+  let priority;
+
+  if(isInitialMarket()){
+    priority=snapshots.find(x=>x.role===currentInitialPhase())||snapshots[0];
+  }else{
+    priority=[...snapshots]
+      .filter(x=>x.missing>0)
+      .sort((a,b)=>b.need-a.need || b.plan.max-a.plan.max)[0]||null;
+  }
+
+  if(!priority)return {cash,slots,snapshots,priority:null,targets:[],message:'Rosa completa.'};
+
+  const targets=priority.rows.slice(0,5);
+  const last=state.purchases.filter(x=>x.buyer===state.me).slice(-1)[0]||null;
+  const lastFeedback=strategy40LastPurchaseFeedback();
+
+  let level='good';
+  let message='';
+  if(isInitialMarket()){
+    const future=['P','D','C','A'].slice(['P','D','C','A'].indexOf(currentInitialPhase())+1)
+      .filter(r=>roleCount(state.me,r)<LIMITS[r]);
+    const reserve=future.reduce((s,r)=>s+Math.max(0,liveRoleBudgetPlan(r,state.me).min),0);
+    message=`Fase ${currentInitialPhase()}: concentra le chiamate sui ${roleName(currentInitialPhase()).toLowerCase()}. Budget reparto ${priority.plan.min}-${priority.plan.max} cr.`;
+    if(future.length)message+=` Proteggi il budget per ${future.join(', ')}: evita rilanci che riducano troppo la riserva dei reparti successivi.`;
+  }else{
+    const second=[...snapshots].filter(x=>x.missing>0&&x.role!==priority.role).sort((a,b)=>b.need-a.need)[0];
+    message=`Priorità libera: ${roleName(priority.role)} (${priority.owned}/${LIMITS[priority.role]} coperti). Punta prima a questo upgrade con fascia reparto ${priority.plan.min}-${priority.plan.max} cr.`;
+    if(second)message+=` Seconda priorità: ${roleName(second.role)}.`;
+  }
+
+  if(lastFeedback?.level==='danger'){
+    level='danger';
+    message+=` Ultimo acquisto in forte sovrapprezzo: passa al Piano C e privilegia alternative economiche.`;
+  }else if(lastFeedback?.level==='warn'){
+    level='warn';
+    message+=` Ultimo acquisto sopra il piano: usa il Piano B e riduci il tetto dei prossimi rilanci.`;
+  }else if(last){
+    message+=` L'ultimo acquisto è sostenibile: il Piano A resta valido.`;
+  }
+
+  return {cash,slots,snapshots,priority,targets,message,level,lastFeedback};
+}
+
+function directorTargetReason(x,priority){
+  const bits=[];
+  if(x.fit>=75)bits.push('fit rosa alto');
+  if(x.afford>=70)bits.push('sostenibile');
+  if(x.ai?.scarcity100>=70)bits.push('scarsità alta');
+  if(x.formation>=70)bits.push(`adatto ${activeFormationPlan().name}`);
+  if(x.ai?.score>=82)bits.push('profilo AI forte');
+  if(!bits.length)bits.push('equilibrio qualità/prezzo');
+  return bits.slice(0,2).join(' · ');
+}
+
+function renderDirectorSportivoAI(){
+  const el=document.getElementById('dashboardDirectorAI');
+  if(!el)return;
+  const d=directorSportivoPlan();
+  if(!d.priority){
+    el.innerHTML='<div class="empty">Rosa completa: nessuna priorità di mercato.</div>';
+    return;
+  }
+  const p=d.priority;
+  const mode=isInitialMarket()?`ASTA INIZIALE · ${currentInitialPhase()}`:`${activeMarketSession().name} · LIBERO`;
+  const planLabel=d.level==='danger'?'PIANO C':d.level==='warn'?'PIANO B':'PIANO A';
+
+  el.innerHTML=`
+    <div class="dsAiCard">
+      <div class="dsAiHead">
+        <div>
+          <div class="dsAiTitle">Direttore Sportivo AI · ${planLabel}</div>
+          <div class="dsAiText">${mode} · ${d.cash} crediti · ${d.slots} posti da completare</div>
+        </div>
+        <span class="tag ${d.level==='good'?'good':d.level==='danger'?'bad':'warn'}">${p.need}/99</span>
+      </div>
+
+      <div class="dsAiPriority">
+        <div class="dsAiPriorityTop">
+          <div>
+            <div class="dsAiTargetMeta">PRIORITÀ ADESSO</div>
+            <div class="dsAiPriorityName">${roleName(p.role)}</div>
+          </div>
+          <div class="dsAiBudget">${p.plan.min}-${p.plan.max}<span style="font-size:7px"> cr</span></div>
+        </div>
+        <div class="dsAiRoles">
+          ${d.snapshots.map(x=>`<div class="dsAiRole"><span>${x.role}</span><b>${x.owned}/${LIMITS[x.role]}</b></div>`).join('')}
+        </div>
+      </div>
+
+      <div class="dsAiTargets">
+        ${d.targets.length?d.targets.map((x,n)=>{
+          const px=liveTop5StrategicPrices(x);
+          return `<div class="dsAiTarget" onclick="openAIForPlayer(${x.index})">
+            <div class="dsAiRank">${n+1}</div>
+            <div>
+              <div class="dsAiTargetName">${esc(x.p.name)}</div>
+              <div class="dsAiTargetMeta">${x.p.role} · ${esc(x.p.team)} · ${directorTargetReason(x,p)}</div>
+            </div>
+            <div class="dsAiPrice">${px.low}-${px.maxRec}<small>MAX ${px.maxRec}</small></div>
+          </div>`;
+        }).join(''):'<div class="empty">Nessun obiettivo disponibile per il reparto.</div>'}
+      </div>
+
+      <div class="dsAiPlan ${d.level==='good'?'':d.level}">
+        <b>${planLabel}</b> · ${d.message}
+      </div>
+
+      <div class="top5Actions" style="margin-top:8px">
+        <button class="secondary" onclick="openTop5LivePage()">🎯 TOP 5 COMPLETI</button>
+        <button class="primary" style="position:static" onclick="openBuyNowPage()">🤖 CHI COMPRO?</button>
+      </div>
+    </div>`;
+}
+
 function renderDashboardControlRaw(){
   renderPremiumDashboardHero();
   const me=state.me;
@@ -6176,6 +6361,7 @@ function renderDashboardControlRaw(){
       :`<div class="empty">Nessun consiglio disponibile: la rosa potrebbe essere completa.</div>`;
   }
 
+  renderDirectorSportivoAI();
   renderStrategy40();
 
   const recent=document.getElementById('dashboardRecent');
@@ -7326,7 +7512,7 @@ function renderTop5LivePage(){
 
   body.innerHTML=`
     <div class="top5Hero">
-      <div class="top5HeroTitle">I tuoi obiettivi strategici LIVE</div>
+      <div class="top5HeroTitle">${isInitialMarket()?`Top 5 ${roleName(currentInitialPhase())} · fase corrente`:`Top 5 obiettivi · mercato libero`}</div>
       <div class="top5HeroText">
         Dopo ogni acquisto l’AI ricalcola priorità, fascia dei giocatori, budget del reparto e 5 obiettivi.
         Se spendi più del piano, ridistribuisce automaticamente i crediti sugli altri reparti. Ogni obiettivo include alternative comparabili.
