@@ -4495,6 +4495,141 @@ nav::after{
   content:none !important;
 }
 
+
+/* V56.5 - App shell stabile: il menu non partecipa allo scroll */
+:root{
+  --bottom-nav-h:52px;
+}
+
+html,body{
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+}
+body{
+  position:fixed !important;
+  inset:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  background:var(--bg) !important;
+}
+
+/* L'intera app scorre qui, escluso il menu */
+#appScroll{
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  top:0 !important;
+  bottom:calc(var(--bottom-nav-h) + env(safe-area-inset-bottom)) !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+  padding:calc(env(safe-area-inset-top) + 8px) 14px 12px !important;
+  background:var(--bg) !important;
+}
+
+/* Barra molto sottile, sempre al fondo fisico dell'app */
+nav{
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  top:auto !important;
+  width:100% !important;
+  height:calc(var(--bottom-nav-h) + env(safe-area-inset-bottom)) !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:3px 8px calc(3px + env(safe-area-inset-bottom)) !important;
+  display:grid !important;
+  grid-template-columns:repeat(5,1fr) !important;
+  align-items:start !important;
+  background:#07111f !important;
+  border:0 !important;
+  border-top:1px solid rgba(142,164,189,.18) !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  transform:none !important;
+  -webkit-transform:none !important;
+  z-index:2147483000 !important;
+}
+nav button{
+  height:42px !important;
+  min-height:42px !important;
+  margin:0 !important;
+  padding:2px 1px 1px !important;
+  border-radius:8px !important;
+  line-height:1.05 !important;
+  font-size:8px !important;
+  background:transparent !important;
+}
+nav button .ico{
+  display:block !important;
+  font-size:17px !important;
+  line-height:19px !important;
+  margin:0 0 1px !important;
+}
+nav button.active{
+  background:transparent !important;
+  box-shadow:none !important;
+  color:var(--premium-gold) !important;
+}
+nav::before,nav::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* Niente seconda fascia riservata al menu */
+.page,.page.active{
+  padding-bottom:12px !important;
+}
+
+/* Le tre pagine con lista interna restano contenute dentro appScroll */
+#rosa.active,
+#listone.active,
+#players.active{
+  position:relative !important;
+  left:auto !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:auto !important;
+  width:100% !important;
+  height:calc(100dvh - env(safe-area-inset-top) - var(--bottom-nav-h) - env(safe-area-inset-bottom) - 92px) !important;
+  max-height:none !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding-bottom:0 !important;
+  display:grid !important;
+  grid-template-rows:auto minmax(0,1fr) !important;
+  overflow:hidden !important;
+}
+
+#rosa .astaLiveScroll,
+#listonePlayers.playersProList,
+#managers.roseProList{
+  min-height:0 !important;
+  max-height:none !important;
+  height:100% !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  padding-bottom:16px !important;
+}
+
+/* Nelle vere sottopagine full screen il menu continua a sparire */
+body.formation-page-open nav,
+body.plan-page-open nav,
+body.buy-now-page-open nav,
+body.rival-radar-open nav,
+body.alternatives-page-open nav,
+body.compare-page-open nav,
+body.ai-page-open nav,
+body.top5-live-open nav{
+  display:none !important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4504,7 +4639,8 @@ nav::after{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V56.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<div id="appScroll">
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V56.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -4701,6 +4837,8 @@ nav::after{
   <div class="section"><button class="secondary danger" onclick="resetAll()">🗑️ Azzera tutta l'asta</button></div>
   <div class="section"><div class="empty">I dati restano salvati sul tuo iPhone anche chiudendo l'app. Per maggiore sicurezza usa ogni tanto “Esporta backup”.</div></div>
 </section>
+
+</div>
 
 <nav>
 <button class="active" onclick="tab('home',this)"><span class="ico">🏠</span>Dashboard</button>
@@ -10041,19 +10179,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 render();
 </script>
 
-<script>
-(function(){
-  function lockBottomNav(){
-    const nav=document.querySelector('nav');
-    if(!nav)return;
-    /* V56.3: non seguire visualViewport/scroll. Il menu resta sempre sul bordo inferiore. */
-    nav.style.bottom='0px';
-  }
-  window.addEventListener('load',lockBottomNav,{passive:true});
-  window.addEventListener('orientationchange',()=>setTimeout(lockBottomNav,80),{passive:true});
-  setTimeout(lockBottomNav,30);
-})();
-</script>
+
 
 <script>
 setTimeout(()=>document.body.classList.remove('splash-active'),1800);
