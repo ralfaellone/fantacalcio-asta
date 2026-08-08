@@ -4270,6 +4270,33 @@ body.top5-live-open #top5LiveModal{
   border-color:rgba(242,201,76,.60);background:#2b240c;color:#f6d66d
 }
 
+
+/* V52 - AI Strategia d'Asta 4.0 */
+.strategy40{
+  background:linear-gradient(145deg,#102238,#091624);
+  border:1px solid rgba(242,201,76,.22);
+  border-radius:15px;padding:10px
+}
+.strategy40Head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.strategy40Title{font-size:12px;font-weight:950}
+.strategy40Text{margin-top:3px;color:var(--muted);font-size:8px;line-height:1.4}
+.strategy40Badge{border-radius:999px;padding:4px 7px;background:#241f0d;color:#f6d66d;border:1px solid rgba(242,201,76,.3);font-size:7px;font-weight:950;white-space:nowrap}
+.strategy40Roles{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:9px}
+.strategy40Role{background:#071321;border:1px solid rgba(142,164,189,.14);border-radius:9px;padding:6px 4px;text-align:center}
+.strategy40Role.hot{border-color:rgba(57,217,138,.36);background:#092119}
+.strategy40Role span{display:block;font-size:6px;color:var(--muted)}
+.strategy40Role b{display:block;margin-top:2px;font-size:10px}
+.strategy40Role em{display:block;margin-top:2px;font-size:6px;color:#8be8b7;font-style:normal}
+.strategy40Targets{margin-top:8px}
+.strategy40Target{display:flex;justify-content:space-between;gap:7px;align-items:center;padding:7px 0;border-top:1px solid rgba(142,164,189,.10)}
+.strategy40Target:first-child{border-top:0}
+.strategy40TargetName{font-size:9px;font-weight:900}
+.strategy40TargetMeta{font-size:7px;color:var(--muted);margin-top:2px}
+.strategy40TargetPrice{font-size:9px;font-weight:950;white-space:nowrap}
+.strategy40Feedback{margin-top:8px;border-radius:10px;padding:8px;background:#0b1727;border:1px solid rgba(142,164,189,.14);font-size:8px;line-height:1.4}
+.strategy40Feedback.good{border-color:rgba(57,217,138,.25)}
+.strategy40Feedback.warn{border-color:rgba(242,201,76,.28)}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4279,7 +4306,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V51.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V52</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -4309,6 +4336,12 @@ body.top5-live-open #top5LiveModal{
   <div class="section" style="margin-top:14px">
     <h2>🤖 Prossima mossa AI</h2>
     <div id="dashboardNextMove"></div>
+  </div>
+
+  <div class="section" style="margin-top:14px">
+    <h2>🧠 Strategia d'Asta AI 4.0</h2>
+    <div class="hint">Priorità dei reparti, budget residuo e prossimi obiettivi si aggiornano dopo ogni acquisto.</div>
+    <div id="dashboardStrategy40" style="margin-top:8px"></div>
   </div>
 
   <div class="section" style="margin-top:14px">
@@ -5296,6 +5329,88 @@ function renderPremiumDashboardHero(){
     </div>`;
 }
 
+
+function strategy40RolePriority(role){
+  const missing=Math.max(0,LIMITS[role]-roleCount(state.me,role));
+  if(!missing)return {role,score:0,missing,plan:liveRoleBudgetPlan(role,state.me),top:null};
+  const plan=liveRoleBudgetPlan(role,state.me);
+  const rows=liveTop5Rows(role);
+  const top=rows[0]||null;
+  const fill=missing/Math.max(1,LIMITS[role]);
+  const share=missing/Math.max(1,remainingRosterSlots(state.me));
+  const topQuality=top?top.score/99:.35;
+  const scarcity=top?top.ai.scarcity100/100:.25;
+  let score=Math.round(clamp(fill*40+share*22+topQuality*25+scarcity*13,0,99));
+  if(roleCount(state.me,role)===0)score=Math.min(99,score+5);
+  return {role,score,missing,plan,top};
+}
+
+function strategy40LastPurchaseFeedback(){
+  const mine=state.purchases.filter(x=>x.buyer===state.me);
+  if(!mine.length)return null;
+  const last=mine[mine.length-1];
+  const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(last.name));
+  if(idx<0)return null;
+  const ai=aiPlayerAnalysis(idx,state.me);
+  if(!ai)return null;
+  const paid=Number(last.price)||0;
+  let cls='good',title='✅ Acquisto sostenibile',text='';
+  if(paid<=ai.ideal){
+    text=`${last.name} a ${paid}: prezzo sotto/in linea con l'ideale AI (${ai.ideal}). La strategia può restare aggressiva sugli obiettivi prioritari.`;
+  }else if(paid<=ai.maxRec){
+    cls='warn'; title='🟡 Acquisto nella fascia alta';
+    text=`${last.name} a ${paid}: ancora entro il NON OLTRE AI (${ai.maxRec}), ma i budget dei reparti restanti sono stati ricalibrati.`;
+  }else{
+    cls='warn'; title='⚠️ Spesa sopra il piano';
+    text=`${last.name} a ${paid}: supera il tetto AI attuale (${ai.maxRec}). L'AI abbassa automaticamente la fascia economica dei prossimi obiettivi.`;
+  }
+  return {cls,title,text};
+}
+
+function renderStrategy40(){
+  const el=document.getElementById('dashboardStrategy40');
+  if(!el)return;
+  const priorities=['P','D','C','A'].map(strategy40RolePriority).sort((a,b)=>b.score-a.score);
+  const active=priorities.filter(x=>x.missing>0);
+  const first=active[0]||null;
+  const feedback=strategy40LastPurchaseFeedback();
+
+  const targets=active.slice(0,3).map(x=>{
+    const t=x.top;
+    if(!t)return '';
+    const alts=liveStrategicAlternatives(t.index,2);
+    return `<div class="strategy40Target">
+      <div>
+        <div class="strategy40TargetName">${x.role} · ${esc(t.p.name)}</div>
+        <div class="strategy40TargetMeta">${liveTargetTier(t,x.plan)} · priorità reparto ${x.score}/99${alts.length?` · alternative: ${alts.map(a=>esc(a.p.name)).join(', ')}`:''}</div>
+      </div>
+      <div class="strategy40TargetPrice">${t.ai.low}-${t.ai.maxRec} cr</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="strategy40">
+      <div class="strategy40Head">
+        <div>
+          <div class="strategy40Title">${first?`Priorità attuale: ${roleName(first.role)}`:'Rosa completata'}</div>
+          <div class="strategy40Text">${first?`Mancano ${first.missing} slot. Budget reparto consigliato ${first.plan.min}-${first.plan.max} crediti. L'AI protegge sempre i crediti necessari per completare gli altri reparti.`:'Nessun altro acquisto necessario.'}</div>
+        </div>
+        <div class="strategy40Badge">${AI_ROSTER_MODULE?activeFormationPlan().name:'MODULO DA SCEGLIERE'}</div>
+      </div>
+      <div class="strategy40Roles">
+        ${priorities.map((x,n)=>`<div class="strategy40Role ${n===0&&x.missing?'hot':''}">
+          <span>${x.role}</span><b>${x.missing?x.score:'✓'}</b><em>${x.missing?`${x.plan.min}-${x.plan.max} cr`:'completo'}</em>
+        </div>`).join('')}
+      </div>
+      ${targets?`<div class="strategy40Targets">${targets}</div>`:''}
+      ${feedback?`<div class="strategy40Feedback ${feedback.cls}"><b>${feedback.title}</b><br>${feedback.text}</div>`:''}
+      <div class="top5Actions" style="margin-top:8px">
+        <button class="secondary" onclick="openTop5LivePage()">🎯 TOP 5 + ALTERNATIVE</button>
+        <button class="primary" style="position:static" onclick="openBuyNowPage()">🤖 CHI COMPRO?</button>
+      </div>
+    </div>`;
+}
+
 function renderDashboardControlRaw(){
   renderPremiumDashboardHero();
   const me=state.me;
@@ -5353,6 +5468,8 @@ function renderDashboardControlRaw(){
       </div>`
       :`<div class="empty">Nessun consiglio disponibile: la rosa potrebbe essere completa.</div>`;
   }
+
+  renderStrategy40();
 
   const recent=document.getElementById('dashboardRecent');
   if(recent){
@@ -6262,8 +6379,8 @@ function renderTop5LivePage(){
     <div class="top5Hero">
       <div class="top5HeroTitle">I tuoi obiettivi strategici LIVE</div>
       <div class="top5HeroText">
-        Dopo ogni acquisto l’AI ricalcola fascia dei giocatori, budget del reparto e 5 obiettivi.
-        Ogni obiettivo include anche alternative realmente comparabili.
+        Dopo ogni acquisto l’AI ricalcola priorità, fascia dei giocatori, budget del reparto e 5 obiettivi.
+        Se spendi più del piano, ridistribuisce automaticamente i crediti sugli altri reparti. Ogni obiettivo include alternative comparabili.
       </div>
       <div class="top5HeroKpis">
         <div class="top5HeroKpi"><span>CREDITI</span><b>${cash}</b></div>
