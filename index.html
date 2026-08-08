@@ -4377,7 +4377,7 @@ body.top5-live-open #top5LiveModal{
 }
 
 
-/* V56.1 - Performance 2.0 */
+/* V56.2 - Performance 2.0 */
 .listoneLoadMore{width:100%;margin:10px 0 4px;padding:11px 8px;border-radius:11px}
 .top5AltRow .top5Meta{opacity:.75}
 </style>
@@ -4389,7 +4389,7 @@ body.top5-live-open #top5LiveModal{
   <h1>Asta Fanta</h1>
   <p>La tua asta. La tua strategia.</p>
 </div>
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V56.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V56.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -4472,20 +4472,8 @@ body.top5-live-open #top5LiveModal{
   <div class="astaLiveScroll">
     <div id="astaLiveDecision"></div>
 
-    <div class="section">
-      <h2>Comandi rapidi</h2>
-      <div class="astaLiveActions">
-        <button onclick="openBuy()">＋<span>Registra acquisto</span></button>
-        <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
-        <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
-        <button onclick="openPlanPage()">📊<span>Piano asta</span></button>
-        <button onclick="openTop5LivePage()">🎯<span>Top 5 AI Live</span></button>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>Ultimi acquisti</h2>
-      <div id="auctionRecentPurchases"></div>
+    <div class="section" style="margin-top:14px">
+      <div class="hint" style="text-align:center">Asta è ora una modalità operativa LIVE: cerca il giocatore chiamato e gestisci qui la decisione in tempo reale.</div>
     </div>
   </div>
 </section>
@@ -5741,9 +5729,10 @@ function renderAstaLiveSelected(){
         <button onclick="setAstaLiveMax()">MAX</button>
       </div>
       <div id="astaLiveVerdict" class="astaVerdict">Inserisci il prezzo attuale per sapere se rilanciare.</div>
+      ${(()=>{const alts=bestAlternativesFor(ASTA_LIVE_PLAYER).slice(0,3);return alts.length?`<div class="astaLiveAlternatives"><div class="hint" style="font-weight:900;margin:12px 0 7px">ALTERNATIVE SE SALE TROPPO</div><div style="display:flex;gap:7px;flex-wrap:wrap">${alts.map(x=>`<button class="secondary" style="padding:8px 10px" onclick="selectAstaLivePlayer(${x.index})">${esc(x.p.name)} · ${x.ai.low}-${x.ai.maxRec}</button>`).join('')}</div></div>`:''})()}
       <div class="astaLiveDecisionActions">
-        <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">ANALISI COMPLETA</button>
-        <button class="primary" style="position:static" onclick="buyFromListone(${ASTA_LIVE_PLAYER})">ACQUISTA</button>
+        <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">🤖 ANALISI COMPLETA</button>
+        <button class="primary" style="position:static" onclick="buyFromListone(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
       </div>
     </div>`;
 }
