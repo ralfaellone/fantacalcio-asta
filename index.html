@@ -4902,7 +4902,7 @@ body.top5-live-open nav{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V60</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V61</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6492,6 +6492,34 @@ function clearAstaLivePlayer(){
   const input=document.getElementById('astaLiveSearch');
   if(input)input.focus();
 }
+
+function renderRivalLiveBox(playerIndex,currentBid=0){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  const rv=rivalLiveSummary(playerIndex,currentBid);
+  return `<div class="rivalLiveBox" id="rivalLiveDynamicBox">
+    <div class="rivalLiveHead">
+      <div class="rivalLiveTitle">👥 PRESSIONE AVVERSARI</div>
+      <div class="rivalLivePressure">${rv.pressure}/99 · ${rv.active} ancora in corsa</div>
+    </div>
+    ${rv.rows.length?rv.rows.map(r=>`<div class="rivalLiveRow">
+      <div>
+        <div class="rivalLiveName">${esc(state.managers[r.managerIndex])}</div>
+        <div class="rivalLiveMeta">${r.missing} ${p.role} mancanti · ${r.cash} cr · reparto già ${r.roleSpent} cr</div>
+      </div>
+      <div class="rivalLiveRisk">${r.label}</div>
+      <div class="rivalLiveMax">≈ ${r.estimatedMax}</div>
+    </div>`).join(''):`<div class="playerMetaLine" style="margin-top:6px">Nessun rivale con pressione significativa.</div>`}
+    <div class="strongBreakdown">La pressione cala mentre il prezzo sale: il valore ≈ indica il tetto stimato di ciascun rivale.</div>
+  </div>`;
+}
+
+function refreshRivalLiveBox(){
+  if(ASTA_LIVE_PLAYER==null)return;
+  const input=document.getElementById('astaLiveBid');
+  const bid=Math.max(0,Number(input?.value)||0);
+  const box=document.getElementById('rivalLiveDynamicBox');
+  if(box)box.outerHTML=renderRivalLiveBox(ASTA_LIVE_PLAYER,bid);
+}
 function renderAstaLiveSelected(){
   const selected=document.getElementById('astaLiveSelected');
   const decision=document.getElementById('astaLiveDecision');
@@ -6566,23 +6594,7 @@ function renderAstaLiveSelected(){
       <div id="astaLiveDelta" class="astaLiveDelta">L'AI aggiorna la decisione mentre rilanci.</div>
       <div id="astaLiveVerdict" class="astaVerdict">Inserisci il prezzo attuale per sapere se rilanciare.</div>
 
-      ${(()=>{
-        const rv=rivalLiveSummary(ASTA_LIVE_PLAYER);
-        return `<div class="rivalLiveBox">
-          <div class="rivalLiveHead">
-            <div class="rivalLiveTitle">👥 PRESSIONE AVVERSARI</div>
-            <div class="rivalLivePressure">${rv.pressure}/99 · ${rv.strong} forti</div>
-          </div>
-          ${rv.rows.length?rv.rows.map(r=>`<div class="rivalLiveRow">
-            <div>
-              <div class="rivalLiveName">${esc(state.managers[r.managerIndex])}</div>
-              <div class="rivalLiveMeta">${r.missing} ${p.role} mancanti · ${r.cash} cr disponibili</div>
-            </div>
-            <div class="rivalLiveRisk">${r.label}</div>
-            <div class="rivalLiveMax">≈ ${r.estimatedMax}</div>
-          </div>`).join(''):`<div class="playerMetaLine" style="margin-top:6px">Nessun rivale con pressione significativa.</div>`}
-        </div>`;
-      })()}
+      ${renderRivalLiveBox(ASTA_LIVE_PLAYER,0)}
 
       ${alts.length?`
         <div class="astaLiveAlternatives">
@@ -6626,7 +6638,7 @@ function evaluateAstaLiveBid(){
   const price=Number(el.value||0);
   const safe=safeMaxBid(state.me);
   const strong=strongRosterProfile(ASTA_LIVE_PLAYER,state.me);
-  const rivals=rivalLiveSummary(ASTA_LIVE_PLAYER);
+  const rivals=rivalLiveSummary(ASTA_LIVE_PLAYER,bid);
   const stop=Math.max(1,Math.min(a.maxRec,safe));
 
   if(marker){
@@ -6673,6 +6685,8 @@ function evaluateAstaLiveBid(){
     if(price<=a.ideal)delta.textContent=`${Math.max(0,a.ideal-price)} cr all'IDEALE · ${Math.max(0,stop-price)} cr al limite`;
     else delta.textContent=`+${price-a.ideal} cr sopra IDEALE · ${Math.max(0,stop-price)} cr al limite`;
   }
+
+  refreshRivalLiveBox();
 }
 
 function renderAuctionPage(){
@@ -7719,95 +7733,110 @@ function refreshTop5LiveIfOpen(){
 }
 
 
-function rivalInterestForPlayer(managerIndex,playerIndex){
+function rivalInterestForPlayer(managerIndex,playerIndex,currentBid=0){
   const p=PLAYER_ARCHIVE[playerIndex];
-  if(!p)return null;
+  if(!p || managerIndex===state.me)return null;
 
-  const cash=budget(managerIndex);
+  const cash=managerCash(managerIndex);
   const missing=Math.max(0,LIMITS[p.role]-roleCount(managerIndex,p.role));
-  const totalMissing=remainingRosterSlots(managerIndex);
-  const safe=safeMaxBid(managerIndex);
+  if(missing<=0 || cash<=0)return null;
 
-  if(missing===0){
-    return {
-      managerIndex,cash,missing,totalMissing,safe,
-      score:0,level:'low',label:'BASSO',
-      affordable:false,playerNeed:0,qualityPull:0,scarcityPull:0,
-      estimatedMax:0,reason:'Reparto già completo.'
-    };
+  const safe=Math.max(1,safeMaxBid(managerIndex));
+  const ai=aiPlayerAnalysis(playerIndex,managerIndex);
+  const fit=rosterFitScore(p,ai,managerIndex);
+  const formation=formationRoleFit(p.role,managerIndex);
+  const urgency=roleUrgencyScore(p.role,managerIndex);
+
+  // Quanto il giocatore è davvero interessante per QUEL rivale.
+  const quality=ai?.score||50;
+  const fvm=clamp((Number(p.fvm)||0)/260,0,1)*100;
+  const needRatio=missing/Math.max(1,LIMITS[p.role]);
+  const needScore=clamp(needRatio*100,0,100);
+
+  // Budget reparto residuo: se il rivale ha già investito molto nel ruolo,
+  // l'interesse per un'altra spesa alta scende.
+  const roleSpent=state.purchases
+    .filter(x=>x.buyer===managerIndex && x.role===p.role)
+    .reduce((s,x)=>s+(Number(x.price)||0),0);
+  const roleBudgetBase=Math.max(1,Math.round((state.startCredits||600)*(
+    p.role==='P'?.09:p.role==='D'?.19:p.role==='C'?.27:.45
+  )));
+  const roleBudgetLeft=Math.max(0,roleBudgetBase-roleSpent);
+  const budgetRoom=clamp(roleBudgetLeft/roleBudgetBase,0,1)*100;
+
+  // Alternative comparabili disponibili: più ce ne sono, meno è probabile
+  // che il rivale insegua proprio questo nome.
+  const comparable=PLAYER_ARCHIVE.filter((q,qi)=>{
+    if(qi===playerIndex || q.role!==p.role)return false;
+    if(purchaseForArchivePlayer(q.name)||isUnavailablePlayer(q.name))return false;
+    const qa=aiPlayerAnalysis(qi,managerIndex);
+    return qa && Math.abs((qa.score||50)-quality)<=7;
+  }).length;
+  const scarcity=clamp(100-comparable*6,18,100);
+
+  let base=
+    quality*.29 +
+    fit*.18 +
+    formation*.10 +
+    urgency*.13 +
+    needScore*.08 +
+    budgetRoom*.10 +
+    scarcity*.07 +
+    fvm*.05;
+
+  // Stima del tetto individuale del rivale, non solo del suo max sicuro.
+  let estimatedMax=Math.round(
+    Math.min(
+      safe,
+      Math.max(1,
+        (ai?.ideal||ai?.high||1)*(.72 + base/250)
+      )
+    )
+  );
+
+  // Un rivale non dovrebbe spendere quasi tutto il budget reparto su un profilo
+  // medio quando ha ancora molti slot da coprire.
+  if(missing>=2){
+    const perSlot=Math.max(1,Math.floor(Math.max(roleBudgetLeft,missing)/missing));
+    const stretch=quality>=82?1.65:quality>=72?1.38:1.18;
+    estimatedMax=Math.min(estimatedMax,Math.max(1,Math.round(perSlot*stretch)));
   }
 
-  const qi=Math.max(1,Number(p.qa)||Number(p.qi)||1);
-  const fvm=Math.max(0,Number(p.fvm)||0);
-  const roleFree=PLAYER_ARCHIVE.filter(x=>x.role===p.role&&!purchaseForArchivePlayer(x.name)&&!isUnavailablePlayer(x.name));
-  const target=playerMarketComposite(p);
-  const values=roleFree.map(playerMarketComposite).sort((a,b)=>a-b);
-  const qualityPct=values.length?values.filter(v=>v<target).length/values.length:.5;
-  const comparable=roleFree.filter(x=>playerMarketComposite(x)>=target*.88).length;
-  const scarcity=clamp(1-comparable/Math.max(3,LIMITS[p.role]*3),0,1);
+  // Il prezzo corrente filtra progressivamente i rivali.
+  const bid=Math.max(0,Number(currentBid)||0);
+  let pricePressure=100;
+  if(bid>0){
+    const ratio=bid/Math.max(1,estimatedMax);
+    if(ratio<=.55) pricePressure=100;
+    else if(ratio<=.75) pricePressure=88;
+    else if(ratio<=.90) pricePressure=70;
+    else if(ratio<=1.00) pricePressure=48;
+    else if(ratio<=1.10) pricePressure=20;
+    else pricePressure=3;
+  }
 
-  let inflation=1.20;
-  if(qualityPct>=.90)inflation=1.65;
-  else if(qualityPct>=.80)inflation=1.48;
-  else if(qualityPct>=.65)inflation=1.34;
-  else if(qualityPct>=.45)inflation=1.25;
+  let score=Math.round(clamp(base*.72+pricePressure*.28,1,99));
 
-  let rolePremium=1;
-  if(p.role==='P'&&qualityPct>=.70)rolePremium=1.16;
-  if(p.role==='A'&&qualityPct>=.75)rolePremium=1.13;
-  if(p.role==='C'&&qualityPct>=.80)rolePremium=1.07;
+  // All'inizio assoluto dell'asta evitiamo falsi 95-99 solo perché tutti
+  // hanno crediti e slot liberi.
+  const totalBought=state.purchases.length;
+  if(totalBought===0 && bid===0)score=Math.min(score,82);
 
-  const market=auctionMarketLearning(p.role);
-  const fvmBase=fvm*(INITIAL/1000);
-  let expected=Math.max(fvmBase,qi*inflation*rolePremium);
-  expected*=market.count?market.factor:1;
-  if(comparable<=2)expected*=1.10;
-  else if(comparable<=4)expected*=1.05;
+  let label='BASSO';
+  if(score>=78)label='ALTO';
+  else if(score>=55)label='MEDIO';
 
-  const ideal=Math.max(1,Math.round(expected));
-  const estimatedMax=Math.max(1,Math.min(safe,cash,Math.round(ideal*(qualityPct>=.80?1.22:1.16))));
-
-  const roleNeed=missing/Math.max(1,LIMITS[p.role]);
-  const urgency=totalMissing>0?clamp(missing/Math.max(1,totalMissing),0,1):0;
-  const liquidity=clamp(cash/Math.max(1,INITIAL),0,1);
-  const bidPower=clamp(safe/Math.max(1,estimatedMax),0,1.35);
-
-  const lowValue=fvm<=3 && qi<=2;
-  const qualityPull=lowValue?.10:clamp(.18+qualityPct*.82,0,1);
-  const scarcityPull=lowValue?0:scarcity;
-  const affordable=Math.min(cash,safe)>=Math.max(1,Math.round(ideal*.82));
-
-  let score=
-    roleNeed*19 +
-    urgency*13 +
-    liquidity*9 +
-    clamp(bidPower,0,1)*18 +
-    qualityPull*25 +
-    scarcityPull*16;
-
-  if(!affordable)score-=18;
-  if(lowValue)score*=.42;
-  if(qualityPct>=.90&&affordable)score+=7;
-  if(scarcity>=.75&&affordable)score+=6;
-  score=Math.round(clamp(score,0,99));
-
-  let level='low',label='BASSO';
-  if(score>=72){level='high';label='ALTO';}
-  else if(score>=46){level='med';label='MEDIO';}
-
-  let reason='';
-  if(score>=72)reason='Rivale molto credibile: bisogno reale del ruolo, liquidità sufficiente e forte interesse per questa fascia di giocatore.';
-  else if(score>=46)reason='Può partecipare all’asta, ma la pressione dipende dal prezzo e dalle alternative ancora disponibili.';
-  else if(!affordable)reason='Pressione bassa: il prezzo atteso è poco compatibile con la sua capacità di rilancio.';
-  else if(lowValue)reason='Pressione bassa: profilo economico e facilmente sostituibile.';
-  else reason='Pressione ridotta: priorità o scarsità non sono abbastanza elevate.';
+  // Se il prezzo ha già superato il tetto stimato, il rivale è quasi fuori.
+  if(bid>estimatedMax){
+    label='QUASI FUORI';
+    score=Math.min(score,24);
+  }
 
   return {
-    managerIndex,cash,missing,totalMissing,safe,score,level,label,
-    affordable,playerNeed:Math.round(roleNeed*100),
-    qualityPull:Math.round(qualityPull*100),
-    scarcityPull:Math.round(scarcityPull*100),
-    estimatedMax,ideal,qualityPct,comparable,reason
+    managerIndex,score,label,cash,missing,estimatedMax,
+    quality:Math.round(quality),fit:Math.round(fit),
+    scarcity:Math.round(scarcity),roleSpent,roleBudgetLeft,
+    currentBid:bid
   };
 }
 function rivalRadarRows(playerIndex){
@@ -8792,16 +8821,17 @@ function strongScoreClass(score){
   return score>=88?'top':score>=80?'hot':'';
 }
 
-function rivalLiveSummary(playerIndex){
+function rivalLiveSummary(playerIndex,currentBid=0){
   const p=PLAYER_ARCHIVE[playerIndex];
-  if(!p)return {pressure:0,strong:0,rows:[]};
+  if(!p)return {pressure:0,strong:0,active:0,rows:[]};
   const rows=state.managers
-    .map((_,i)=>i===state.me?null:rivalInterestForPlayer(i,playerIndex))
+    .map((_,i)=>i===state.me?null:rivalInterestForPlayer(i,playerIndex,currentBid))
     .filter(Boolean)
-    .sort((a,b)=>b.score-a.score)
+    .sort((a,b)=>b.score-a.score || b.estimatedMax-a.estimatedMax)
     .slice(0,4);
+  const active=rows.filter(x=>x.label!=='QUASI FUORI').length;
   const pressure=rows.length?Math.round(rows.reduce((s,x)=>s+x.score,0)/rows.length):0;
-  return {pressure,strong:rows.filter(x=>x.score>=72).length,rows};
+  return {pressure,strong:rows.filter(x=>x.score>=78).length,active,rows};
 }
 
 function advisorScore(p,index){
