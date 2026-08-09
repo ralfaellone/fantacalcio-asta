@@ -5098,6 +5098,19 @@ body.player-detail-open{
   font-weight:950;
 }
 
+
+/* V64 - Simulatore Asta AI */
+.auctionSimBox{margin-top:10px;padding:9px;border:1px solid rgba(57,217,138,.22);border-radius:13px;background:#071a18}
+.auctionSimHead{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.auctionSimTitle{font-size:9px;font-weight:950}
+.auctionSimAction{padding:5px 8px;border-radius:999px;font-size:7px;font-weight:950}
+.auctionSimAction.buy{background:#0d3827;color:#58e7a4}.auctionSimAction.wait{background:#3a2b08;color:#ffd66b}.auctionSimAction.stop{background:#3b1118;color:#ff8994}
+.auctionSimGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:7px}
+.auctionSimMetric{padding:7px;border-radius:9px;background:#081321;border:1px solid rgba(142,164,189,.12)}
+.auctionSimMetric span{display:block;font-size:6px;color:var(--muted)}.auctionSimMetric b{display:block;margin-top:2px;font-size:10px}
+.auctionSimWhy{margin-top:7px;font-size:7px;line-height:1.45;color:#cbd6e5}
+.auctionSimAlt{margin-top:6px;font-size:7px;color:#bda9ff}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5108,7 +5121,7 @@ body.player-detail-open{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V63</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V64</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7165,6 +7178,102 @@ function refreshRivalLiveBox(){
   const box=document.getElementById('rivalLiveDynamicBox');
   if(box)box.outerHTML=renderRivalLiveBox(ASTA_LIVE_PLAYER,bid);
 }
+
+function simulatedRosterImpact(playerIndex,price){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  const prof=strongRosterProfile(playerIndex,state.me);
+  const before=strongRosterGlobal();
+  const cashBefore=budget(state.me);
+  const cashAfter=Math.max(0,cashBefore-Math.max(0,Number(price)||0));
+  const slotsBefore=remainingRosterSlots(state.me);
+  const slotsAfter=Math.max(0,slotsBefore-1);
+  const spec=nextSlotSpec(p.role);
+  const roleBefore=before.roleMap[p.role]?.score||0;
+
+  // Stima conservativa: misura il guadagno del reparto e poi lo propaga
+  // al punteggio globale senza alterare realmente lo stato dell'asta.
+  const profileScore=Number(prof?.score||50);
+  const filled=Math.max(1,roleCount(state.me,p.role)+1);
+  const roleAfter=Math.round(clamp((roleBefore*Math.max(0,filled-1)+profileScore)/filled,0,99));
+  const roleGain=Math.max(0,roleAfter-roleBefore);
+  const completionGain=25>0?1/25:0;
+  const overallGain=Math.max(1,Math.round(roleGain*.18 + profileScore*.035 + completionGain*10));
+  const overallAfter=Math.min(99,before.overall+overallGain);
+
+  const futureReserve=slotsAfter>0?Math.floor(cashAfter/slotsAfter):cashAfter;
+  let budgetLabel='BUONO';
+  if(futureReserve<8)budgetLabel='CRITICO';
+  else if(futureReserve<14)budgetLabel='STRETTO';
+
+  return {before,overallAfter,cashBefore,cashAfter,slotsBefore,slotsAfter,spec,roleBefore,roleAfter,budgetLabel,futureReserve,profileScore};
+}
+
+function auctionSimulatorDecision(playerIndex,price){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  const a=aiPlayerAnalysis(playerIndex,state.me);
+  if(!p||!a)return null;
+  const bid=Math.max(0,Number(price)||0);
+  const safe=safeMaxBid(state.me);
+  const stop=Math.max(1,Math.min(a.maxRec,safe));
+  const impact=simulatedRosterImpact(playerIndex,bid);
+  const rivals=rivalLiveSummary(playerIndex,bid);
+  const alts=liveStrategicAlternatives(playerIndex,3);
+  const slotNeeded=roleCount(state.me,p.role)<LIMITS[p.role];
+  const roleAllowed=marketRoleAllowed(p.role);
+
+  let action='RILANCIA',cls='buy',why='';
+  if(!roleAllowed||!slotNeeded){
+    action='LASCIA';cls='stop';
+    why=!roleAllowed?`Il ruolo ${p.role} non appartiene al blocco attivo.`:`Il reparto ${p.role} è già completo.`;
+  }else if(bid>stop || bid>a.high){
+    action='LASCIA';cls='stop';
+    why=`Prezzo oltre il limite utile: il tetto operativo è ${stop} cr e il range AI termina a ${a.high}.`;
+  }else if(impact.budgetLabel==='CRITICO' && bid>=a.low){
+    action=`SOLO SOTTO ${Math.max(1,a.low)}`;cls='wait';
+    why=`L'acquisto comprimerebbe troppo il budget: resterebbero circa ${impact.futureReserve} cr per slot.`;
+  }else if(bid>=a.ideal){
+    action=`RILANCIA FINO A ${stop}`;cls='wait';
+    why=`Giocatore utile per ${impact.spec.label}, ma sei già nella fascia alta. Non superare ${stop}.`;
+  }else if(bid>0 && bid<a.low){
+    action='COMPRA';cls='buy';
+    why=`Prezzo sotto il minimo AI ${a.low}: buon rapporto tra slot, qualità e costo.`;
+  }else{
+    action=`RILANCIA FINO A ${stop}`;cls='buy';
+    why=`Prezzo coerente con il piano per ${impact.spec.label}.`;
+  }
+
+  if(rivals.strong>=2 && cls!=='stop')why+=` Pressione rivali alta: ${rivals.strong} avversari forti.`;
+  const bestAlt=alts[0]||null;
+  return {action,cls,why,stop,impact,rivals,bestAlt};
+}
+
+function renderAuctionSimulator(playerIndex,price){
+  const sim=auctionSimulatorDecision(playerIndex,price);
+  if(!sim)return '';
+  const i=sim.impact;
+  const alt=sim.bestAlt;
+  return `<div class="auctionSimBox" id="auctionSimulatorBox">
+    <div class="auctionSimHead">
+      <div class="auctionSimTitle">🧠 DOPO QUESTO ACQUISTO</div>
+      <div class="auctionSimAction ${sim.cls}">${esc(sim.action)}</div>
+    </div>
+    <div class="auctionSimGrid">
+      <div class="auctionSimMetric"><span>FORZA ROSA</span><b>${i.before.overall} → ${i.overallAfter}</b></div>
+      <div class="auctionSimMetric"><span>BUDGET</span><b>${i.cashBefore} → ${i.cashAfter}</b></div>
+      <div class="auctionSimMetric"><span>SLOT</span><b>${esc(i.spec.label)}</b></div>
+      <div class="auctionSimMetric"><span>BUDGET FUTURO</span><b>${i.budgetLabel}</b></div>
+    </div>
+    <div class="auctionSimWhy">${esc(sim.why)}</div>
+    ${alt?`<div class="auctionSimAlt">Alternativa se molli: <b>${esc(alt.p.name)}</b> · ${alt.ai.low}-${alt.ai.maxRec} cr</div>`:''}
+  </div>`;
+}
+
+function refreshAuctionSimulator(){
+  if(ASTA_LIVE_PLAYER==null)return;
+  const bid=Math.max(0,Number(document.getElementById('astaLivePrice')?.value)||0);
+  const box=document.getElementById('auctionSimulatorBox');
+  if(box)box.outerHTML=renderAuctionSimulator(ASTA_LIVE_PLAYER,bid);
+}
 function renderAstaLiveSelected(){
   const selected=document.getElementById('astaLiveSelected');
   const decision=document.getElementById('astaLiveDecision');
@@ -7239,6 +7348,8 @@ function renderAstaLiveSelected(){
       <div id="astaLiveDelta" class="astaLiveDelta">L'AI aggiorna la decisione mentre rilanci.</div>
       <div id="astaLiveVerdict" class="astaVerdict">Inserisci il prezzo attuale per sapere se rilanciare.</div>
 
+      ${renderAuctionSimulator(ASTA_LIVE_PLAYER,0)}
+
       ${renderRivalLiveBox(ASTA_LIVE_PLAYER,0)}
 
       ${alts.length?`
@@ -7280,16 +7391,15 @@ function evaluateAstaLiveBid(){
   const marker=document.getElementById('astaLiveSmartMarker');
   if(!a||!el||!out)return;
 
-  const price=Number(el.value||0);
+  const price=Math.max(0,Number(el.value)||0);
   const safe=safeMaxBid(state.me);
   const strong=strongRosterProfile(ASTA_LIVE_PLAYER,state.me);
-  const rivals=rivalLiveSummary(ASTA_LIVE_PLAYER,bid);
+  const rivals=rivalLiveSummary(ASTA_LIVE_PLAYER,price);
   const stop=Math.max(1,Math.min(a.maxRec,safe));
 
   if(marker){
-    const scaleMax=Math.max(stop, a.high, a.ideal, 1);
-    const pct=Math.max(0,Math.min(100,(price/scaleMax)*100));
-    marker.style.left=`${pct}%`;
+    const scaleMax=Math.max(stop,a.high,a.ideal,1);
+    marker.style.left=`${Math.max(0,Math.min(100,(price/scaleMax)*100))}%`;
   }
 
   if(!price){
@@ -7297,41 +7407,31 @@ function evaluateAstaLiveBid(){
     out.textContent='Inserisci il prezzo attuale per sapere se rilanciare.';
     if(badge){badge.className='astaLiveDecisionBadge';badge.textContent='INSERISCI PREZZO';}
     if(delta)delta.textContent="L'AI aggiorna la decisione mentre rilanci.";
+    refreshRivalLiveBox();
+    refreshAuctionSimulator();
     return;
   }
 
-  let action='RILANCIA', cls='go', verdictClass='good', text='';
-  if(price>stop){
-    action='STOP'; cls='stop'; verdictClass='bad';
-    text=`Non rilanciare: ${price} supera il tuo limite operativo di ${stop} crediti.`;
-  }else if(price>a.high){
-    action='STOP PRESTO'; cls='stop'; verdictClass='bad';
-    text=`Sei oltre il range di valore (${a.low}-${a.high}). Hai ancora ${Math.max(0,stop-price)} crediti teorici, ma l'AI consiglia di non inseguire.`;
-  }else if(price>=a.ideal){
-    action='ASPETTA / RILANCIA SOLO +1'; cls='wait'; verdictClass='warn';
-    text=`Sei nella fascia alta. Rilancia soltanto se il giocatore è davvero prioritario e resta entro ${stop}.`;
-  }else if(price>=a.low){
-    action='RILANCIA'; cls='go'; verdictClass='good';
-    text=`Prezzo ancora corretto. Sei nel range AI ${a.low}-${a.high}.${strong&&strong.score>=82?' Profilo molto forte per la tua rosa.':''}${rivals.strong>=2?' Attenzione: più rivali possono spingere il prezzo.':''}`;
-  }else{
-    action='RILANCIA'; cls='go'; verdictClass='good';
-    text=`Ottimo prezzo: sei sotto il minimo stimato ${a.low}. Hai ancora molto margine.${strong&&strong.score>=82?' Per FORZA ROSA è un obiettivo da provare a prendere.':''}`;
-  }
+  const sim=auctionSimulatorDecision(ASTA_LIVE_PLAYER,price);
+  let action=sim?.action||'RILANCIA';
+  let cls=sim?.cls==='stop'?'stop':sim?.cls==='wait'?'wait':'go';
+  let verdictClass=sim?.cls==='stop'?'bad':sim?.cls==='wait'?'warn':'good';
+  let text=sim?.why||'Valutazione aggiornata.';
 
   if(badge){
     badge.className=`astaLiveDecisionBadge ${cls}`;
     badge.textContent=action;
   }
-  if(out){
-    out.className=`astaVerdict ${verdictClass}`;
-    out.textContent=text;
-  }
+  out.className=`astaVerdict ${verdictClass}`;
+  out.textContent=text;
+
   if(delta){
     if(price<=a.ideal)delta.textContent=`${Math.max(0,a.ideal-price)} cr all'IDEALE · ${Math.max(0,stop-price)} cr al limite`;
     else delta.textContent=`+${price-a.ideal} cr sopra IDEALE · ${Math.max(0,stop-price)} cr al limite`;
   }
 
   refreshRivalLiveBox();
+  refreshAuctionSimulator();
 }
 
 function renderAuctionPage(){
