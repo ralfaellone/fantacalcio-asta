@@ -4935,6 +4935,49 @@ body.top5-live-open nav{
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style id="v62-1-mobile-scroll-fix">
+/* V62.1 — iPhone/PWA: contenuto sempre scrollabile e mai coperto dal menu */
+html, body {
+  min-height: 100%;
+  height: auto !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+body {
+  position: relative !important;
+  padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+}
+#app, .app, main, .main, .page, .screen, .view, .content, .page-content,
+.player-detail, .player-page, .player-detail-page {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.bottom-nav, .bottomNav, nav.bottom, .nav-bottom, .tabbar, .tab-bar, .bottom-bar {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 9999 !important;
+}
+@supports (padding: max(0px)) {
+  body {
+    padding-bottom: max(92px, calc(76px + env(safe-area-inset-bottom))) !important;
+  }
+}
+/* spazio di sicurezza per gli ultimi pulsanti nelle schede */
+.player-detail:last-child,
+.player-page:last-child,
+.player-detail-page:last-child,
+main > *:last-child,
+.page > *:last-child,
+.screen > *:last-child {
+  margin-bottom: 24px;
+}
+</style>
+
 </head>
 <body class="splash-active">
 <div id="splashScreen">
@@ -11375,4 +11418,21 @@ render();
 <script>
 setTimeout(()=>document.body.classList.remove('splash-active'),1800);
 </script>
+
+<script id="v62-1-scroll-guard">
+(function(){
+  function unlockPageScroll(){
+    document.documentElement.style.setProperty('overflow-y','auto','important');
+    document.documentElement.style.setProperty('height','auto','important');
+    document.body.style.setProperty('overflow-y','auto','important');
+    document.body.style.setProperty('height','auto','important');
+    document.body.style.setProperty('position','relative','important');
+  }
+  window.addEventListener('load', unlockPageScroll, {passive:true});
+  window.addEventListener('hashchange', unlockPageScroll, {passive:true});
+  document.addEventListener('click', function(){ setTimeout(unlockPageScroll,0); }, {passive:true});
+  unlockPageScroll();
+})();
+</script>
+
 </body></html>
