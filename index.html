@@ -4933,51 +4933,48 @@ body.top5-live-open nav{
 .rosaForteTargetPrice small{display:block;color:var(--muted);font-size:5.5px;font-weight:700;margin-top:2px}
 .rosaForteWarning{margin-top:8px;padding:7px 8px;border-radius:9px;background:#2a230b;border:1px solid rgba(242,201,76,.22);color:#f6d66d;font-size:7px;line-height:1.4}
 
+
+/* V62.2 - Fix mirato scheda giocatore iPhone */
+#playerDetailModal{
+  z-index:2147483600 !important;
+  overflow:hidden !important;
+}
+#playerDetailModal.show{
+  display:block !important;
+}
+.playerDetailShell{
+  height:100dvh !important;
+  max-height:100dvh !important;
+  min-height:0 !important;
+  grid-template-rows:auto minmax(0,1fr) auto !important;
+  overflow:hidden !important;
+}
+.playerDetailBody{
+  min-height:0 !important;
+  height:auto !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+  padding-bottom:24px !important;
+}
+.playerDetailFooter{
+  position:relative !important;
+  z-index:2 !important;
+  flex:0 0 auto !important;
+  padding-bottom:calc(env(safe-area-inset-bottom) + 10px) !important;
+}
+/* Quando la scheda è aperta, la bottom-nav non deve esistere sopra il modal */
+body.player-detail-open nav{
+  display:none !important;
+}
+body.player-detail-open{
+  overflow:hidden !important;
+  height:100dvh !important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-<style id="v62-1-mobile-scroll-fix">
-/* V62.1 — iPhone/PWA: contenuto sempre scrollabile e mai coperto dal menu */
-html, body {
-  min-height: 100%;
-  height: auto !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch;
-}
-body {
-  position: relative !important;
-  padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
-}
-#app, .app, main, .main, .page, .screen, .view, .content, .page-content,
-.player-detail, .player-page, .player-detail-page {
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
-}
-.bottom-nav, .bottomNav, nav.bottom, .nav-bottom, .tabbar, .tab-bar, .bottom-bar {
-  position: fixed !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  z-index: 9999 !important;
-}
-@supports (padding: max(0px)) {
-  body {
-    padding-bottom: max(92px, calc(76px + env(safe-area-inset-bottom))) !important;
-  }
-}
-/* spazio di sicurezza per gli ultimi pulsanti nelle schede */
-.player-detail:last-child,
-.player-page:last-child,
-.player-detail-page:last-child,
-main > *:last-child,
-.page > *:last-child,
-.screen > *:last-child {
-  margin-bottom: 24px;
-}
-</style>
-
 </head>
 <body class="splash-active">
 <div id="splashScreen">
@@ -4986,7 +4983,7 @@ main > *:last-child,
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V62</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V62.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -10803,15 +10800,20 @@ function renderPlayerDetail(index){
 function openPlayerDetail(index){
   playerDetailReturnScroll=window.scrollY||0;
   renderPlayerDetail(index);
-  document.getElementById('playerDetailModal').classList.add('show');
-  document.body.style.overflow='hidden';
+  const modal=document.getElementById('playerDetailModal');
+  if(modal)modal.classList.add('show');
+  document.body.classList.add('player-detail-open');
   const body=document.getElementById('playerDetailBody');
-  if(body)body.scrollTop=0;
+  if(body){
+    body.scrollTop=0;
+    requestAnimationFrame(()=>{ body.scrollTop=0; });
+  }
 }
 
 function closePlayerDetail(){
-  document.getElementById('playerDetailModal').classList.remove('show');
-  document.body.style.overflow='';
+  const modal=document.getElementById('playerDetailModal');
+  if(modal)modal.classList.remove('show');
+  document.body.classList.remove('player-detail-open');
   requestAnimationFrame(()=>window.scrollTo(0,playerDetailReturnScroll));
 }
 
@@ -11418,21 +11420,4 @@ render();
 <script>
 setTimeout(()=>document.body.classList.remove('splash-active'),1800);
 </script>
-
-<script id="v62-1-scroll-guard">
-(function(){
-  function unlockPageScroll(){
-    document.documentElement.style.setProperty('overflow-y','auto','important');
-    document.documentElement.style.setProperty('height','auto','important');
-    document.body.style.setProperty('overflow-y','auto','important');
-    document.body.style.setProperty('height','auto','important');
-    document.body.style.setProperty('position','relative','important');
-  }
-  window.addEventListener('load', unlockPageScroll, {passive:true});
-  window.addEventListener('hashchange', unlockPageScroll, {passive:true});
-  document.addEventListener('click', function(){ setTimeout(unlockPageScroll,0); }, {passive:true});
-  unlockPageScroll();
-})();
-</script>
-
 </body></html>
