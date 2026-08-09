@@ -5121,7 +5121,7 @@ body.player-detail-open{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V64</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V64.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7225,9 +7225,15 @@ function auctionSimulatorDecision(playerIndex,price){
   if(!roleAllowed||!slotNeeded){
     action='LASCIA';cls='stop';
     why=!roleAllowed?`Il ruolo ${p.role} non appartiene al blocco attivo.`:`Il reparto ${p.role} è già completo.`;
-  }else if(bid>stop || bid>a.high){
+  }else if(bid>stop){
     action='LASCIA';cls='stop';
-    why=`Prezzo oltre il limite utile: il tetto operativo è ${stop} cr e il range AI termina a ${a.high}.`;
+    why=`Hai superato il tetto massimo di ${stop} cr. Non rilanciare oltre.`;
+  }else if(bid===stop){
+    action='ULTIMO RILANCIO · TETTO MASSIMO';cls='wait';
+    why=`Sei esattamente al tetto massimo di ${stop} cr. Puoi arrivare a questo prezzo, ma a ${stop+1} devi lasciare.`;
+  }else if(bid>a.high){
+    action='LASCIA';cls='stop';
+    why=`Sei oltre il range di valore AI (${a.low}-${a.high}). Meglio lasciare anche se il tetto operativo è ${stop} cr.`;
   }else if(impact.budgetLabel==='CRITICO' && bid>=a.low){
     action=`SOLO SOTTO ${Math.max(1,a.low)}`;cls='wait';
     why=`L'acquisto comprimerebbe troppo il budget: resterebbero circa ${impact.futureReserve} cr per slot.`;
