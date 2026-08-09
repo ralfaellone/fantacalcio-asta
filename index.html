@@ -5131,7 +5131,7 @@ body.player-detail-open{
 .dynamicPlanSave{margin-top:7px;font-size:7px;line-height:1.45;color:#bda9ff}
 
 
-/* V66.3 - Dashboard Compact + fix caricamento D.S. AI */
+/* V66.4 - Dashboard Compact + fix caricamento D.S. AI */
 .dsQuickBar{margin-top:12px;min-height:54px;padding:9px 12px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(135deg,rgba(22,42,64,.92),rgba(10,25,40,.96));display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:9px;cursor:pointer}
 .dsQuickIcon{font-size:23px;line-height:1}.dsQuickText{min-width:0}.dsQuickText b{display:block;font-size:13px}.dsQuickText span{display:block;margin-top:2px;font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dsQuickGo{font-size:10px;font-weight:950;color:#ffd13b;white-space:nowrap}
 #home .section:first-of-type{margin-bottom:2px}
@@ -5155,7 +5155,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V66.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V66.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5197,7 +5197,7 @@ nav button .ico{font-size:19px!important}
     <button onclick="dsJump('dsStrategy',this)">🧠 Strategia</button>
   </div>
   <div id="dsDynamic" class="section dsSection"><h2>🧭 Piano Rosa Dinamico AI</h2><div class="hint">Come spendere: budget protetto, spendibile ora e prossimi obiettivi.</div><div id="dashboardDynamicPlan" style="margin-top:8px"></div></div>
-  <div id="dsStrong" class="section dsSection"><h2>🏆 Rosa Forte AI</h2><div class="hint">Quanto è forte la rosa: bonus, anti-malus, continuità, modificatore e acquisti che la migliorano.</div><div id="dashboardStrongRoster" style="margin-top:8px"></div></div>
+  <div id="dsStrong" class="section dsSection"><h2>🏆 Rosa Forte AI</h2><div class="hint">Quanto è forte la rosa: bonus, anti-malus, continuità e acquisti utili. Il modificatore pesa solo con un modulo che lo attiva.</div><div id="dashboardStrongRoster" style="margin-top:8px"></div></div>
   <div id="dsStrategy" class="section dsSection"><h2>🧠 Strategia d'Asta AI 4.0</h2><div class="hint">Dove intervenire: priorità dei reparti, budget e alternative.</div><div id="dashboardStrategy40" style="margin-top:8px"></div></div>
   <div id="dsDirectorEngine" style="display:none"><div id="dashboardDirectorAI"></div></div>
 </section>
@@ -6528,11 +6528,12 @@ function strongRosterBudgetScore(){
 }
 
 function strongRosterModifierScore(roleMap){
-  const p=roleMap.P, d=roleMap.D;
   const plan=activeFormationPlan(state.me);
-  const needFour=Number(plan.xi?.D||0)>=4;
+  if(!modifierActiveForPlan(plan))return null;
+
+  const p=roleMap.P, d=roleMap.D;
   const base=p.score*.32+d.score*.68;
-  const depth=clamp(roleCount(state.me,'D')/(needFour?4:3),0,1)*16;
+  const depth=clamp(roleCount(state.me,'D')/4,0,1)*16;
   return Math.round(clamp(base*.84+depth,0,99));
 }
 
@@ -6544,19 +6545,32 @@ function strongRosterGlobal(){
   const discipline=all.length?Math.round(all.reduce((s,x)=>s+x.discipline,0)/all.length):0;
   const continuity=all.length?Math.round(all.reduce((s,x)=>s+x.continuity,0)/all.length):0;
   const budgetScore=strongRosterBudgetScore();
+
+  const plan=activeFormationPlan(state.me);
+  const modifierActive=modifierActiveForPlan(plan);
   const modifier=strongRosterModifierScore(roleMap);
+
   const completion=roster(state.me).length/25;
   const roleAverage=['P','D','C','A'].reduce((s,r)=>s+roleMap[r].score,0)/4;
-  const support=(bonus*.18+discipline*.16+continuity*.18+budgetScore*.24+modifier*.24);
+
+  // Se il modulo non usa il modificatore, quel 24% viene redistribuito:
+  // niente penalità artificiale per 3-4-3 o 3-5-2.
+  const support=modifierActive
+    ? (bonus*.18+discipline*.16+continuity*.18+budgetScore*.24+(modifier||0)*.24)
+    : (bonus*.24+discipline*.20+continuity*.24+budgetScore*.32);
+
   const overall=Math.round(clamp((roleAverage*.72+support*.28)*(.38+.62*Math.sqrt(completion||0)),0,99));
-  return {roleMap,bonus,discipline,continuity,budgetScore,modifier,completion,overall};
+  return {roleMap,bonus,discipline,continuity,budgetScore,modifier,modifierActive,completion,overall};
 }
 
 function strongRosterSlotLabel(role){
   const n=Math.min(LIMITS[role],roleCount(state.me,role)+1);
+  const mod=modifierActiveForPlan();
   const map={
     P:['P1 TITOLARE','P2 SECONDO','P3 RISERVA'],
-    D:['D1 PREMIUM MOD.','D2 BONUS','D3 VOTO','D4 MODIFICATORE','D5 ROTAZIONE','D6 PROFONDITÀ','D7 PROFONDITÀ','D8 COMPLETAMENTO'],
+    D:mod
+      ? ['D1 PREMIUM MOD.','D2 BONUS','D3 VOTO','D4 MODIFICATORE','D5 ROTAZIONE','D6 PROFONDITÀ','D7 PROFONDITÀ','D8 COMPLETAMENTO']
+      : ['D1 TOP TITOLARE','D2 BONUS','D3 VOTO','D4 TITOLARE','D5 ROTAZIONE','D6 PROFONDITÀ','D7 PROFONDITÀ','D8 COMPLETAMENTO'],
     C:['C1 TOP BONUS','C2 BONUS','C3 TITOLARE','C4 QUALITÀ','C5 ROTAZIONE','C6 PROFONDITÀ','C7 PROFONDITÀ','C8 COMPLETAMENTO'],
     A:['A1 TOP','A2 SECONDA FASCIA','A3 TITOLARE','A4 ROTAZIONE','A5 SCOMMESSA','A6 COMPLETAMENTO']
   };
@@ -6565,22 +6579,34 @@ function strongRosterSlotLabel(role){
 
 
 function slotSpec(role,position){
+  const modifierOn=modifierActiveForPlan();
+  const defenderSpecs=modifierOn ? [
+    {label:'D1 PREMIUM MOD.',intent:'MODIFICATORE',bonusW:.10,disciplineW:.17,continuityW:.20,qualityW:.28,fitW:.15,affordW:.10},
+    {label:'D2 BONUS',intent:'BONUS',bonusW:.28,disciplineW:.10,continuityW:.15,qualityW:.22,fitW:.15,affordW:.10},
+    {label:'D3 VOTO',intent:'VOTO',bonusW:.08,disciplineW:.20,continuityW:.25,qualityW:.22,fitW:.15,affordW:.10},
+    {label:'D4 MODIFICATORE',intent:'MODIFICATORE',bonusW:.06,disciplineW:.18,continuityW:.22,qualityW:.22,fitW:.20,affordW:.12},
+    {label:'D5 ROTAZIONE',intent:'ROTAZIONE',bonusW:.08,disciplineW:.13,continuityW:.18,qualityW:.18,fitW:.18,affordW:.25},
+    {label:'D6 PROFONDITÀ',intent:'VALORE',bonusW:.06,disciplineW:.10,continuityW:.14,qualityW:.14,fitW:.16,affordW:.40},
+    {label:'D7 PROFONDITÀ',intent:'VALORE',bonusW:.05,disciplineW:.10,continuityW:.12,qualityW:.12,fitW:.15,affordW:.46},
+    {label:'D8 COMPLETAMENTO',intent:'RISPARMIO',bonusW:.03,disciplineW:.08,continuityW:.10,qualityW:.09,fitW:.10,affordW:.60}
+  ] : [
+    {label:'D1 TOP TITOLARE',intent:'QUALITÀ',bonusW:.16,disciplineW:.14,continuityW:.20,qualityW:.30,fitW:.12,affordW:.08},
+    {label:'D2 BONUS',intent:'BONUS',bonusW:.30,disciplineW:.08,continuityW:.14,qualityW:.23,fitW:.13,affordW:.12},
+    {label:'D3 VOTO',intent:'VOTO',bonusW:.10,disciplineW:.18,continuityW:.25,qualityW:.23,fitW:.14,affordW:.10},
+    {label:'D4 TITOLARE',intent:'TITOLARITÀ',bonusW:.10,disciplineW:.14,continuityW:.24,qualityW:.20,fitW:.17,affordW:.15},
+    {label:'D5 ROTAZIONE',intent:'ROTAZIONE',bonusW:.09,disciplineW:.12,continuityW:.18,qualityW:.17,fitW:.18,affordW:.26},
+    {label:'D6 PROFONDITÀ',intent:'VALORE',bonusW:.06,disciplineW:.10,continuityW:.14,qualityW:.14,fitW:.16,affordW:.40},
+    {label:'D7 PROFONDITÀ',intent:'VALORE',bonusW:.05,disciplineW:.10,continuityW:.12,qualityW:.12,fitW:.15,affordW:.46},
+    {label:'D8 COMPLETAMENTO',intent:'RISPARMIO',bonusW:.03,disciplineW:.08,continuityW:.10,qualityW:.09,fitW:.10,affordW:.60}
+  ];
+
   const specs={
     P:[
       {label:'P1 TITOLARE',intent:'AFFIDABILITÀ',bonusW:.05,disciplineW:.15,continuityW:.28,qualityW:.32,fitW:.10,affordW:.10},
       {label:'P2 SECONDO',intent:'SICUREZZA',bonusW:.02,disciplineW:.13,continuityW:.25,qualityW:.22,fitW:.10,affordW:.28},
       {label:'P3 RISERVA',intent:'RISPARMIO',bonusW:0,disciplineW:.10,continuityW:.12,qualityW:.13,fitW:.05,affordW:.60}
     ],
-    D:[
-      {label:'D1 PREMIUM MOD.',intent:'MODIFICATORE',bonusW:.10,disciplineW:.17,continuityW:.20,qualityW:.28,fitW:.15,affordW:.10},
-      {label:'D2 BONUS',intent:'BONUS',bonusW:.28,disciplineW:.10,continuityW:.15,qualityW:.22,fitW:.15,affordW:.10},
-      {label:'D3 VOTO',intent:'VOTO',bonusW:.08,disciplineW:.20,continuityW:.25,qualityW:.22,fitW:.15,affordW:.10},
-      {label:'D4 MODIFICATORE',intent:'MODIFICATORE',bonusW:.06,disciplineW:.18,continuityW:.22,qualityW:.22,fitW:.20,affordW:.12},
-      {label:'D5 ROTAZIONE',intent:'ROTAZIONE',bonusW:.08,disciplineW:.13,continuityW:.18,qualityW:.18,fitW:.18,affordW:.25},
-      {label:'D6 PROFONDITÀ',intent:'VALORE',bonusW:.06,disciplineW:.10,continuityW:.14,qualityW:.14,fitW:.16,affordW:.40},
-      {label:'D7 PROFONDITÀ',intent:'VALORE',bonusW:.05,disciplineW:.10,continuityW:.12,qualityW:.12,fitW:.15,affordW:.46},
-      {label:'D8 COMPLETAMENTO',intent:'RISPARMIO',bonusW:.03,disciplineW:.08,continuityW:.10,qualityW:.09,fitW:.10,affordW:.60}
-    ],
+    D:defenderSpecs,
     C:[
       {label:'C1 TOP BONUS',intent:'BONUS',bonusW:.34,disciplineW:.08,continuityW:.15,qualityW:.25,fitW:.10,affordW:.08},
       {label:'C2 BONUS',intent:'BONUS',bonusW:.30,disciplineW:.08,continuityW:.15,qualityW:.22,fitW:.12,affordW:.13},
@@ -6675,7 +6701,7 @@ function strongRosterTargetReason(x){
   if(Number(x.availabilityScore)>=80)bits.push('continuità');
   if(Number(x.fit)>=75)bits.push('fit rosa');
   if(Number(x.formation)>=70)bits.push(`fit ${activeFormationPlan().name}`);
-  if(x.p?.role==='D' && activeFormationPlan().xi?.D>=4)bits.push('utile al modificatore');
+  if(x.p?.role==='D' && modifierActiveForPlan())bits.push('utile al modificatore');
   if(Number(x.afford)>=70)bits.push('prezzo sostenibile');
   return (bits.length?bits:['equilibrio qualità/prezzo']).slice(0,3).join(' · ');
 }
@@ -6723,56 +6749,51 @@ function strongRosterTargets(limit=5){
 }
 
 function strongRosterVerdict(g){
+  const plan=activeFormationPlan(state.me);
+  const modifierOn=modifierActiveForPlan(plan);
+
   if(!roster(state.me).length){
     if(isInitialMarket()){
-      return `Rosa ancora vuota. Nel blocco ${initialBlockLabel()} l'AI valuta solo ${allowedInitialRoleText()} come priorità operative, proteggendo il budget per i blocchi successivi.`;
+      let txt=`Rosa ancora vuota. Nel blocco ${initialBlockLabel()} l'AI valuta solo ${allowedInitialRoleText()} come priorità operative, proteggendo il budget per i blocchi successivi.`;
+      if(plan.id!=='neutral' && !modifierOn)txt+=` Con il ${plan.name} il modificatore non è attivo: la difesa viene costruita per qualità, bonus, voto e continuità.`;
+      return txt;
     }
     return 'Rosa ancora vuota: il punteggio crescerà con gli acquisti. Parti costruendo bene gli slot principali senza bruciare il budget.';
   }
 
   const candidateRoles=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
-  const openCandidateRoles=candidateRoles
-    .filter(r=>roleCount(state.me,r)<LIMITS[r]);
-
+  const openCandidateRoles=candidateRoles.filter(r=>roleCount(state.me,r)<LIMITS[r]);
   const pool=(openCandidateRoles.length?openCandidateRoles:candidateRoles)
-    .map(r=>g.roleMap[r])
-    .sort((a,b)=>a.score-b.score);
-
+    .map(r=>g.roleMap[r]).sort((a,b)=>a.score-b.score);
   const weak=pool[0];
+
   let text='';
-
   if(weak){
-    if(isInitialMarket()){
-      text=`Priorità del blocco ${initialBlockLabel()}: ${roleName(weak.role)} (${weak.score}/99). `;
-    }else{
-      text=`Reparto da rinforzare: ${roleName(weak.role)} (${weak.score}/99). `;
-    }
+    text+=isInitialMarket()
+      ? `Priorità del blocco ${initialBlockLabel()}: ${roleName(weak.role)} (${weak.score}/99). `
+      : `Reparto da rinforzare: ${roleName(weak.role)} (${weak.score}/99). `;
   }
 
-  if(g.budgetScore<55){
-    text+='Budget sotto pressione: privilegia valore e alternative. ';
-  }else{
-    text+='Budget ancora gestibile. ';
-  }
+  text+=g.budgetScore<55
+    ? 'Budget sotto pressione: privilegia valore e alternative. '
+    : 'Budget ancora gestibile. ';
 
-  if(isInitialMarket()){
-    if(currentInitialPhase()==='PD'){
-      if(g.modifier<60 && roleCount(state.me,'D')<4){
-        text+='Nel blocco P + D conviene aumentare qualità/profondità difensiva per sfruttare meglio il modificatore.';
-      }else if(g.modifier>=75){
-        text+='La base P + D è già adatta a sostenere il modificatore.';
+  if(plan.id==='neutral'){
+    text+='Scegli il modulo per decidere se il modificatore deve entrare nella strategia.';
+  }else if(modifierOn){
+    if(isInitialMarket() && currentInitialPhase()==='PD'){
+      if((g.modifier||0)<60 && roleCount(state.me,'D')<4){
+        text+='Il modulo scelto attiva il modificatore: aumenta qualità e profondità tra P e D.';
+      }else if((g.modifier||0)>=75){
+        text+='Il modulo scelto attiva il modificatore e la base difensiva è già adatta a sfruttarlo.';
       }else{
-        text+='Continua a bilanciare portiere e difensori senza consumare il budget destinato a C + A.';
+        text+='Il modificatore è attivo: continua a bilanciare qualità del portiere e dei difensori.';
       }
     }else{
-      text+='Nel blocco C + A la priorità operativa resta solo tra centrocampisti e attaccanti.';
+      text+='Il modulo scelto attiva il modificatore: la qualità di P e D resta un fattore strategico.';
     }
   }else{
-    if(g.modifier<60 && roleCount(state.me,'D')<4){
-      text+='Per il modificatore serve aumentare qualità/profondità tra P e D.';
-    }else if(g.modifier>=75){
-      text+='Base difensiva adatta a sfruttare il modificatore.';
-    }
+    text+=`Con il ${plan.name} il modificatore NON è attivo: nessun sovrainvestimento specifico in difesa; privilegia qualità, bonus, voto e continuità e lascia più budget ai reparti offensivi.`;
   }
 
   return text;
@@ -6878,7 +6899,7 @@ function renderStrongRosterAI(){
         <div class="rosaForteMetric"><span>BUDGET</span><b>${g.budgetScore}</b></div>
       </div>
       <div class="rosaForteExtra" style="grid-template-columns:1fr 1fr">
-        <div class="rosaForteMetric"><span>MODIFICATORE</span><b>${g.modifier}/99</b></div>
+        <div class="rosaForteMetric"><span>MODIFICATORE</span><b>${g.modifierActive?`${g.modifier}/99`:'OFF'}</b></div>
         <div class="rosaForteMetric"><span>COMPLETAMENTO</span><b>${Math.round(g.completion*100)}%</b></div>
       </div>
 
@@ -7029,7 +7050,7 @@ function renderDirectorSportivoAI(){
       <div class="dsAiHead">
         <div>
           <div class="dsAiTitle">Direttore Sportivo AI · ${planLabel}</div>
-          <div class="dsAiText">${mode} · ${d.cash} crediti · ${d.slots} posti da completare</div>
+          <div class="dsAiText">${mode} · ${d.cash} crediti · ${d.slots} posti da completare · Modificatore: ${modifierStatusText()}</div>
         </div>
         <span class="tag ${d.level==='good'?'good':d.level==='danger'?'bad':'warn'}">${p.need}/99</span>
       </div>
@@ -9010,11 +9031,22 @@ let BUY_NOW_ROLE='ALL';
 
 
 const FORMATION_PLANS=[
-  {id:'343',name:'3-4-3',style:'Attacco pesante',xi:{P:1,D:3,C:4,A:3},budget:{P:.08,D:.16,C:.28,A:.48}},
-  {id:'433',name:'4-3-3',style:'Modificatore + attacco',xi:{P:1,D:4,C:3,A:3},budget:{P:.09,D:.22,C:.25,A:.44}},
-  {id:'352',name:'3-5-2',style:'Centrocampo dominante',xi:{P:1,D:3,C:5,A:2},budget:{P:.08,D:.16,C:.38,A:.38}},
-  {id:'442',name:'4-4-2',style:'Equilibrata / modificatore',xi:{P:1,D:4,C:4,A:2},budget:{P:.09,D:.23,C:.32,A:.36}}
+  {id:'343',name:'3-4-3',style:'Attacco pesante',modifier:false,xi:{P:1,D:3,C:4,A:3},budget:{P:.08,D:.16,C:.28,A:.48}},
+  {id:'433',name:'4-3-3',style:'Modificatore + attacco',modifier:true,xi:{P:1,D:4,C:3,A:3},budget:{P:.09,D:.22,C:.25,A:.44}},
+  {id:'352',name:'3-5-2',style:'Centrocampo dominante',modifier:false,xi:{P:1,D:3,C:5,A:2},budget:{P:.08,D:.16,C:.38,A:.38}},
+  {id:'442',name:'4-4-2',style:'Equilibrata / modificatore',modifier:true,xi:{P:1,D:4,C:4,A:2},budget:{P:.09,D:.23,C:.32,A:.36}}
 ];
+
+
+function modifierActiveForPlan(plan=activeFormationPlan(state.me)){
+  if(!plan || plan.id==='neutral')return false;
+  if(typeof plan.modifier==='boolean')return plan.modifier;
+  return Number(plan.xi?.D||0)>=4;
+}
+function modifierStatusText(plan=activeFormationPlan(state.me)){
+  if(!plan || plan.id==='neutral')return 'DA DEFINIRE';
+  return modifierActiveForPlan(plan)?'ATTIVO':'NON ATTIVO';
+}
 
 function roleOwnedQuality(role,buyerIndex=state.me){
   const buys=state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===role);
@@ -9038,7 +9070,7 @@ function formationPlanScore(plan,buyerIndex=state.me){
     const xiNeed=plan.xi[role];
     const lineupReady=Math.min(1,owned/Math.max(1,xiNeed));
     score+=lineupReady*7 + (q/100)*5;
-    if(role==='D' && xiNeed===4)score+=4; // app configured with modifier
+    if(role==='D' && modifierActiveForPlan(plan))score+=4; // bonus solo se il modulo attiva davvero il modificatore
   });
   const roleSpendFit=['P','D','C','A'].reduce((acc,role)=>{
     const spentRole=state.purchases.filter(x=>x.buyer===buyerIndex&&x.role===role).reduce((s,x)=>s+Number(x.price||0),0);
@@ -9063,6 +9095,7 @@ function activeFormationPlan(buyerIndex=state.me){
     id:'neutral',
     name:'DA SCEGLIERE',
     style:'Seleziona il tuo modulo',
+    modifier:false,
     xi:{P:1,D:3.5,C:4,A:2.5},
     budget:{P:.085,D:.195,C:.305,A:.415}
   };
@@ -9115,10 +9148,11 @@ function formationTargets(plan){
 }
 function formationPlanWhy(plan){
   const bits=[];
-  if(plan.xi.D===4)bits.push('sfrutta meglio il modificatore difesa');
+  if(modifierActiveForPlan(plan))bits.push('attiva e può sfruttare il modificatore difesa');
+  else if(plan.id!=='neutral')bits.push('non attiva il modificatore: più libertà di budget per C/A');
   if(plan.xi.A===3)bits.push('mantiene tre slot offensivi titolari');
   if(plan.xi.C===5)bits.push('valorizza una rosa forte a centrocampo');
-  if(plan.id==='442')bits.push('riduce il rischio e distribuisce meglio il budget');
+  if(plan.id==='442')bits.push('distribuisce il budget in modo equilibrato');
   const open=['P','D','C','A'].filter(r=>roleCount(state.me,r)<plan.xi[r]);
   if(open.length)bits.push(`priorità attuali: ${open.join(', ')}`);
   else bits.push('undici base già coperto: ora serve profondità');
