@@ -5111,6 +5111,25 @@ body.player-detail-open{
 .auctionSimWhy{margin-top:7px;font-size:7px;line-height:1.45;color:#cbd6e5}
 .auctionSimAlt{margin-top:6px;font-size:7px;color:#bda9ff}
 
+
+/* V65 - Piano Rosa Dinamico AI */
+.dynamicPlanCard{border:1px solid rgba(57,217,138,.24);border-radius:14px;padding:10px;background:linear-gradient(145deg,#0b211d,#091522)}
+.dynamicPlanHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.dynamicPlanTitle{font-size:12px;font-weight:950}.dynamicPlanSub{font-size:7px;color:var(--muted);margin-top:3px;line-height:1.4}
+.dynamicPlanStatus{padding:5px 8px;border-radius:999px;font-size:7px;font-weight:950;white-space:nowrap}
+.dynamicPlanStatus.good{background:#0d3827;color:#58e7a4}.dynamicPlanStatus.warn{background:#3a2b08;color:#ffd66b}.dynamicPlanStatus.bad{background:#3b1118;color:#ff8994}
+.dynamicPlanMetrics{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
+.dynamicPlanMetric{padding:7px 4px;text-align:center;border-radius:9px;background:#081321;border:1px solid rgba(142,164,189,.12)}
+.dynamicPlanMetric span{display:block;font-size:5.8px;color:var(--muted)}.dynamicPlanMetric b{display:block;margin-top:2px;font-size:10px}
+.dynamicPlanGoal{margin-top:8px;padding:7px 8px;border-radius:9px;background:#0a1727;border:1px solid rgba(142,164,189,.12)}
+.dynamicPlanGoalTitle{font-size:7px;font-weight:950}.dynamicPlanGoalText{margin-top:3px;font-size:7px;line-height:1.45;color:#cbd6e5}
+.dynamicPlanTargets{margin-top:7px;display:grid;gap:5px}
+.dynamicPlanTarget{display:grid;grid-template-columns:20px 1fr auto;gap:7px;align-items:center;padding:7px;border-radius:10px;background:#081321;border:1px solid rgba(142,164,189,.12)}
+.dynamicPlanRank{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#16263b;font-size:7px;font-weight:950}
+.dynamicPlanName{font-size:8px;font-weight:950}.dynamicPlanMeta{font-size:6.2px;color:var(--muted);margin-top:2px;line-height:1.35}
+.dynamicPlanPrice{text-align:right;font-size:9px;font-weight:950;color:#f6d66d}.dynamicPlanPrice small{display:block;font-size:5.5px;color:var(--muted)}
+.dynamicPlanSave{margin-top:7px;font-size:7px;line-height:1.45;color:#bda9ff}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5121,7 +5140,7 @@ body.player-detail-open{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V64.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V65</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5164,6 +5183,12 @@ body.player-detail-open{
     <h2>🏆 Rosa Forte AI</h2>
     <div class="hint">Valuta la forza reale della rosa e ti indica i 5 acquisti più utili per migliorarla, considerando bonus, malus, continuità, prezzo, modulo e modificatore.</div>
     <div id="dashboardStrongRoster" style="margin-top:8px"></div>
+  </div>
+
+  <div class="section" style="margin-top:14px">
+    <h2>🧭 Piano Rosa Dinamico AI</h2>
+    <div class="hint">Controlla se sei in linea con il piano, protegge il budget futuro e aggiorna i prossimi obiettivi dopo ogni acquisto tuo o degli avversari.</div>
+    <div id="dashboardDynamicPlan" style="margin-top:8px"></div>
   </div>
 
   <div class="section" style="margin-top:14px">
@@ -6754,6 +6779,77 @@ function strongRosterVerdict(g){
   return text;
 }
 
+
+function dynamicPlanReserve(){
+  const cash=budget(state.me);
+  const blockRoles=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
+  const currentMissing=blockRoles.reduce((s,r)=>s+Math.max(0,LIMITS[r]-roleCount(state.me,r)),0);
+  const futureRoles=(isInitialMarket()&&currentInitialPhase()==='PD')?['C','A']:[];
+  const futureMissing=futureRoles.reduce((s,r)=>s+Math.max(0,LIMITS[r]-roleCount(state.me,r)),0);
+  let reserve=0;
+  futureRoles.forEach(r=>{
+    const plan=liveRoleBudgetPlan(r,state.me);
+    reserve+=Math.max(plan.min,Math.round((plan.min+plan.max)*.52));
+  });
+  reserve=Math.min(cash,Math.max(0,reserve));
+  return {cash,currentMissing,futureMissing,reserve,spendable:Math.max(0,cash-reserve),futureRoles};
+}
+function dynamicPlanStatus(){
+  const r=dynamicPlanReserve(),slots=remainingRosterSlots(state.me);
+  const avg=slots?Math.floor(r.cash/slots):r.cash,g=strongRosterGlobal();
+  let level='good',label='🟢 IN LINEA',reason='Budget e costruzione della rosa sono coerenti con il piano.';
+  if(avg<8||(r.futureMissing>0&&r.cash<r.reserve+Math.max(20,r.currentMissing*4))){
+    level='bad';label='🔴 RISCHIO';reason='Il budget residuo rischia di non coprire bene gli slot ancora aperti.';
+  }else if(avg<14||g.budgetScore<58){
+    level='warn';label='🟡 DA CORREGGERE';reason='Serve recuperare crediti sui prossimi slot e privilegiare alternative di valore.';
+  }
+  return {...r,level,label,reason,avg,g};
+}
+function dynamicPlanTargets(limit=3){
+  const status=dynamicPlanStatus();
+  return strongRosterTargets(Math.max(5,limit)).slice(0,limit).map(x=>{
+    const px=liveTop5StrategicPrices(x),spec=x._slotSpec||nextSlotSpec(x.p.role);
+    const cap=status.level==='bad'?Math.min(px.maxRec,Math.max(px.low,Math.round(px.ideal*.88))):
+      status.level==='warn'?Math.min(px.maxRec,Math.max(px.low,Math.round(px.ideal*.96))):px.maxRec;
+    return {...x,_dynPx:px,_dynSpec:spec,_dynCap:cap};
+  });
+}
+function dynamicPlanSavingTip(targets){
+  const status=dynamicPlanStatus();
+  if(!targets.length)return 'Nessun risparmio necessario: completa gli slot rimasti senza forzare.';
+  const expensive=[...targets].sort((a,b)=>b._dynPx.ideal-a._dynPx.ideal)[0];
+  const alts=slotAlternatives(expensive,expensive.p.role,expensive._dynSpec);
+  const cheap=alts.find(a=>a.type==='Risparmio')||alts[alts.length-1];
+  if(status.level==='good'&&!cheap)return 'Piano in equilibrio: non serve tagliare aggressivamente i tetti.';
+  if(cheap){
+    const apx=liveTop5StrategicPrices(cheap.x),saving=Math.max(0,expensive._dynPx.ideal-apx.ideal);
+    return `Dove risparmiare: se ${expensive.p.name} sale troppo, ${cheap.x.p.name} copre ${expensive._dynSpec.label} a circa ${apx.ideal} cr${saving?`, liberando ~${saving} cr`:''}.`;
+  }
+  return `Dove risparmiare: non superare ${expensive._dynCap} cr su ${expensive.p.name}; proteggi il budget degli slot successivi.`;
+}
+function renderDynamicRosterPlan(){
+  const el=document.getElementById('dashboardDynamicPlan');if(!el)return;
+  const s=dynamicPlanStatus(),targets=dynamicPlanTargets(3);
+  const mode=isInitialMarket()?`BLOCCO ${initialBlockLabel()}`:`${activeMarketSession().name} · LIBERO`;
+  const reserveText=s.futureRoles.length?`${s.reserve} cr per ${s.futureRoles.join('+')}`:'nessun blocco futuro vincolato';
+  el.innerHTML=`<div class="dynamicPlanCard">
+    <div class="dynamicPlanHead"><div><div class="dynamicPlanTitle">Piano Rosa · aggiornamento live</div>
+    <div class="dynamicPlanSub">${mode} · ${roster(state.me).length}/25 giocatori · ${s.cash} cr rimasti</div></div>
+    <div class="dynamicPlanStatus ${s.level}">${s.label}</div></div>
+    <div class="dynamicPlanMetrics">
+      <div class="dynamicPlanMetric"><span>BUDGET PROTETTO</span><b>${s.reserve}</b></div>
+      <div class="dynamicPlanMetric"><span>SPENDIBILE ORA</span><b>${s.spendable}</b></div>
+      <div class="dynamicPlanMetric"><span>MEDIA / SLOT</span><b>${s.avg}</b></div>
+    </div>
+    <div class="dynamicPlanGoal"><div class="dynamicPlanGoalTitle">🎯 COSA FARE ADESSO</div>
+    <div class="dynamicPlanGoalText">${s.reason} Budget da proteggere: <b>${reserveText}</b>.</div></div>
+    <div class="dynamicPlanTargets">${targets.map((x,n)=>`<div class="dynamicPlanTarget" onclick="openAIForPlayer(${x.index})">
+      <div class="dynamicPlanRank">${n+1}</div><div><div class="dynamicPlanName">${esc(x.p.name)}</div>
+      <div class="dynamicPlanMeta">${x._dynSpec.label} · ${x._dynSpec.intent} · ${strongRosterTargetReason(x)}</div></div>
+      <div class="dynamicPlanPrice">${x._dynPx.ideal}<small>MAX PIANO ${x._dynCap}</small></div></div>`).join('')||'<div class="empty">Nessun obiettivo aperto nel mercato corrente.</div>'}</div>
+    <div class="dynamicPlanSave">💡 ${dynamicPlanSavingTip(targets)}</div>
+  </div>`;
+}
 function renderStrongRosterAI(){
   const el=document.getElementById('dashboardStrongRoster');
   if(!el)return;
@@ -7052,6 +7148,13 @@ function renderDashboardControlRaw(){
     console.error('Rosa Forte AI',err);
     const el=document.getElementById('dashboardStrongRoster');
     if(el)el.innerHTML='<div class="empty">Rosa Forte AI in aggiornamento. Riapri la Dashboard.</div>';
+  }
+  try{
+    renderDynamicRosterPlan();
+  }catch(err){
+    console.error('Piano Rosa Dinamico AI',err);
+    const el=document.getElementById('dashboardDynamicPlan');
+    if(el)el.innerHTML='<div class="empty">Piano Rosa AI in aggiornamento. Riapri la Dashboard.</div>';
   }
   try{
     renderStrategy40();
