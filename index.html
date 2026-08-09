@@ -4973,6 +4973,63 @@ body.player-detail-open{
   height:100dvh !important;
 }
 
+
+/* V62.3 - Fascia acquisto AI visibile nella registrazione */
+.buyAiRange{
+  display:none;
+  margin-top:8px;
+  padding:9px;
+  border-radius:14px;
+  border:1px solid rgba(244,196,48,.32);
+  background:linear-gradient(145deg,#141b27,#0a1522);
+}
+.buyAiRange.show{display:block}
+.buyAiRangeTitle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:7px;
+  font-size:9px;
+  font-weight:950;
+}
+.buyAiRangeScore{
+  color:#55e6a4;
+  white-space:nowrap;
+}
+.buyAiRangeGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px;
+}
+.buyAiRangeBox{
+  background:#081321;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:7px 3px;
+  text-align:center;
+}
+.buyAiRangeBox span{
+  display:block;
+  font-size:6.5px;
+  color:var(--muted);
+}
+.buyAiRangeBox b{
+  display:block;
+  margin-top:2px;
+  font-size:13px;
+}
+.buyAiRangeNote{
+  margin-top:6px;
+  font-size:7px;
+  line-height:1.4;
+  color:var(--muted);
+}
+@media(max-width:390px){
+  .buyAiRangeGrid{gap:4px}
+  .buyAiRangeBox b{font-size:12px}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4983,7 +5040,7 @@ body.player-detail-open{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V62.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V62.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5315,6 +5372,7 @@ body.player-detail-open{
       <div id="playerSuggestions" class="playerSuggestions"></div>
     </div>
     <div id="playerSelected" class="playerSelected"></div>
+    <div id="buyAiRange" class="buyAiRange"></div>
     <div class="archiveNote">Listone Classic Fantacalcio.it 2026/27 completo integrato nell’app. Puoi aggiornarlo in futuro importando un nuovo file ufficiale.</div>
   </div>
 
@@ -11098,6 +11156,46 @@ function safeMaxBid(i){
   return Math.max(0,available-slotsAfterThis);
 }
 
+
+function renderBuyAiRange(){
+  const box=document.getElementById('buyAiRange');
+  if(!box)return;
+
+  const name=(document.getElementById('pname')?.value||'').trim();
+  const buyer=parseInt(document.getElementById('pbuyer')?.value,10);
+  const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(name));
+
+  if(idx<0 || Number.isNaN(buyer)){
+    box.classList.remove('show');
+    box.innerHTML='';
+    return;
+  }
+
+  const ai=aiPlayerAnalysis(idx,buyer);
+  if(!ai){
+    box.classList.remove('show');
+    box.innerHTML='';
+    return;
+  }
+
+  const absolute=Math.max(1,Math.min(ai.maxRec,safeMaxBid(buyer)));
+  box.innerHTML=`
+    <div class="buyAiRangeTitle">
+      <span>🤖 FASCIA ACQUISTO AI</span>
+      <span class="buyAiRangeScore">${ai.score}/99 · ${esc(ai.verdict||'')}</span>
+    </div>
+    <div class="buyAiRangeGrid">
+      <div class="buyAiRangeBox"><span>MIN</span><b>${ai.low}</b></div>
+      <div class="buyAiRangeBox"><span>IDEALE</span><b>${ai.ideal}</b></div>
+      <div class="buyAiRangeBox"><span>MAX RANGE</span><b>${ai.high}</b></div>
+      <div class="buyAiRangeBox"><span>NON OLTRE</span><b>${absolute}</b></div>
+    </div>
+    <div class="buyAiRangeNote">
+      Il NON OLTRE è il limite AI del singolo giocatore, già confrontato con la max sicura della squadra selezionata.
+    </div>`;
+  box.classList.add('show');
+}
+
 function updateBuyPreview(){
   const buyer=parseInt(document.getElementById('pbuyer').value,10);
   const role=document.getElementById('prole').value;
@@ -11111,6 +11209,7 @@ function updateBuyPreview(){
   document.getElementById('buyBudget').textContent=available;
   document.getElementById('buySlots').textContent=slots;
   document.getElementById('safeBid').textContent=safe;
+  renderBuyAiRange();
 
   const safeNote=document.getElementById('safeBidNote');
   if(price>safe && price<=available){
@@ -11181,6 +11280,8 @@ function openBuy(){
   selectedArchivePlayer=null;
   document.getElementById('playerSelected').innerHTML='';
   document.getElementById('playerSelected').classList.remove('show');
+  const rangeBox=document.getElementById('buyAiRange');
+  if(rangeBox){rangeBox.innerHTML='';rangeBox.classList.remove('show');}
   document.getElementById('playerSuggestions').classList.remove('show');
   document.getElementById('buyHint').textContent='';
   selectBuyRole('P');
