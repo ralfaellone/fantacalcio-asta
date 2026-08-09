@@ -5157,12 +5157,20 @@ nav button .ico{font-size:19px!important}
 .dsModuleBtn.active{border-color:#39d98a;background:#0d3827;color:#58e7a4}
 
 
-/* V67 - Budget AI Dinamico */
+/* V67.1 - Budget AI Dinamico */
 .dynamicBudgetLive{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:7px}
 .dynamicBudgetLive>div{padding:6px 3px;text-align:center;border-radius:8px;background:#081321;border:1px solid rgba(142,164,189,.10)}
 .dynamicBudgetLive span{display:block;font-size:5px;color:var(--muted)}
 .dynamicBudgetLive b{display:block;margin-top:2px;font-size:7px}.dynamicBudgetLive b.pos{color:#58e7a4}.dynamicBudgetLive b.neg{color:#ff8994}
 .dynamicBudgetLive small{display:block;margin-top:2px;font-size:4.8px;color:#9aa9bb}
+
+
+/* V67.1 - contabilità budget sempre riconciliata */
+.budgetEquation{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:4px;align-items:center;margin-top:7px}
+.budgetEquation>div{padding:7px 3px;text-align:center;border-radius:9px;background:#081321;border:1px solid rgba(142,164,189,.12)}
+.budgetEquation>div.total{border-color:rgba(57,217,138,.45);background:#0b251d}
+.budgetEquation span{display:block;font-size:5px;color:var(--muted);font-weight:800}.budgetEquation b{display:block;margin-top:2px;font-size:9px}
+.budgetEquation strong{text-align:center;font-size:8px;color:#8393a7}
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -5174,7 +5182,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6880,18 +6888,33 @@ function adaptiveRoleShares(){
 }
 function adaptiveBudgetPlan(){
   const cash=budget(state.me),slots=remainingRosterSlots(state.me);
-  const safety=Math.max(slots,Math.round((Number(state.initialBudget)||INITIAL||600)*.04));
+  const safety=Math.min(cash,Math.max(slots,Math.round((Number(state.initialBudget)||INITIAL||600)*.04)));
   const usable=Math.max(0,cash-safety);
   const shares=adaptiveRoleShares();
   const delta=purchasePlanDelta(state.me);
+  const open=['P','D','C','A'].filter(r=>roleCount(state.me,r)<LIMITS[r]);
+
+  // Integer allocations with exact reconciliation: sum(P,D,C,A)+safety === cash.
+  const raw=open.map(r=>({r,v:usable*(shares[r]||0)}));
+  const ints={P:0,D:0,C:0,A:0};
+  let assigned=0;
+  raw.forEach(x=>{ints[x.r]=Math.floor(x.v);assigned+=ints[x.r]});
+  let rem=usable-assigned;
+  raw.sort((a,b)=>(b.v-Math.floor(b.v))-(a.v-Math.floor(a.v)));
+  for(let i=0;i<rem;i++)ints[raw[i%raw.length].r]++;
+
   const roles={};
   ['P','D','C','A'].forEach(r=>{
     const missing=Math.max(0,LIMITS[r]-roleCount(state.me,r));
     const temp=roleMarketTemperature(r);
-    const allocation=missing?Math.max(missing,Math.round(usable*(shares[r]||0))):0;
+    const allocation=missing?ints[r]:0;
     roles[r]={missing,allocation,avg:missing?Math.max(1,Math.round(allocation/missing)):0,temp};
   });
-  return {cash,slots,safety,usable,shares,roles,delta};
+
+  const pd=roles.P.allocation+roles.D.allocation;
+  const ca=roles.C.allocation+roles.A.allocation;
+  const totalAllocated=pd+ca+safety;
+  return {cash,slots,safety,usable,shares,roles,delta,pd,ca,totalAllocated};
 }
 function adaptiveSlotCap(role,baseCap){
   const ap=adaptiveBudgetPlan(),rp=ap.roles[role];
@@ -6912,8 +6935,10 @@ function dynamicPlanReserve(){
   const currentMissing=blockRoles.reduce((s,r)=>s+Math.max(0,LIMITS[r]-roleCount(state.me,r)),0);
   const futureRoles=(isInitialMarket()&&currentInitialPhase()==='PD')?['C','A']:[];
   const futureMissing=futureRoles.reduce((s,r)=>s+Math.max(0,LIMITS[r]-roleCount(state.me,r)),0);
-  const reserve=Math.min(ap.cash,futureRoles.reduce((s,r)=>s+(ap.roles[r]?.allocation||0),0)+ap.safety);
-  return {cash:ap.cash,currentMissing,futureMissing,reserve,spendable:Math.max(0,ap.cash-reserve),futureRoles,adaptive:ap};
+  const futureBudget=futureRoles.reduce((s,r)=>s+(ap.roles[r]?.allocation||0),0);
+  const reserve=Math.min(ap.cash,futureBudget+ap.safety);
+  const spendable=Math.max(0,ap.cash-reserve);
+  return {cash:ap.cash,currentMissing,futureMissing,reserve,spendable,futureRoles,futureBudget,adaptive:ap};
 }
 function dynamicPlanStatus(){
   const r=dynamicPlanReserve(),slots=remainingRosterSlots(state.me);
@@ -6958,17 +6983,27 @@ function renderDynamicRosterPlan(){
     <div class="dynamicPlanHead"><div><div class="dynamicPlanTitle">Piano Rosa · aggiornamento live</div>
     <div class="dynamicPlanSub">${mode} · ${roster(state.me).length}/25 giocatori · ${s.cash} cr rimasti</div></div>
     <div class="dynamicPlanStatus ${s.level}">${s.label}</div></div>
+    ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(); const d=ap.delta.delta; return `
+    <div class="budgetEquation">
+      <div><span>P + D</span><b>${ap.pd}</b></div>
+      <strong>+</strong>
+      <div><span>C + A</span><b>${ap.ca}</b></div>
+      <strong>+</strong>
+      <div><span>RISERVA MINIMA</span><b>${ap.safety}</b></div>
+      <strong>=</strong>
+      <div class="total"><span>TOTALE</span><b>${ap.totalAllocated}</b></div>
+    </div>
     <div class="dynamicPlanMetrics">
-      <div class="dynamicPlanMetric"><span>BUDGET PROTETTO</span><b>${s.reserve}</b></div>
-      <div class="dynamicPlanMetric"><span>SPENDIBILE ORA</span><b>${s.spendable}</b></div>
+      <div class="dynamicPlanMetric"><span>SPENDIBILE BLOCCO ATTUALE</span><b>${s.spendable}</b></div>
+      <div class="dynamicPlanMetric"><span>PROTETTO BLOCCHI FUTURI</span><b>${s.futureBudget}</b></div>
       <div class="dynamicPlanMetric"><span>MEDIA / SLOT</span><b>${s.avg}</b></div>
     </div>
-    ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(); const d=ap.delta.delta; return `<div class="dynamicBudgetLive">
-      <div><span>ANDAMENTO ACQUISTI</span><b class="${d>=0?'pos':'neg'}">${d>=0?'+':''}${d} cr vs piano</b></div>
+    <div class="dynamicBudgetLive">
+      <div><span>VS PIANO</span><b class="${d>=0?'pos':'neg'}">${d>=0?'+':''}${d} cr</b><small>${d>0?'RISPARMIO':d<0?'EXTRA SPESA':'IN LINEA'}</small></div>
       ${['P','D','C','A'].map(r=>`<div><span>${r} DISPONIBILE</span><b>${ap.roles[r].allocation}</b><small>${ap.roles[r].temp.label}${ap.roles[r].temp.pct?` ${ap.roles[r].temp.pct>0?'+':''}${ap.roles[r].temp.pct}%`:''}</small></div>`).join('')}
     </div>`})()}
     <div class="dynamicPlanGoal"><div class="dynamicPlanGoalTitle">🎯 COSA FARE ADESSO</div>
-    <div class="dynamicPlanGoalText">${s.reason} Budget da proteggere: <b>${reserveText}</b>.</div></div>
+    <div class="dynamicPlanGoalText">${s.reason} Budget futuro C+A: <b>${s.futureBudget} cr</b> · Riserva minima: <b>${(s.adaptive||adaptiveBudgetPlan()).safety} cr</b>.</div></div>
     <div class="dynamicPlanTargets">${targets.map((x,n)=>`<div class="dynamicPlanTarget" onclick="openAIForPlayer(${x.index})">
       <div class="dynamicPlanRank">${n+1}</div><div><div class="dynamicPlanName">${esc(x.p.name)}</div>
       <div class="dynamicPlanMeta">${x._dynSpec.label} · ${x._dynSpec.intent} · ${strongRosterTargetReason(x)}</div></div>
