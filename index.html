@@ -5131,7 +5131,7 @@ body.player-detail-open{
 .dynamicPlanSave{margin-top:7px;font-size:7px;line-height:1.45;color:#bda9ff}
 
 
-/* V66.4 - Dashboard Compact + fix caricamento D.S. AI */
+/* V66.5 - Dashboard Compact + fix caricamento D.S. AI */
 .dsQuickBar{margin-top:12px;min-height:54px;padding:9px 12px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(135deg,rgba(22,42,64,.92),rgba(10,25,40,.96));display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:9px;cursor:pointer}
 .dsQuickIcon{font-size:23px;line-height:1}.dsQuickText{min-width:0}.dsQuickText b{display:block;font-size:13px}.dsQuickText span{display:block;margin-top:2px;font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dsQuickGo{font-size:10px;font-weight:950;color:#ffd13b;white-space:nowrap}
 #home .section:first-of-type{margin-bottom:2px}
@@ -5145,6 +5145,17 @@ nav button .ico{font-size:19px!important}
 .dsAiTabs button{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:13px;padding:10px 4px;font-weight:900;font-size:11px}
 .dsAiTabs button.active{border-color:#d8a91f;color:#ffd13b;background:#2a230d}
 .dsSection{scroll-margin-top:58px;margin-top:12px}.dsSection>h2{margin-bottom:4px}
+
+/* V66.5 - Modulo sempre visibile nel Direttore Sportivo */
+.dsModuleBox{margin:10px 0 8px;padding:9px;border-radius:13px;background:#0a1727;border:1px solid rgba(142,164,189,.14)}
+.dsModuleTop{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.dsModuleTop b{display:block;font-size:8px}.dsModuleTop span{display:block;margin-top:2px;font-size:6px;color:var(--muted)}
+.dsModifierBadge{padding:5px 7px;border-radius:999px;font-size:6px;font-weight:950;white-space:nowrap;background:#222b37;color:#b8c5d5}
+.dsModifierBadge.on{background:#0d3827;color:#58e7a4}.dsModifierBadge.off{background:#3b1118;color:#ff8994}
+.dsModuleButtons{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+.dsModuleBtn{border:1px solid rgba(142,164,189,.18);background:#081321;color:#cbd6e5;border-radius:9px;padding:7px 3px;font-size:7px;font-weight:950}
+.dsModuleBtn.active{border-color:#39d98a;background:#0d3827;color:#58e7a4}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5155,7 +5166,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V66.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V66.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5190,6 +5201,13 @@ nav button .ico{font-size:19px!important}
   <div class="section" style="margin-top:0">
     <h2>🧠 Direttore Sportivo AI</h2>
     <div class="hint">Il centro strategico: costruzione rosa, gestione budget e priorità d’acquisto.</div>
+  </div>
+  <div class="dsModuleBox">
+    <div class="dsModuleTop">
+      <div><b>⚽ MODULO PROGETTO ROSA</b><span>Il modulo cambia priorità, budget e uso del modificatore.</span></div>
+      <div id="dsModifierBadge" class="dsModifierBadge">MODIFICATORE —</div>
+    </div>
+    <div id="dsModuleButtons" class="dsModuleButtons"></div>
   </div>
   <div class="dsAiTabs">
     <button class="active" onclick="dsJump('dsDynamic',this)">🧭 Piano</button>
@@ -7743,6 +7761,7 @@ function render(){
   }else if(id==='dsai'){
     // Carica tutti i motori del Direttore Sportivo anche entrando direttamente dalla tab.
     // La Dashboard Compact resta separata e non viene ricostruita qui.
+    try{ renderDSModuleSelector(); }catch(err){ console.error('Modulo D.S. AI',err); }
     try{ renderDirectorSportivoAI(); }catch(err){ console.error('Direttore Sportivo AI',err); }
     try{ renderDynamicRosterPlan(); }catch(err){ console.error('Piano Rosa Dinamico AI',err); }
     try{ renderStrongRosterAI(); }catch(err){ console.error('Rosa Forte AI',err); }
@@ -7942,18 +7961,41 @@ function renderListone(){
 
 let AI_ROSTER_MODULE=localStorage.getItem('astaFantaFormationModule')||'';
 
+function renderDSModuleSelector(){
+  const box=document.getElementById('dsModuleButtons');
+  const badge=document.getElementById('dsModifierBadge');
+  if(!box)return;
+  const current=AI_ROSTER_MODULE||'';
+  box.innerHTML=FORMATION_PLANS.map(plan=>`
+    <button class="dsModuleBtn ${current===plan.id?'active':''}" onclick="setAIRosterModule('${plan.id}')">
+      ${plan.name}
+    </button>`).join('');
+  if(badge){
+    const plan=FORMATION_PLANS.find(x=>x.id===current);
+    if(!plan){
+      badge.className='dsModifierBadge';
+      badge.textContent='MODIFICATORE —';
+    }else{
+      const on=modifierActiveForPlan(plan);
+      badge.className=`dsModifierBadge ${on?'on':'off'}`;
+      badge.textContent=`MODIFICATORE ${on?'🟢 ATTIVO':'🔴 OFF'}`;
+    }
+  }
+}
+
 function setAIRosterModule(id){
   if(!FORMATION_PLANS.some(x=>x.id===id))return;
   AI_ROSTER_MODULE=id;
   localStorage.setItem('astaFantaFormationModule',id);
   clearPerformanceCaches();
-  renderFormationPage();
-  refreshTop5LiveIfOpen();
-
-  // Aggiorna subito la Dashboard, senza cambiare nessun altro dato/stato.
-  if(typeof renderPremiumDashboardHero==='function'){
-    renderPremiumDashboardHero();
-  }
+  try{renderFormationPage();}catch(e){}
+  try{refreshTop5LiveIfOpen();}catch(e){}
+  try{renderPremiumDashboardHero();}catch(e){}
+  try{renderDSModuleSelector();}catch(e){}
+  try{renderDirectorSportivoAI();}catch(e){}
+  try{renderDynamicRosterPlan();}catch(e){}
+  try{renderStrongRosterAI();}catch(e){}
+  try{renderStrategy40();}catch(e){}
 }
 
 function aiRosterTier(role,slot,plan){
