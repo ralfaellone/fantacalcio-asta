@@ -5130,6 +5130,16 @@ body.player-detail-open{
 .dynamicPlanPrice{text-align:right;font-size:9px;font-weight:950;color:#f6d66d}.dynamicPlanPrice small{display:block;font-size:5.5px;color:var(--muted)}
 .dynamicPlanSave{margin-top:7px;font-size:7px;line-height:1.45;color:#bda9ff}
 
+
+/* V66 - Dashboard compatta + Direttore Sportivo AI dedicato */
+nav{grid-template-columns:repeat(6,1fr)!important;gap:1px!important}
+nav button{font-size:9px!important;padding-left:0!important;padding-right:0!important}
+nav button .ico{font-size:19px!important}
+.dsMiniCard{padding:13px!important}.dsOpenBtn{position:static!important;width:100%;margin-top:12px}
+.dsAiTabs{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:rgba(7,16,29,.96);backdrop-filter:blur(14px);padding:8px 0 10px;margin:6px 0 4px}
+.dsAiTabs button{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:13px;padding:10px 4px;font-weight:900;font-size:11px}
+.dsAiTabs button.active{border-color:#d8a91f;color:#ffd13b;background:#2a230d}
+.dsSection{scroll-margin-top:58px;margin-top:12px}.dsSection>h2{margin-bottom:4px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5140,7 +5150,7 @@ body.player-detail-open{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V65</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V66</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5175,37 +5185,13 @@ body.player-detail-open{
 
   <div class="section" style="margin-top:14px">
     <h2>🧠 Direttore Sportivo AI</h2>
-    <div class="hint">Piano dinamico: priorità, budget e 5 obiettivi cambiano automaticamente mentre costruisci la rosa.</div>
-    <div id="dashboardDirectorAI" style="margin-top:8px"></div>
-  </div>
-
-  <div class="section" style="margin-top:14px">
-    <h2>🏆 Rosa Forte AI</h2>
-    <div class="hint">Valuta la forza reale della rosa e ti indica i 5 acquisti più utili per migliorarla, considerando bonus, malus, continuità, prezzo, modulo e modificatore.</div>
-    <div id="dashboardStrongRoster" style="margin-top:8px"></div>
-  </div>
-
-  <div class="section" style="margin-top:14px">
-    <h2>🧭 Piano Rosa Dinamico AI</h2>
-    <div class="hint">Controlla se sei in linea con il piano, protegge il budget futuro e aggiorna i prossimi obiettivi dopo ogni acquisto tuo o degli avversari.</div>
-    <div id="dashboardDynamicPlan" style="margin-top:8px"></div>
-  </div>
-
-  <div class="section" style="margin-top:14px">
-    <h2>🧠 Strategia d'Asta AI 4.0</h2>
-    <div class="hint">Priorità dei reparti, budget residuo e prossimi obiettivi si aggiornano dopo ogni acquisto.</div>
-    <div id="dashboardStrategy40" style="margin-top:8px"></div>
-  </div>
-
-  <div class="section" style="margin-top:14px">
-    <h2>Azioni rapide</h2>
-    <div class="dashActions">
-      <button onclick="openBuy()">🔨<span>Registra acquisto</span></button>
-      <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
-      <button onclick="openOpportunityPage()">💎<span>Occasioni</span></button>
-      <button onclick="openPlanPage()">📊<span>Piano asta</span></button>
-      <button onclick="openFormationPage()">🧩<span>Costruisci Rosa AI</span></button>
-      <button onclick="openTop5LivePage()">🎯<span>Top 5 AI Live</span></button>
+    <div class="hint">Il cervello della tua rosa, senza appesantire la Dashboard.</div>
+    <div class="card dsMiniCard" style="margin-top:8px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+        <div><div class="k">CENTRO STRATEGICO</div><div class="v" style="font-size:18px">Piano, forza rosa e strategia</div></div>
+        <span class="tag good">AI</span>
+      </div>
+      <button class="primary dsOpenBtn" onclick="openDSAI()">APRI D.S. AI</button>
     </div>
   </div>
 
@@ -5216,6 +5202,22 @@ body.player-detail-open{
     </div>
     <div id="dashboardRecent" style="margin-top:8px"></div>
   </div>
+</section>
+
+<section id="dsai" class="page">
+  <div class="section" style="margin-top:0">
+    <h2>🧠 Direttore Sportivo AI</h2>
+    <div class="hint">Il centro strategico: costruzione rosa, gestione budget e priorità d’acquisto.</div>
+  </div>
+  <div class="dsAiTabs">
+    <button class="active" onclick="dsJump('dsDynamic',this)">🧭 Piano</button>
+    <button onclick="dsJump('dsStrong',this)">🏆 Rosa</button>
+    <button onclick="dsJump('dsStrategy',this)">🧠 Strategia</button>
+  </div>
+  <div id="dsDynamic" class="section dsSection"><h2>🧭 Piano Rosa Dinamico AI</h2><div class="hint">Come spendere: budget protetto, spendibile ora e prossimi obiettivi.</div><div id="dashboardDynamicPlan" style="margin-top:8px"></div></div>
+  <div id="dsStrong" class="section dsSection"><h2>🏆 Rosa Forte AI</h2><div class="hint">Quanto è forte la rosa: bonus, anti-malus, continuità, modificatore e acquisti che la migliorano.</div><div id="dashboardStrongRoster" style="margin-top:8px"></div></div>
+  <div id="dsStrategy" class="section dsSection"><h2>🧠 Strategia d'Asta AI 4.0</h2><div class="hint">Dove intervenire: priorità dei reparti, budget e alternative.</div><div id="dashboardStrategy40" style="margin-top:8px"></div></div>
+  <div id="dsDirectorEngine" style="display:none"><div id="dashboardDirectorAI"></div></div>
 </section>
 
 <section id="rosa" class="page">
@@ -5367,6 +5369,7 @@ body.player-detail-open{
 <nav>
 <button class="active" onclick="tab('home',this)"><span class="ico">🏠</span>Dashboard</button>
 <button onclick="tab('rosa',this)"><span class="ico">🔨</span>Asta</button>
+<button onclick="tab('dsai',this)"><span class="ico">🧠</span>D.S. AI</button>
 <button onclick="tab('listone',this)"><span class="ico">🔎</span>Giocatori</button>
 <button onclick="tab('players',this)"><span class="ico">👥</span>Rose</button>
 <button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
@@ -6199,8 +6202,19 @@ function tab(id,btn){
   document.body.classList.toggle('players-pro-open',id==='listone');
   document.body.classList.toggle('rose-pro-open',id==='players');
   document.body.classList.toggle('asta-live-open',id==='rosa');
+  document.body.classList.toggle('ds-ai-open',id==='dsai');
   if(typeof renderCommonHeader==='function')renderCommonHeader();
   requestAnimationFrame(()=>render());
+}
+function openDSAI(){
+  const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('D.S. AI'));
+  if(btn)tab('dsai',btn);
+  setTimeout(()=>document.getElementById('dsDynamic')?.scrollIntoView({block:'start'}),30);
+}
+function dsJump(id,btn){
+  document.querySelectorAll('.dsAiTabs button').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function homePlayerMatches(){
