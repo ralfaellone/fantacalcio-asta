@@ -4892,6 +4892,10 @@ body.top5-live-open nav{
   border:1px solid rgba(142,164,189,.12);font-size:6.5px;color:var(--muted);line-height:1.45
 }
 
+
+/* V61.3 - Asta iniziale a blocchi P+D / C+A */
+.marketPhaseRow.blockMode{grid-template-columns:repeat(2,1fr) !important}
+.marketPhaseRow.blockMode button{font-size:8px !important;padding:7px 4px !important}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -4902,7 +4906,7 @@ body.top5-live-open nav{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V61.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V61.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5506,7 +5510,7 @@ function defaultState(){return {
   me:0,purchases:[],releases:[],unavailablePlayers:[],
   marketSessions:[{id:'initial',type:'initial',name:'Asta iniziale',createdAt:Date.now()}],
   activeMarketSessionId:'initial',
-  initialAuctionPhase:'P'
+  initialAuctionPhase:'PD'
 }}
 function load(){
   try{
@@ -5526,7 +5530,9 @@ function load(){
     if(!s.activeMarketSessionId || !s.marketSessions.some(x=>x.id===s.activeMarketSessionId)){
       s.activeMarketSessionId='initial';
     }
-    if(!['P','D','C','A'].includes(s.initialAuctionPhase))s.initialAuctionPhase='P';
+    if(['P','D'].includes(s.initialAuctionPhase))s.initialAuctionPhase='PD';
+    else if(['C','A'].includes(s.initialAuctionPhase))s.initialAuctionPhase='CA';
+    else if(!['PD','CA'].includes(s.initialAuctionPhase))s.initialAuctionPhase='PD';
 
     // Migrazione trasparente: i vecchi acquisti restano nello storico.
     s.purchases=(s.purchases||[]).map(x=>({
@@ -5554,20 +5560,41 @@ function isInitialMarket(){
   return activeMarketSession().type==='initial';
 }
 function currentInitialPhase(){
-  return ['P','D','C','A'].includes(state.initialAuctionPhase)?state.initialAuctionPhase:'P';
+  return ['PD','CA'].includes(state.initialAuctionPhase)?state.initialAuctionPhase:'PD';
 }
+
+function initialBlockRoles(block=currentInitialPhase()){
+  return block==='CA'?['C','A']:['P','D'];
+}
+function initialBlockLabel(block=currentInitialPhase()){
+  return block==='CA'?'C + A':'P + D';
+}
+function initialBlockLongLabel(block=currentInitialPhase()){
+  return block==='CA'?'Centrocampisti + Attaccanti':'Portieri + Difensori';
+}
+function initialBlockPriorityRole(){
+  const roles=initialBlockRoles().filter(r=>roleCount(state.me,r)<LIMITS[r]);
+  if(!roles.length)return null;
+  return roles
+    .map(r=>({r,need:Math.max(0,LIMITS[r]-roleCount(state.me,r))/Math.max(1,LIMITS[r]),plan:liveRoleBudgetPlan(r,state.me)}))
+    .sort((a,b)=>b.need-a.need || b.plan.max-a.plan.max)[0].r;
+}
+function allowedInitialRoleText(){
+  return initialBlockRoles().map(roleName).join(' e ').toLowerCase();
+}
+
 function marketRoleAllowed(role){
-  return !isInitialMarket() || role===currentInitialPhase();
+  return !isInitialMarket() || initialBlockRoles().includes(role);
 }
 function marketModeText(){
   const s=activeMarketSession();
   return s.type==='initial'
-    ? `${s.name} · fase ${currentInitialPhase()}`
+    ? `${s.name} · blocco ${initialBlockLabel()}`
     : `${s.name} · mercato libero`;
 }
 function marketSessionShort(){
   const s=activeMarketSession();
-  return s.type==='initial'?`INIZIALE · ${currentInitialPhase()}`:`RIPARAZIONE #${s.number||1}`;
+  return s.type==='initial'?`INIZIALE · ${initialBlockLabel()}`:`RIPARAZIONE #${s.number||1}`;
 }
 function marketPurchaseMeta(){
   const s=activeMarketSession();
@@ -5578,13 +5605,15 @@ function marketPurchaseMeta(){
     marketPhase:s.type==='initial'?currentInitialPhase():'FREE'
   };
 }
-function setInitialAuctionPhase(role){
-  if(!['P','D','C','A'].includes(role))return;
-  state.initialAuctionPhase=role;
-  nextMoveSelectedRole=role;
-  TOP5_ROLE_FILTER=role;
-  BUY_NOW_ROLE=role;
+function setInitialAuctionPhase(block){
+  if(!['PD','CA'].includes(block))return;
+  state.initialAuctionPhase=block;
+  nextMoveSelectedRole=initialBlockPriorityRole()||initialBlockRoles()[0];
+  TOP5_ROLE_FILTER='ALL';
+  BUY_NOW_ROLE='ALL';
+  if(typeof advisorRole!=='undefined')advisorRole=initialBlockPriorityRole()||initialBlockRoles()[0];
   persist();
+  renderMarketSeasonPanel();
   render();
 }
 function createRepairMarket(){
@@ -5610,9 +5639,9 @@ function activateMarketSession(id){
   if(!state.marketSessions.some(x=>x.id===id))return;
   state.activeMarketSessionId=id;
   if(isInitialMarket()){
-    nextMoveSelectedRole=currentInitialPhase();
-    TOP5_ROLE_FILTER=currentInitialPhase();
-    BUY_NOW_ROLE=currentInitialPhase();
+    nextMoveSelectedRole=initialBlockPriorityRole()||initialBlockRoles()[0];
+    TOP5_ROLE_FILTER='ALL';
+    BUY_NOW_ROLE='ALL';
   }else{
     nextMoveSelectedRole='';
     TOP5_ROLE_FILTER='ALL';
@@ -6055,7 +6084,7 @@ function renderPremiumDashboardHero(){
 
 function strategy40RolePriority(role){
   const missing=Math.max(0,LIMITS[role]-roleCount(state.me,role));
-  if(isInitialMarket() && role!==currentInitialPhase()){
+  if(isInitialMarket() && !initialBlockRoles().includes(role)){
     return {role,score:0,missing,plan:liveRoleBudgetPlan(role,state.me),top:null,locked:true};
   }
   if(!missing)return {role,score:0,missing,plan:liveRoleBudgetPlan(role,state.me),top:null};
@@ -6226,14 +6255,16 @@ function directorSportivoPlan(){
   let priority;
 
   if(isInitialMarket()){
-    priority=snapshots.find(x=>x.role===currentInitialPhase())||snapshots[0];
+    priority=[...snapshots]
+      .filter(x=>initialBlockRoles().includes(x.role) && x.missing>0)
+      .sort((a,b)=>b.need-a.need || b.plan.max-a.plan.max)[0]||null;
   }else{
     priority=[...snapshots]
       .filter(x=>x.missing>0)
       .sort((a,b)=>b.need-a.need || b.plan.max-a.plan.max)[0]||null;
   }
 
-  if(!priority)return {cash,slots,snapshots,priority:null,targets:[],message:'Rosa completa.'};
+  if(!priority)return {cash,slots,snapshots,priority:null,targets:[],message:'Rosa completa per il blocco attuale.'};
 
   const targets=priority.rows.slice(0,5);
   const last=state.purchases.filter(x=>x.buyer===state.me).slice(-1)[0]||null;
@@ -6242,11 +6273,10 @@ function directorSportivoPlan(){
   let level='good';
   let message='';
   if(isInitialMarket()){
-    const future=['P','D','C','A'].slice(['P','D','C','A'].indexOf(currentInitialPhase())+1)
-      .filter(r=>roleCount(state.me,r)<LIMITS[r]);
-    const reserve=future.reduce((s,r)=>s+Math.max(0,liveRoleBudgetPlan(r,state.me).min),0);
-    message=`Fase ${currentInitialPhase()}: concentra le chiamate sui ${roleName(currentInitialPhase()).toLowerCase()}. Budget reparto ${priority.plan.min}-${priority.plan.max} cr.`;
-    if(future.length)message+=` Proteggi il budget per ${future.join(', ')}: evita rilanci che riducano troppo la riserva dei reparti successivi.`;
+    const currentRoles=initialBlockRoles();
+    const future=currentInitialPhase()==='PD'?['C','A']:[];
+    message=`Blocco ${initialBlockLabel()}: puoi acquistare ${currentRoles.join(' e ')}. Priorità AI attuale: ${roleName(priority.role)} con budget reparto ${priority.plan.min}-${priority.plan.max} cr.`;
+    if(future.length)message+=` Proteggi una riserva sufficiente per il blocco C + A.`;
   }else{
     const second=[...snapshots].filter(x=>x.missing>0&&x.role!==priority.role).sort((a,b)=>b.need-a.need)[0];
     message=`Priorità libera: ${roleName(priority.role)} (${priority.owned}/${LIMITS[priority.role]} coperti). Punta prima a questo upgrade con fascia reparto ${priority.plan.min}-${priority.plan.max} cr.`;
@@ -6291,7 +6321,7 @@ function renderDirectorSportivoAI(){
     return;
   }
   const p=d.priority;
-  const mode=isInitialMarket()?`ASTA INIZIALE · ${currentInitialPhase()}`:`${activeMarketSession().name} · LIBERO`;
+  const mode=isInitialMarket()?`ASTA INIZIALE · BLOCCO ${initialBlockLabel()}`:`${activeMarketSession().name} · LIBERO`;
   const planLabel=d.level==='danger'?'PIANO C':d.level==='warn'?'PIANO B':'PIANO A';
 
   el.innerHTML=`
@@ -6492,7 +6522,7 @@ function renderAstaLiveSuggestions(){
 function selectAstaLivePlayer(index){
   const chosen=PLAYER_ARCHIVE[index];
   if(chosen && !marketRoleAllowed(chosen.role)){
-    alert(`Asta iniziale: siamo nella fase ${currentInitialPhase()}. Puoi chiamare solo ${roleName(currentInitialPhase()).toLowerCase()}.`);
+    alert(`Asta iniziale: blocco ${initialBlockLabel()}. Puoi chiamare ${allowedInitialRoleText()}.`);
     return;
   }
   ASTA_LIVE_PLAYER=index;
@@ -6798,7 +6828,7 @@ function renderMarketContextBars(){
       <div>
         <div class="marketContextMain">🗓️ ${esc(s.name)}</div>
         <div class="marketContextSub">${s.type==='initial'
-          ? `Asta iniziale a reparti · fase attuale ${currentInitialPhase()} · l'AI consiglia solo ${roleName(currentInitialPhase()).toLowerCase()}`
+          ? `Asta iniziale a blocchi · ${initialBlockLabel()} · l'AI lavora su ${initialBlockLongLabel().toLowerCase()}`
           : `Mercato libero · l'AI può scegliere il reparto con il miglior upgrade`}</div>
       </div>
       <span class="marketContextBadge">${marketSessionShort()}</span>`;
@@ -6807,10 +6837,10 @@ function renderMarketContextBars(){
   const asta=document.getElementById('astaMarketContext');
   if(asta){
     asta.innerHTML=s.type==='initial'
-      ? `<div class="marketContextMain">FASE ASTA INIZIALE · ${currentInitialPhase()}</div>
-         <div class="marketContextSub">Le chiamate sono limitate al reparto corrente. Cambia fase quando la lega passa al reparto successivo.</div>
-         <div class="marketPhaseRow">
-           ${['P','D','C','A'].map(r=>`<button class="${currentInitialPhase()===r?'active':''}" onclick="setInitialAuctionPhase('${r}')">${r}</button>`).join('')}
+      ? `<div class="marketContextMain">ASTA INIZIALE · BLOCCO ${initialBlockLabel()}</div>
+         <div class="marketContextSub">In questo blocco possono essere chiamati entrambi i ruoli. Quando termina, passa al blocco successivo.</div>
+         <div class="marketPhaseRow blockMode">
+           ${[['PD','P + D'],['CA','C + A']].map(([id,label])=>`<button class="${currentInitialPhase()===id?'active':''}" onclick="setInitialAuctionPhase('${id}')">${label}</button>`).join('')}
          </div>`
       : `<div class="marketContextMain">${esc(s.name)} · MERCATO LIBERO</div>
          <div class="marketContextSub">Puoi chiamare P, D, C o A in qualsiasi ordine. Il Direttore Sportivo AI sceglie la priorità in base alla rosa attuale.</div>`;
@@ -6827,20 +6857,20 @@ function renderMarketSeasonPanel(){
       <div class="marketSeasonTitle">${esc(active.name)}</div>
       <div class="marketSeasonText">
         ${active.type==='initial'
-          ? `Modalità a reparti P → D → C → A. Fase corrente: ${currentInitialPhase()}.`
+          ? `Modalità a blocchi: prima P + D, poi C + A. Blocco corrente: ${initialBlockLabel()}.`
           : `Modalità libera: tutti i ruoli possono essere chiamati. Questa è la sessione di riparazione attiva.`}
       </div>
 
       ${active.type==='initial'?`
-        <div class="marketPhaseRow">
-          ${['P','D','C','A'].map(r=>`<button class="${currentInitialPhase()===r?'active':''}" onclick="setInitialAuctionPhase('${r}')">${r}</button>`).join('')}
+        <div class="marketPhaseRow blockMode">
+          ${[['PD','P + D'],['CA','C + A']].map(([id,label])=>`<button class="${currentInitialPhase()===id?'active':''}" onclick="setInitialAuctionPhase('${id}')">${label}</button>`).join('')}
         </div>`:''}
 
       <div class="marketSeasonActions">
         <button class="secondary" onclick="createRepairMarket()">＋ NUOVO MERCATO DI RIPARAZIONE</button>
       </div>
       <div class="marketDirectorNote">
-        🧠 Gli acquisti vengono salvati nella sessione attiva. Puoi creare Mercato riparazione #1, #2, #3… senza limite.
+        🧠 Nell'asta iniziale l'AI considera insieme i due ruoli del blocco attivo. I mercati di riparazione restano invece completamente liberi.
       </div>
     </div>
 
@@ -6849,7 +6879,7 @@ function renderMarketSeasonPanel(){
         <div class="marketSessionCard ${s.id===state.activeMarketSessionId?'active':''}">
           <div>
             <div class="marketSessionName">${esc(s.name)}</div>
-            <div class="marketSessionMeta">${s.type==='initial'?'Asta a reparti':'Mercato libero'} · ${marketSessionCount(s.id)} acquisti attualmente in rosa</div>
+            <div class="marketSessionMeta">${s.type==='initial'?'Asta a blocchi P+D → C+A':'Mercato libero'} · ${marketSessionCount(s.id)} acquisti attualmente in rosa</div>
           </div>
           ${s.id===state.activeMarketSessionId
             ? `<span class="tag good">ATTIVO</span>`
@@ -7565,7 +7595,7 @@ let TOP5_ROLE_FILTER='ALL';
 let TOP5_ALT_TOKEN=0;
 function hydrateTop5Alternatives(){
   const token=++TOP5_ALT_TOKEN;
-  const roles=isInitialMarket()?[currentInitialPhase()]:(TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER]);
+  const roles=isInitialMarket()?(TOP5_ROLE_FILTER==='ALL'?initialBlockRoles():[TOP5_ROLE_FILTER]):(TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER]);
   const indexes=[];
   roles.forEach(role=>liveTop5Rows(role).forEach(x=>indexes.push(x.index)));
   indexes.forEach((idx,n)=>{
@@ -7583,7 +7613,8 @@ function hydrateTop5Alternatives(){
 
 function setTop5RoleFilter(role){
   if(isInitialMarket()){
-    TOP5_ROLE_FILTER=currentInitialPhase();
+    if(role!=='ALL' && !initialBlockRoles().includes(role))return;
+    TOP5_ROLE_FILTER=role;
   }else{
     TOP5_ROLE_FILTER=role;
   }
@@ -7600,11 +7631,11 @@ function renderTop5LivePage(){
   const slots=remainingRosterSlots(state.me);
   const plan=activeFormationPlan(state.me);
   const stage=aiCore3AuctionStage();
-  if(isInitialMarket())TOP5_ROLE_FILTER=currentInitialPhase();
+  if(isInitialMarket() && TOP5_ROLE_FILTER!=='ALL' && !initialBlockRoles().includes(TOP5_ROLE_FILTER))TOP5_ROLE_FILTER='ALL';
 
   body.innerHTML=`
     <div class="top5Hero">
-      <div class="top5HeroTitle">${isInitialMarket()?`Top 5 ${roleName(currentInitialPhase())} · fase corrente`:`Top 5 obiettivi · mercato libero`}</div>
+      <div class="top5HeroTitle">${isInitialMarket()?`Top 5 blocco ${initialBlockLabel()} · fase corrente`:`Top 5 obiettivi · mercato libero`}</div>
       <div class="top5HeroText">
         Dopo ogni acquisto l’AI ricalcola priorità, fascia dei giocatori, budget del reparto e 5 obiettivi.
         Se spendi più del piano, ridistribuisce automaticamente i crediti sugli altri reparti. Ogni obiettivo include alternative comparabili.
@@ -7626,14 +7657,14 @@ function renderTop5LivePage(){
         <div class="top5ModuleLabel">VISUALIZZA REPARTO</div>
         <div class="top5RoleFilterButtons">
           ${(isInitialMarket()
-            ? [[currentInitialPhase(),roleName(currentInitialPhase())]]
+            ? [['ALL','Tutto il blocco'],...initialBlockRoles().map(r=>[r,roleName(r)])]
             : [['ALL','Tutti'],['P','Portieri'],['D','Difensori'],['C','Centrocampisti'],['A','Attaccanti']]
           ).map(([id,label])=>`<button class="${TOP5_ROLE_FILTER===id?'active':''}" onclick="setTop5RoleFilter('${id}')">${label}</button>`).join('')}
         </div>
       </div>
     </div>
 
-    ${(isInitialMarket()?[currentInitialPhase()]:(TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER])).map(role=>{
+    ${(isInitialMarket()?(TOP5_ROLE_FILTER==='ALL'?initialBlockRoles():[TOP5_ROLE_FILTER]):(TOP5_ROLE_FILTER==='ALL'?['P','D','C','A']:[TOP5_ROLE_FILTER])).map(role=>{
       const rows=liveTop5Rows(role);
       const strat=liveRoleStrategy(role);
       const owned=roleCount(state.me,role);
@@ -8342,7 +8373,7 @@ function renderBuyNowPage(){
       <div style="font-size:17px;font-weight:950">La tua situazione adesso</div>
       <div class="playerMetaLine">${cash} crediti · ${slots} posti mancanti · P ${roleCount(state.me,'P')}/${LIMITS.P} · D ${roleCount(state.me,'D')}/${LIMITS.D} · C ${roleCount(state.me,'C')}/${LIMITS.C} · A ${roleCount(state.me,'A')}/${LIMITS.A}</div>
       <div class="buyNowRoles">
-        ${(isInitialMarket()?[currentInitialPhase()]:['ALL','P','D','C','A']).map(r=>`<button class="buyNowRole ${BUY_NOW_ROLE===r?'on':''}" onclick="setBuyNowRole('${r}')">${r==='ALL'?'TUTTI':r}</button>`).join('')}
+        ${(isInitialMarket()?['ALL',...initialBlockRoles()]:['ALL','P','D','C','A']).map(r=>`<button class="buyNowRole ${BUY_NOW_ROLE===r?'on':''}" onclick="setBuyNowRole('${r}')">${r==='ALL'?'TUTTO BLOCCO':r}</button>`).join('')}
       </div>
     </div>
 
@@ -8378,7 +8409,7 @@ function renderBuyNowPage(){
   `;
 }
 function openBuyNowPage(){
-  BUY_NOW_ROLE=isInitialMarket()?currentInitialPhase():'ALL';
+  BUY_NOW_ROLE='ALL';
   renderBuyNowPage();
   document.body.classList.add('buy-now-page-open');
   document.getElementById('buyNowModal').classList.add('show');
@@ -8874,11 +8905,11 @@ function advisorScore(p,index){
   return {score:clamp(score,1,99),stats:st,price};
 }
 function defaultAdvisorRole(){
-  if(isInitialMarket())return currentInitialPhase();
-  const order=['P','D','C','A']
+  const order=(isInitialMarket()?initialBlockRoles():['P','D','C','A'])
     .map(r=>({r,need:Math.max(0,LIMITS[r]-roleCount(state.me,r))/LIMITS[r]}))
+    .filter(x=>roleCount(state.me,x.r)<LIMITS[x.r])
     .sort((a,b)=>b.need-a.need);
-  return order[0]?.r||'A';
+  return order[0]?.r||(isInitialMarket()?initialBlockRoles()[0]:'A');
 }
 function openAdvisor(){
   advisorRole=defaultAdvisorRole();
@@ -8888,8 +8919,8 @@ function openAdvisor(){
 }
 function closeAdvisor(){leaveSubPage('advisorModal')}
 function setAdvisorRole(role,btn){
-  if(isInitialMarket() && role!==currentInitialPhase()){
-    alert(`Asta iniziale: l'AI sta lavorando solo sui ${roleName(currentInitialPhase()).toLowerCase()}.`);
+  if(isInitialMarket() && !initialBlockRoles().includes(role)){
+    alert(`Asta iniziale: l'AI sta lavorando sul blocco ${initialBlockLabel()} (${allowedInitialRoleText()}).`);
     return;
   }
   advisorRole=role;
@@ -8966,7 +8997,14 @@ function firstIncompleteRole(){
 }
 function ensureNextMoveRole(){
   if(isInitialMarket()){
-    nextMoveSelectedRole=currentInitialPhase();
+    const allowed=initialBlockRoles().filter(r=>roleCount(state.me,r)<LIMITS[r]);
+    if(!allowed.length){
+      nextMoveSelectedRole=null;
+      return null;
+    }
+    if(!allowed.includes(nextMoveSelectedRole)){
+      nextMoveSelectedRole=initialBlockPriorityRole()||allowed[0];
+    }
     return nextMoveSelectedRole;
   }
   if(!nextMoveSelectedRole || roleCount(state.me,nextMoveSelectedRole)>=LIMITS[nextMoveSelectedRole]){
@@ -8975,8 +9013,8 @@ function ensureNextMoveRole(){
   return nextMoveSelectedRole;
 }
 function setNextMoveRole(role,btn){
-  if(isInitialMarket() && role!==currentInitialPhase()){
-    alert(`Asta iniziale: la fase corrente è ${currentInitialPhase()}.`);
+  if(isInitialMarket() && !initialBlockRoles().includes(role)){
+    alert(`Asta iniziale: il blocco corrente è ${initialBlockLabel()}. Puoi scegliere solo ${allowedInitialRoleText()}.`);
     return;
   }
   nextMoveSelectedRole=role;
@@ -9036,9 +9074,9 @@ function renderNextMove(){
     advice+='Mantieni equilibrio con il budget dei reparti successivi.';
   }
 
-  if(role==='P') advice+=' Finché i portieri non sono completi, il flusso naturale resta P → D → C → A.';
-  if(role==='D') advice+=' Terminati i difensori, passa ai centrocampisti.';
-  if(role==='C') advice+=' Terminato il centrocampo, conserva il budget necessario per l’attacco.';
+  if(role==='P') advice+=' Nel blocco P + D puoi alternare liberamente portieri e difensori.';
+  if(role==='D') advice+=' Nel blocco P + D puoi alternare liberamente difensori e portieri.';
+  if(role==='C') advice+=' Nel blocco C + A puoi alternare liberamente centrocampisti e attaccanti.';
 
   adviceEl.textContent=advice;
 
@@ -10494,7 +10532,7 @@ function buyFromListone(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p || alreadyBoughtPlayer(p.name) || isUnavailablePlayer(p.name)) return;
   if(!marketRoleAllowed(p.role)){
-    alert(`Asta iniziale: fase ${currentInitialPhase()}. In questo momento puoi acquistare solo ${roleName(currentInitialPhase()).toLowerCase()}.`);
+    alert(`Asta iniziale: blocco ${initialBlockLabel()}. In questo momento puoi acquistare ${allowedInitialRoleText()}.`);
     return;
   }
   openBuy();
@@ -10675,7 +10713,7 @@ function closeParticipant(){
 }
 
 function roleName(r){return {P:'Portieri',D:'Difensori',C:'Centrocampisti',A:'Attaccanti'}[r]}
-function itemHTML(x){return `<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div><span class="historyMarketTag">${esc(x.marketSessionName||'Asta iniziale')}${x.marketType==='initial'&&x.marketPhase?` · ${x.marketPhase}`:''}</span></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="delete" onclick="del('${x.id}')">×</button></div></div>`}
+function itemHTML(x){return `<div class="item"><div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div><span class="historyMarketTag">${esc(x.marketSessionName||'Asta iniziale')}${x.marketType==='initial'&&x.marketPhase?` · ${x.marketPhase==='PD'?'P + D':x.marketPhase==='CA'?'C + A':x.marketPhase}`:''}</span></div><div style="display:flex;align-items:center"><div class="price">${x.price}</div><button class="delete" onclick="del('${x.id}')">×</button></div></div>`}
 function esc(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]))}
 
 function normalizePlayerText(s){
@@ -10871,7 +10909,7 @@ function saveBuy(){
 
   if(!name||!price||price<1){hint.textContent='Inserisci nome e prezzo.';hint.className='hint danger';updateBuyPreview();return}
   if(!marketRoleAllowed(role)){
-    hint.textContent=`Asta iniziale: fase ${currentInitialPhase()}. Puoi registrare solo ${roleName(currentInitialPhase()).toLowerCase()}.`;
+    hint.textContent=`Asta iniziale: blocco ${initialBlockLabel()}. Puoi registrare ${allowedInitialRoleText()}.`;
     hint.className='hint danger';
     updateBuyPreview();
     return;
