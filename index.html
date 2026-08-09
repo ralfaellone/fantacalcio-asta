@@ -5030,6 +5030,74 @@ body.player-detail-open{
   .buyAiRangeBox b{font-size:12px}
 }
 
+
+/* V63 - Strategia per slot + alternative intelligenti */
+.slotPlanBox{
+  margin-top:10px;
+  padding:9px;
+  border-radius:12px;
+  background:#0a1727;
+  border:1px solid rgba(142,164,189,.14);
+}
+.slotPlanHead{
+  display:flex;justify-content:space-between;gap:8px;align-items:center
+}
+.slotPlanTitle{font-size:9px;font-weight:950}
+.slotPlanBudget{font-size:9px;font-weight:950;color:#f6d66d}
+.slotPlanGrid{
+  margin-top:7px;
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:5px;
+}
+.slotPlanItem{
+  padding:7px;
+  border-radius:9px;
+  background:#081321;
+  border:1px solid rgba(142,164,189,.12);
+}
+.slotPlanItem.filled{opacity:.55}
+.slotPlanItem.active{
+  border-color:rgba(57,217,138,.35);
+  background:#092119;
+}
+.slotPlanItem span{
+  display:block;
+  font-size:6px;
+  color:var(--muted);
+}
+.slotPlanItem b{
+  display:block;
+  margin-top:2px;
+  font-size:8px;
+}
+.slotAltRow{
+  margin-top:5px;
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.slotAltChip{
+  border:1px solid rgba(137,92,246,.30);
+  background:#1b1029;
+  color:#d8c4ff;
+  border-radius:999px;
+  padding:4px 6px;
+  font-size:6px;
+  font-weight:850;
+}
+.slotIntent{
+  display:inline-block;
+  margin-top:4px;
+  padding:3px 6px;
+  border-radius:999px;
+  background:#2a230b;
+  color:#f6d66d;
+  border:1px solid rgba(242,201,76,.28);
+  font-size:6px;
+  font-weight:950;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5040,7 +5108,7 @@ body.player-detail-open{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V62.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V63</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6458,6 +6526,111 @@ function strongRosterSlotLabel(role){
   return map[role]?.[Math.max(0,n-1)]||`${role}${n}`;
 }
 
+
+function slotSpec(role,position){
+  const specs={
+    P:[
+      {label:'P1 TITOLARE',intent:'AFFIDABILITÀ',bonusW:.05,disciplineW:.15,continuityW:.28,qualityW:.32,fitW:.10,affordW:.10},
+      {label:'P2 SECONDO',intent:'SICUREZZA',bonusW:.02,disciplineW:.13,continuityW:.25,qualityW:.22,fitW:.10,affordW:.28},
+      {label:'P3 RISERVA',intent:'RISPARMIO',bonusW:0,disciplineW:.10,continuityW:.12,qualityW:.13,fitW:.05,affordW:.60}
+    ],
+    D:[
+      {label:'D1 PREMIUM MOD.',intent:'MODIFICATORE',bonusW:.10,disciplineW:.17,continuityW:.20,qualityW:.28,fitW:.15,affordW:.10},
+      {label:'D2 BONUS',intent:'BONUS',bonusW:.28,disciplineW:.10,continuityW:.15,qualityW:.22,fitW:.15,affordW:.10},
+      {label:'D3 VOTO',intent:'VOTO',bonusW:.08,disciplineW:.20,continuityW:.25,qualityW:.22,fitW:.15,affordW:.10},
+      {label:'D4 MODIFICATORE',intent:'MODIFICATORE',bonusW:.06,disciplineW:.18,continuityW:.22,qualityW:.22,fitW:.20,affordW:.12},
+      {label:'D5 ROTAZIONE',intent:'ROTAZIONE',bonusW:.08,disciplineW:.13,continuityW:.18,qualityW:.18,fitW:.18,affordW:.25},
+      {label:'D6 PROFONDITÀ',intent:'VALORE',bonusW:.06,disciplineW:.10,continuityW:.14,qualityW:.14,fitW:.16,affordW:.40},
+      {label:'D7 PROFONDITÀ',intent:'VALORE',bonusW:.05,disciplineW:.10,continuityW:.12,qualityW:.12,fitW:.15,affordW:.46},
+      {label:'D8 COMPLETAMENTO',intent:'RISPARMIO',bonusW:.03,disciplineW:.08,continuityW:.10,qualityW:.09,fitW:.10,affordW:.60}
+    ],
+    C:[
+      {label:'C1 TOP BONUS',intent:'BONUS',bonusW:.34,disciplineW:.08,continuityW:.15,qualityW:.25,fitW:.10,affordW:.08},
+      {label:'C2 BONUS',intent:'BONUS',bonusW:.30,disciplineW:.08,continuityW:.15,qualityW:.22,fitW:.12,affordW:.13},
+      {label:'C3 TITOLARE',intent:'TITOLARITÀ',bonusW:.18,disciplineW:.11,continuityW:.24,qualityW:.20,fitW:.15,affordW:.12},
+      {label:'C4 QUALITÀ',intent:'QUALITÀ',bonusW:.20,disciplineW:.10,continuityW:.16,qualityW:.23,fitW:.17,affordW:.14},
+      {label:'C5 ROTAZIONE',intent:'ROTAZIONE',bonusW:.14,disciplineW:.10,continuityW:.16,qualityW:.15,fitW:.18,affordW:.27},
+      {label:'C6 PROFONDITÀ',intent:'VALORE',bonusW:.10,disciplineW:.09,continuityW:.13,qualityW:.12,fitW:.16,affordW:.40},
+      {label:'C7 PROFONDITÀ',intent:'VALORE',bonusW:.08,disciplineW:.08,continuityW:.12,qualityW:.10,fitW:.14,affordW:.48},
+      {label:'C8 COMPLETAMENTO',intent:'RISPARMIO',bonusW:.05,disciplineW:.07,continuityW:.08,qualityW:.08,fitW:.10,affordW:.62}
+    ],
+    A:[
+      {label:'A1 TOP',intent:'TOP',bonusW:.38,disciplineW:.05,continuityW:.14,qualityW:.28,fitW:.08,affordW:.07},
+      {label:'A2 SECONDA FASCIA',intent:'BONUS',bonusW:.32,disciplineW:.06,continuityW:.15,qualityW:.23,fitW:.10,affordW:.14},
+      {label:'A3 TITOLARE',intent:'TITOLARITÀ',bonusW:.25,disciplineW:.07,continuityW:.20,qualityW:.20,fitW:.12,affordW:.16},
+      {label:'A4 ROTAZIONE',intent:'ROTAZIONE',bonusW:.18,disciplineW:.08,continuityW:.15,qualityW:.15,fitW:.14,affordW:.30},
+      {label:'A5 SCOMMESSA',intent:'UPSIDE',bonusW:.22,disciplineW:.06,continuityW:.08,qualityW:.15,fitW:.14,affordW:.35},
+      {label:'A6 COMPLETAMENTO',intent:'RISPARMIO',bonusW:.10,disciplineW:.06,continuityW:.08,qualityW:.08,fitW:.08,affordW:.60}
+    ]
+  };
+  const arr=specs[role]||[];
+  return arr[Math.min(Math.max(0,position-1),arr.length-1)]||{label:`${role}${position}`,intent:'EQUILIBRIO',bonusW:.15,disciplineW:.1,continuityW:.15,qualityW:.2,fitW:.15,affordW:.25};
+}
+
+function nextSlotSpec(role){
+  return slotSpec(role,Math.min(LIMITS[role],roleCount(state.me,role)+1));
+}
+
+function slotCandidateScore(x,spec){
+  const quality=Number(x.score||x.ai?.score||50);
+  return Math.round(clamp(
+    Number(x.bonusScore||50)*spec.bonusW +
+    Number(x.disciplineScore||65)*spec.disciplineW +
+    Number(x.availabilityScore||55)*spec.continuityW +
+    quality*spec.qualityW +
+    Number(x.fit||50)*spec.fitW +
+    Number(x.afford||50)*spec.affordW
+  ,1,99));
+}
+
+function slotAlternatives(target,role,spec){
+  const pool=strongRosterCandidates(role,10)
+    .filter(x=>x.index!==target.index)
+    .map(x=>({...x,_slotScore:slotCandidateScore(x,spec)}))
+    .sort((a,b)=>b._slotScore-a._slotScore);
+
+  const quality=pool[0]||null;
+  const targetPx=liveTop5StrategicPrices(target);
+  const cheaper=pool
+    .filter(x=>liveTop5StrategicPrices(x).ideal < targetPx.ideal)
+    .sort((a,b)=>{
+      const ap=liveTop5StrategicPrices(a).ideal;
+      const bp=liveTop5StrategicPrices(b).ideal;
+      const as=(a._slotScore*1.15)-ap;
+      const bs=(b._slotScore*1.15)-bp;
+      return bs-as;
+    })[0]||null;
+
+  const functionAlt=pool.find(x=>{
+    if(spec.intent==='BONUS'||spec.intent==='TOP')return Number(x.bonusScore)>=70;
+    if(spec.intent==='MODIFICATORE'||spec.intent==='VOTO')return Number(x.disciplineScore)>=75&&Number(x.availabilityScore)>=70;
+    if(spec.intent==='TITOLARITÀ'||spec.intent==='SICUREZZA')return Number(x.availabilityScore)>=75;
+    return true;
+  })||null;
+
+  const seen=new Set(), out=[];
+  [['Qualità',quality],['Funzione',functionAlt],['Risparmio',cheaper]].forEach(([type,x])=>{
+    if(x && !seen.has(x.index)){
+      seen.add(x.index);
+      out.push({type,x});
+    }
+  });
+  return out.slice(0,3);
+}
+
+function slotPlanRows(){
+  const roles=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
+  const rows=[];
+  roles.forEach(role=>{
+    for(let i=1;i<=LIMITS[role];i++){
+      const spec=slotSpec(role,i);
+      const filled=i<=roleCount(state.me,role);
+      rows.push({role,position:i,spec,filled});
+    }
+  });
+  return rows;
+}
+
 function strongRosterTargetReason(x){
   const bits=[];
   if(Number(x.bonusScore)>=72)bits.push('bonus alto');
@@ -6474,17 +6647,30 @@ function strongRosterTargets(limit=5){
   const roles=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
   const openRoles=roles.filter(r=>roleCount(state.me,r)<LIMITS[r]);
   const pool=[];
+
   openRoles.forEach(role=>{
-    strongRosterCandidates(role,4).forEach((x,rank)=>{
+    const spec=nextSlotSpec(role);
+    strongRosterCandidates(role,8).forEach((x,rank)=>{
       const need=(LIMITS[role]-roleCount(state.me,role))/LIMITS[role];
-      const slotBoost=rank===0?8:rank===1?4:0;
-      const modifierBoost=role==='D'&&activeFormationPlan().xi?.D>=4?6:0;
-      pool.push({...x,_role:role,_rank:rank,_pickScore:(Number(x.score)||50)+need*12+slotBoost+modifierBoost});
+      const slotScore=slotCandidateScore(x,spec);
+      const px=liveTop5StrategicPrices(x);
+      const capPenalty=(x.slotPlan?.cap>0 && px.ideal>x.slotPlan.cap)
+        ? Math.min(18,Math.round((px.ideal/x.slotPlan.cap-1)*20))
+        : 0;
+      pool.push({
+        ...x,
+        _role:role,
+        _rank:rank,
+        _slotSpec:spec,
+        _slotScore:slotScore,
+        _pickScore:slotScore + need*10 + (rank===0?5:rank===1?2:0) - capPenalty
+      });
     });
   });
+
   pool.sort((a,b)=>b._pickScore-a._pickScore);
+
   const out=[], perRole={};
-  // Garantisce almeno una scelta per ciascun ruolo aperto del blocco, quando possibile.
   openRoles.forEach(role=>{
     const x=pool.find(y=>y._role===role&&!out.includes(y));
     if(x&&out.length<limit){out.push(x);perRole[role]=1;}
@@ -6493,7 +6679,8 @@ function strongRosterTargets(limit=5){
     if(out.length>=limit)break;
     if(out.includes(x))continue;
     if((perRole[x._role]||0)>=3)continue;
-    out.push(x);perRole[x._role]=(perRole[x._role]||0)+1;
+    out.push(x);
+    perRole[x._role]=(perRole[x._role]||0)+1;
   }
   return out.slice(0,limit).sort((a,b)=>b._pickScore-a._pickScore);
 }
@@ -6588,16 +6775,40 @@ function renderStrongRosterAI(){
       </div>
 
       <div class="rosaForteBlock"><b>🧠 Lettura AI:</b> ${strongRosterVerdict(g)}</div>
+
+      <div class="slotPlanBox">
+        <div class="slotPlanHead">
+          <div class="slotPlanTitle">🧩 PIANO SLOT ATTUALE</div>
+          <div class="slotPlanBudget">${budget(state.me)} cr disponibili</div>
+        </div>
+        <div class="slotPlanGrid">
+          ${slotPlanRows().filter(x=>x.position<=Math.min(LIMITS[x.role],roleCount(state.me,x.role)+2)).map(x=>`
+            <div class="slotPlanItem ${x.filled?'filled':(!x.filled&&x.position===roleCount(state.me,x.role)+1?'active':'')}">
+              <span>${x.role}${x.position} · ${x.filled?'COPERTO':'DA COPRIRE'}</span>
+              <b>${x.spec.label}</b>
+              <span>${x.spec.intent}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
       <div class="rosaForteTargetsTitle">🎯 5 ACQUISTI CHE MIGLIORANO DI PIÙ LA TUA ROSA ADESSO</div>
       ${targets.length?targets.map((x,n)=>{
         const px=liveTop5StrategicPrices(x);
-        const slot=strongRosterSlotLabel(x.p.role);
+        const spec=x._slotSpec||nextSlotSpec(x.p.role);
+        const alts=slotAlternatives(x,x.p.role,spec);
         return `<div class="rosaForteTarget" onclick="openAIForPlayer(${x.index})">
           <div class="rosaForteTargetRank">${n+1}</div>
           <div>
             <div class="rosaForteTargetName">${esc(x.p.name)} <span class="strongScore ${strongScoreClass(x.score)}">${Math.round(x.score)}/99</span></div>
             <div class="rosaForteTargetMeta">${x.p.role} · ${esc(x.p.team)} · ${strongRosterTargetReason(x)}</div>
-            <span class="rosaForteSlot">${slot}</span>
+            <span class="rosaForteSlot">${spec.label}</span>
+            <span class="slotIntent">${spec.intent}</span>
+            ${alts.length?`<div class="slotAltRow">
+              ${alts.map(a=>{
+                const apx=liveTop5StrategicPrices(a.x);
+                return `<span class="slotAltChip">${a.type}: ${esc(a.x.p.name)} · ${apx.low}-${apx.maxRec}</span>`;
+              }).join('')}
+            </div>`:''}
           </div>
           <div class="rosaForteTargetPrice">${px.low}-${px.maxRec}<small>IDEALE ${px.ideal} · MAX ${px.maxRec}</small></div>
         </div>`;
