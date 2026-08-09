@@ -5131,7 +5131,7 @@ body.player-detail-open{
 .dynamicPlanSave{margin-top:7px;font-size:7px;line-height:1.45;color:#bda9ff}
 
 
-/* V66.5 - Dashboard Compact + fix caricamento D.S. AI */
+/* V67 - Dashboard Compact + fix caricamento D.S. AI */
 .dsQuickBar{margin-top:12px;min-height:54px;padding:9px 12px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(135deg,rgba(22,42,64,.92),rgba(10,25,40,.96));display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:9px;cursor:pointer}
 .dsQuickIcon{font-size:23px;line-height:1}.dsQuickText{min-width:0}.dsQuickText b{display:block;font-size:13px}.dsQuickText span{display:block;margin-top:2px;font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dsQuickGo{font-size:10px;font-weight:950;color:#ffd13b;white-space:nowrap}
 #home .section:first-of-type{margin-bottom:2px}
@@ -5146,7 +5146,7 @@ nav button .ico{font-size:19px!important}
 .dsAiTabs button.active{border-color:#d8a91f;color:#ffd13b;background:#2a230d}
 .dsSection{scroll-margin-top:58px;margin-top:12px}.dsSection>h2{margin-bottom:4px}
 
-/* V66.5 - Modulo sempre visibile nel Direttore Sportivo */
+/* V67 - Modulo sempre visibile nel Direttore Sportivo */
 .dsModuleBox{margin:10px 0 8px;padding:9px;border-radius:13px;background:#0a1727;border:1px solid rgba(142,164,189,.14)}
 .dsModuleTop{display:flex;justify-content:space-between;gap:8px;align-items:center}
 .dsModuleTop b{display:block;font-size:8px}.dsModuleTop span{display:block;margin-top:2px;font-size:6px;color:var(--muted)}
@@ -5155,6 +5155,14 @@ nav button .ico{font-size:19px!important}
 .dsModuleButtons{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
 .dsModuleBtn{border:1px solid rgba(142,164,189,.18);background:#081321;color:#cbd6e5;border-radius:9px;padding:7px 3px;font-size:7px;font-weight:950}
 .dsModuleBtn.active{border-color:#39d98a;background:#0d3827;color:#58e7a4}
+
+
+/* V67 - Budget AI Dinamico */
+.dynamicBudgetLive{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:7px}
+.dynamicBudgetLive>div{padding:6px 3px;text-align:center;border-radius:8px;background:#081321;border:1px solid rgba(142,164,189,.10)}
+.dynamicBudgetLive span{display:block;font-size:5px;color:var(--muted)}
+.dynamicBudgetLive b{display:block;margin-top:2px;font-size:7px}.dynamicBudgetLive b.pos{color:#58e7a4}.dynamicBudgetLive b.neg{color:#ff8994}
+.dynamicBudgetLive small{display:block;margin-top:2px;font-size:4.8px;color:#9aa9bb}
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -5166,7 +5174,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V66.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6818,19 +6826,94 @@ function strongRosterVerdict(g){
 }
 
 
+
+function purchasePlanDelta(buyerIndex=state.me){
+  const rows=roster(buyerIndex);
+  let expected=0,paid=0;
+  rows.forEach((buy,idx)=>{
+    const pidx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(buy.name));
+    let planned=Math.max(1,Number(buy.price)||1);
+    if(pidx>=0){
+      const a=aiPlayerAnalysis(pidx,buyerIndex);
+      planned=Math.max(1,Number(a?.ideal||a?.low||planned));
+    }
+    expected+=planned; paid+=Number(buy.price)||0;
+  });
+  return {expected,paid,delta:expected-paid}; // positive = saving
+}
+function roleMarketTemperature(role){
+  const buys=(state.purchases||[]).filter(x=>x.role===role);
+  if(buys.length<2)return {ratio:1,label:'NORMALE',pct:0};
+  let actual=0,expected=0,n=0;
+  buys.forEach(b=>{
+    const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(b.name));
+    if(idx<0)return;
+    const a=aiPlayerAnalysis(idx,b.buyer);
+    if(!a)return;
+    actual+=Number(b.price)||0; expected+=Math.max(1,Number(a.ideal)||1); n++;
+  });
+  if(!n)return {ratio:1,label:'NORMALE',pct:0};
+  const ratio=actual/expected,pct=Math.round((ratio-1)*100);
+  return {ratio,label:ratio>1.12?'CARO':ratio<.90?'FAVOREVOLE':'NORMALE',pct};
+}
+function adaptiveRoleShares(){
+  const plan=activeFormationPlan(state.me);
+  const base={...plan.budget};
+  const g=strongRosterGlobal();
+  // Weak departments get a modest increase, strong departments give budget back.
+  ['P','D','C','A'].forEach(r=>{
+    const score=g.roleMap?.[r]?.score||0;
+    if(roleCount(state.me,r)>0){
+      if(score<52)base[r]*=1.10;
+      else if(score>76)base[r]*=.92;
+    }
+    const temp=roleMarketTemperature(r);
+    // Do not chase inflated markets; allow a little more room in favorable markets.
+    if(temp.ratio>1.15)base[r]*=.95;
+    else if(temp.ratio<.88)base[r]*=1.04;
+  });
+  const open=['P','D','C','A'].filter(r=>roleCount(state.me,r)<LIMITS[r]);
+  const den=open.reduce((s,r)=>s+(base[r]||0),0)||1;
+  const out={P:0,D:0,C:0,A:0};
+  open.forEach(r=>out[r]=base[r]/den);
+  return out;
+}
+function adaptiveBudgetPlan(){
+  const cash=budget(state.me),slots=remainingRosterSlots(state.me);
+  const safety=Math.max(slots,Math.round((Number(state.initialBudget)||INITIAL||600)*.04));
+  const usable=Math.max(0,cash-safety);
+  const shares=adaptiveRoleShares();
+  const delta=purchasePlanDelta(state.me);
+  const roles={};
+  ['P','D','C','A'].forEach(r=>{
+    const missing=Math.max(0,LIMITS[r]-roleCount(state.me,r));
+    const temp=roleMarketTemperature(r);
+    const allocation=missing?Math.max(missing,Math.round(usable*(shares[r]||0))):0;
+    roles[r]={missing,allocation,avg:missing?Math.max(1,Math.round(allocation/missing)):0,temp};
+  });
+  return {cash,slots,safety,usable,shares,roles,delta};
+}
+function adaptiveSlotCap(role,baseCap){
+  const ap=adaptiveBudgetPlan(),rp=ap.roles[role];
+  if(!rp||!rp.missing)return 0;
+  const reserveForRest=Math.max(0,rp.missing-1);
+  const roleHard=Math.max(1,rp.allocation-reserveForRest);
+  let cap=Math.min(baseCap,roleHard);
+  // Savings can be partially reinvested, overspend tightens the cap.
+  if(ap.delta.delta>0)cap+=Math.min(Math.round(ap.delta.delta*.30),Math.max(1,Math.round(baseCap*.12)));
+  if(ap.delta.delta<0)cap-=Math.min(Math.round(Math.abs(ap.delta.delta)*.22),Math.max(1,Math.round(baseCap*.10)));
+  if(rp.temp.ratio>1.15)cap=Math.round(cap*.96);
+  return Math.max(1,Math.min(safeMaxBid(state.me),cap));
+}
+
 function dynamicPlanReserve(){
-  const cash=budget(state.me);
+  const ap=adaptiveBudgetPlan();
   const blockRoles=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
   const currentMissing=blockRoles.reduce((s,r)=>s+Math.max(0,LIMITS[r]-roleCount(state.me,r)),0);
   const futureRoles=(isInitialMarket()&&currentInitialPhase()==='PD')?['C','A']:[];
   const futureMissing=futureRoles.reduce((s,r)=>s+Math.max(0,LIMITS[r]-roleCount(state.me,r)),0);
-  let reserve=0;
-  futureRoles.forEach(r=>{
-    const plan=liveRoleBudgetPlan(r,state.me);
-    reserve+=Math.max(plan.min,Math.round((plan.min+plan.max)*.52));
-  });
-  reserve=Math.min(cash,Math.max(0,reserve));
-  return {cash,currentMissing,futureMissing,reserve,spendable:Math.max(0,cash-reserve),futureRoles};
+  const reserve=Math.min(ap.cash,futureRoles.reduce((s,r)=>s+(ap.roles[r]?.allocation||0),0)+ap.safety);
+  return {cash:ap.cash,currentMissing,futureMissing,reserve,spendable:Math.max(0,ap.cash-reserve),futureRoles,adaptive:ap};
 }
 function dynamicPlanStatus(){
   const r=dynamicPlanReserve(),slots=remainingRosterSlots(state.me);
@@ -6847,8 +6930,9 @@ function dynamicPlanTargets(limit=3){
   const status=dynamicPlanStatus();
   return strongRosterTargets(Math.max(5,limit)).slice(0,limit).map(x=>{
     const px=liveTop5StrategicPrices(x),spec=x._slotSpec||nextSlotSpec(x.p.role);
-    const cap=status.level==='bad'?Math.min(px.maxRec,Math.max(px.low,Math.round(px.ideal*.88))):
+    const statusCap=status.level==='bad'?Math.min(px.maxRec,Math.max(px.low,Math.round(px.ideal*.88))):
       status.level==='warn'?Math.min(px.maxRec,Math.max(px.low,Math.round(px.ideal*.96))):px.maxRec;
+    const cap=Math.min(statusCap,adaptiveSlotCap(x.p.role,statusCap));
     return {...x,_dynPx:px,_dynSpec:spec,_dynCap:cap};
   });
 }
@@ -6879,6 +6963,10 @@ function renderDynamicRosterPlan(){
       <div class="dynamicPlanMetric"><span>SPENDIBILE ORA</span><b>${s.spendable}</b></div>
       <div class="dynamicPlanMetric"><span>MEDIA / SLOT</span><b>${s.avg}</b></div>
     </div>
+    ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(); const d=ap.delta.delta; return `<div class="dynamicBudgetLive">
+      <div><span>ANDAMENTO ACQUISTI</span><b class="${d>=0?'pos':'neg'}">${d>=0?'+':''}${d} cr vs piano</b></div>
+      ${['P','D','C','A'].map(r=>`<div><span>${r} DISPONIBILE</span><b>${ap.roles[r].allocation}</b><small>${ap.roles[r].temp.label}${ap.roles[r].temp.pct?` ${ap.roles[r].temp.pct>0?'+':''}${ap.roles[r].temp.pct}%`:''}</small></div>`).join('')}
+    </div>`})()}
     <div class="dynamicPlanGoal"><div class="dynamicPlanGoalTitle">🎯 COSA FARE ADESSO</div>
     <div class="dynamicPlanGoalText">${s.reason} Budget da proteggere: <b>${reserveText}</b>.</div></div>
     <div class="dynamicPlanTargets">${targets.map((x,n)=>`<div class="dynamicPlanTarget" onclick="openAIForPlayer(${x.index})">
@@ -7355,10 +7443,12 @@ function auctionSimulatorDecision(playerIndex,price){
   if(!p||!a)return null;
   const bid=Math.max(0,Number(price)||0);
   const safe=safeMaxBid(state.me);
-  const stop=Math.max(1,Math.min(a.maxRec,safe));
+  const rawStop=Math.max(1,Math.min(a.maxRec,safe));
+  const stop=Math.max(1,Math.min(rawStop,adaptiveSlotCap(p.role,rawStop)));
   const impact=simulatedRosterImpact(playerIndex,bid);
   const rivals=rivalLiveSummary(playerIndex,bid);
   const alts=liveStrategicAlternatives(playerIndex,3);
+  const budgetPlan=adaptiveBudgetPlan();
   const slotNeeded=roleCount(state.me,p.role)<LIMITS[p.role];
   const roleAllowed=marketRoleAllowed(p.role);
 
@@ -7391,7 +7481,9 @@ function auctionSimulatorDecision(playerIndex,price){
 
   if(rivals.strong>=2 && cls!=='stop')why+=` Pressione rivali alta: ${rivals.strong} avversari forti.`;
   const bestAlt=alts[0]||null;
-  return {action,cls,why,stop,impact,rivals,bestAlt};
+  if(budgetPlan.delta.delta>4 && cls!=='stop')why+=` Hai ${budgetPlan.delta.delta} cr di vantaggio rispetto al piano acquisti.`;
+  if(budgetPlan.delta.delta<-4)why+=` Sei ${Math.abs(budgetPlan.delta.delta)} cr sopra il piano: il D.S. sta comprimendo i tetti successivi.`;
+  return {action,cls,why,stop,impact,rivals,bestAlt,budgetPlan};
 }
 
 function renderAuctionSimulator(playerIndex,price){
