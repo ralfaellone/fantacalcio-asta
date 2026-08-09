@@ -5131,6 +5131,11 @@ body.player-detail-open{
 .dynamicPlanSave{margin-top:7px;font-size:7px;line-height:1.45;color:#bda9ff}
 
 
+/* V66.1 - Dashboard Compact: elimina KPI duplicati e riduce accesso D.S. AI */
+.dsQuickBar{margin-top:12px;min-height:54px;padding:9px 12px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(135deg,rgba(22,42,64,.92),rgba(10,25,40,.96));display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:9px;cursor:pointer}
+.dsQuickIcon{font-size:23px;line-height:1}.dsQuickText{min-width:0}.dsQuickText b{display:block;font-size:13px}.dsQuickText span{display:block;margin-top:2px;font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dsQuickGo{font-size:10px;font-weight:950;color:#ffd13b;white-space:nowrap}
+#home .section:first-of-type{margin-bottom:2px}
+.dashHeroRoles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}.dashHeroRoles span{padding:6px 3px;border-radius:9px;background:rgba(5,17,31,.55);text-align:center;font-size:8px;color:var(--muted)}.dashHeroRoles b{font-size:10px;color:var(--text)}
 /* V66 - Dashboard compatta + Direttore Sportivo AI dedicato */
 nav{grid-template-columns:repeat(6,1fr)!important;gap:1px!important}
 nav button{font-size:9px!important;padding-left:0!important;padding-right:0!important}
@@ -5150,7 +5155,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V66</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V66.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5161,38 +5166,15 @@ nav button .ico{font-size:19px!important}
     <div class="hint">La situazione della tua asta in un colpo d’occhio.</div>
   </div>
 
-  <div class="card" style="margin-top:12px">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-      <div>
-        <div class="k">La mia squadra</div>
-        <div class="v" id="dashboardTeamName" style="font-size:21px">—</div>
-      </div>
-      <span class="tag good">LIVE</span>
-    </div>
-    <div class="dashKpis">
-      <div class="dashKpi"><span>CREDITI</span><b id="dashBudget">—</b></div>
-      <div class="dashKpi"><span>SPESO</span><b id="dashSpent">—</b></div>
-      <div class="dashKpi"><span>ROSA</span><b id="dashRoster">—</b></div>
-      <div class="dashKpi"><span>MAX SICURA</span><b id="dashSafe">—</b></div>
-    </div>
-    <div id="dashRoles" class="dashRoles"></div>
-  </div>
-
   <div class="section" style="margin-top:14px">
     <h2>🤖 Prossima mossa AI</h2>
     <div id="dashboardNextMove"></div>
   </div>
 
-  <div class="section" style="margin-top:14px">
-    <h2>🧠 Direttore Sportivo AI</h2>
-    <div class="hint">Il cervello della tua rosa, senza appesantire la Dashboard.</div>
-    <div class="card dsMiniCard" style="margin-top:8px">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
-        <div><div class="k">CENTRO STRATEGICO</div><div class="v" style="font-size:18px">Piano, forza rosa e strategia</div></div>
-        <span class="tag good">AI</span>
-      </div>
-      <button class="primary dsOpenBtn" onclick="openDSAI()">APRI D.S. AI</button>
-    </div>
+  <div class="dsQuickBar" onclick="openDSAI()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDSAI()}">
+    <div class="dsQuickIcon">🧠</div>
+    <div class="dsQuickText"><b>Direttore Sportivo AI</b><span>Piano rosa · forza · strategia</span></div>
+    <div class="dsQuickGo">APRI ›</div>
   </div>
 
   <div class="section" style="margin-top:14px">
@@ -6339,6 +6321,9 @@ function renderPremiumDashboardHero(){
       <div class="dashPremiumMetric"><span>SPESI</span><b>${spentNow}</b></div>
       <div class="dashPremiumMetric"><span>MAX SICURA</span><b>${maxSafe}</b></div>
       <div class="dashPremiumMetric"><span>PIANO AI</span><b>${plan?plan.name:'—'}</b></div>
+    </div>
+    <div class="dashHeroRoles">
+      <span>P <b>${roleCount(me,'P')}/${LIMITS.P}</b></span><span>D <b>${roleCount(me,'D')}/${LIMITS.D}</b></span><span>C <b>${roleCount(me,'C')}/${LIMITS.C}</b></span><span>A <b>${roleCount(me,'A')}/${LIMITS.A}</b></span>
     </div>`;
 }
 
