@@ -5040,7 +5040,7 @@ body.player-detail-open{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V62.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · Modificatore · V62.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6499,13 +6499,58 @@ function strongRosterTargets(limit=5){
 }
 
 function strongRosterVerdict(g){
-  if(!roster(state.me).length)return 'Rosa ancora vuota: il punteggio crescerà con gli acquisti. Parti costruendo bene gli slot principali senza bruciare il budget.';
-  const weak=['P','D','C','A'].map(r=>g.roleMap[r]).sort((a,b)=>a.score-b.score)[0];
-  let text=`Reparto da rinforzare: ${roleName(weak.role)} (${weak.score}/99). `;
-  if(g.budgetScore<55)text+='Budget sotto pressione: privilegia valore e alternative. ';
-  else text+='Budget ancora gestibile. ';
-  if(g.modifier<60 && roleCount(state.me,'D')<4)text+='Per il modificatore serve aumentare qualità/profondità tra P e D.';
-  else if(g.modifier>=75)text+='Base difensiva adatta a sfruttare il modificatore.';
+  if(!roster(state.me).length){
+    if(isInitialMarket()){
+      return `Rosa ancora vuota. Nel blocco ${initialBlockLabel()} l'AI valuta solo ${allowedInitialRoleText()} come priorità operative, proteggendo il budget per i blocchi successivi.`;
+    }
+    return 'Rosa ancora vuota: il punteggio crescerà con gli acquisti. Parti costruendo bene gli slot principali senza bruciare il budget.';
+  }
+
+  const candidateRoles=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
+  const openCandidateRoles=candidateRoles
+    .filter(r=>roleCount(state.me,r)<LIMITS[r]);
+
+  const pool=(openCandidateRoles.length?openCandidateRoles:candidateRoles)
+    .map(r=>g.roleMap[r])
+    .sort((a,b)=>a.score-b.score);
+
+  const weak=pool[0];
+  let text='';
+
+  if(weak){
+    if(isInitialMarket()){
+      text=`Priorità del blocco ${initialBlockLabel()}: ${roleName(weak.role)} (${weak.score}/99). `;
+    }else{
+      text=`Reparto da rinforzare: ${roleName(weak.role)} (${weak.score}/99). `;
+    }
+  }
+
+  if(g.budgetScore<55){
+    text+='Budget sotto pressione: privilegia valore e alternative. ';
+  }else{
+    text+='Budget ancora gestibile. ';
+  }
+
+  if(isInitialMarket()){
+    if(currentInitialPhase()==='PD'){
+      if(g.modifier<60 && roleCount(state.me,'D')<4){
+        text+='Nel blocco P + D conviene aumentare qualità/profondità difensiva per sfruttare meglio il modificatore.';
+      }else if(g.modifier>=75){
+        text+='La base P + D è già adatta a sostenere il modificatore.';
+      }else{
+        text+='Continua a bilanciare portiere e difensori senza consumare il budget destinato a C + A.';
+      }
+    }else{
+      text+='Nel blocco C + A la priorità operativa resta solo tra centrocampisti e attaccanti.';
+    }
+  }else{
+    if(g.modifier<60 && roleCount(state.me,'D')<4){
+      text+='Per il modificatore serve aumentare qualità/profondità tra P e D.';
+    }else if(g.modifier>=75){
+      text+='Base difensiva adatta a sfruttare il modificatore.';
+    }
+  }
+
   return text;
 }
 
@@ -6530,6 +6575,7 @@ function renderStrongRosterAI(){
       <div class="rosaForteRoles">
         ${['P','D','C','A'].map(r=>`<div class="rosaForteMetric"><span>${r}</span><b>${g.roleMap[r].score}/99</b></div>`).join('')}
       </div>
+      ${isInitialMarket()?`<div class="strongBreakdown" style="margin-top:5px">Priorità operative attuali: <b>${initialBlockLabel()}</b>. Gli altri reparti restano visibili solo come stato generale della rosa.</div>`:''}
       <div class="rosaForteExtra">
         <div class="rosaForteMetric"><span>BONUS</span><b>${g.bonus}</b></div>
         <div class="rosaForteMetric"><span>ANTI-MALUS</span><b>${g.discipline}</b></div>
