@@ -5248,7 +5248,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7192,15 +7192,116 @@ function dynamicPlanStatus(){
   }
   return {...r,level,label,reason,avg,g};
 }
+
+/* V67.7.6 - Prezzo AI individuale per obiettivo:
+   evita che giocatori diversi dello stesso slot abbiano tutti lo stesso IDEALE/MAX. */
+function dynamicIndividualPrice(x){
+  const base=liveTop5StrategicPrices(x);
+  const raw=x.ai||{};
+  const spec=x._slotSpec||nextSlotSpec(x.p.role);
+  const slotScore=Number(x._slotScore||slotCandidateScore(x,spec)||50);
+  const pickScore=Number(x._pickScore||slotScore);
+  const fav=isFavorite(x.p.name);
+  const favMeta=fav?goalMeta(x.p.name):{};
+  const favBoost=favoritePriorityBoost(x.p.name);
+
+  // Qualità reale del singolo profilo.
+  const quality=Number(x.score||raw.score||50);
+  const bonus=Number(x.bonusScore||50);
+  const continuity=Number(x.availabilityScore||55);
+  const discipline=Number(x.disciplineScore||65);
+  const fit=Number(x.fit||50);
+  const formation=Number(x.formation||50);
+  const fvm=Number(x.p.fvm)||0;
+  const qi=Number(x.p.qi)||0;
+
+  const strength=clamp(
+    slotScore*.34 + quality*.16 + bonus*.10 + continuity*.12 +
+    discipline*.07 + fit*.08 + formation*.05 +
+    Math.min(99,fvm*2)*.04 + Math.min(99,qi*4)*.04 +
+    favBoost*.35
+  ,1,99);
+
+  // Parte dal prezzo AI del giocatore, non dal solo target dello slot.
+  const rawIdeal=Math.max(1,Number(raw.ideal||base.ideal||1));
+  const slotIdeal=Math.max(1,Number(base.ideal||rawIdeal));
+  let ideal=Math.round(rawIdeal*.58 + slotIdeal*.42);
+
+  // Differenzia la gerarchia: prima scelta > alternative.
+  const delta=Math.round((strength-65)/8);
+  ideal=Math.max(1,ideal+delta);
+
+  // I preferiti forti possono ricevere un piccolo premio, mai automatico.
+  if(fav){
+    if(favMeta.priority==='high') ideal+=2;
+    else if(favMeta.priority==='medium') ideal+=1;
+    if(Number(favMeta.target)>0)
+      ideal=Math.round(ideal*.82+Number(favMeta.target)*.18);
+  }
+
+  // Mantiene il prezzo coerente con il budget e con il piano slot.
+  const hardSafe=safeMaxBid(state.me);
+  const slotCap=Math.max(base.maxRec,Number(x.slotPlan?.cap||base.maxRec||ideal));
+  const rawMax=Math.max(ideal,Number(raw.maxRec||ideal));
+  let maxRec=Math.round(
+    ideal * (strength>=84?1.25:strength>=75?1.20:strength>=66?1.15:1.10)
+  );
+  maxRec=Math.max(ideal,Math.min(hardSafe,rawMax,Math.max(slotCap,ideal),maxRec));
+
+  const low=Math.max(1,Math.min(ideal,Math.round(ideal*(strength>=75?.78:.74))));
+  const high=Math.max(ideal,Math.min(maxRec,Math.round(ideal*1.10)));
+
+  return {low,ideal,high,maxRec,strength,pickScore};
+}
+
 function dynamicPlanTargets(limit=3){
   const status=dynamicPlanStatus();
-  return strongRosterTargets(Math.max(5,limit)).slice(0,limit).map(x=>{
-    const px=liveTop5StrategicPrices(x),spec=x._slotSpec||nextSlotSpec(x.p.role);
-    const statusCap=status.level==='bad'?Math.min(px.maxRec,Math.max(px.low,Math.round(px.ideal*.88))):
-      status.level==='warn'?Math.min(px.maxRec,Math.max(px.low,Math.round(px.ideal*.96))):px.maxRec;
-    const cap=Math.min(statusCap,adaptiveSlotCap(x.p.role,statusCap));
-    return {...x,_dynPx:px,_dynSpec:spec,_dynCap:cap};
+  const candidates=strongRosterTargets(Math.max(8,limit));
+
+  const rows=candidates.map(x=>{
+    const spec=x._slotSpec||nextSlotSpec(x.p.role);
+    const px=dynamicIndividualPrice({...x,_slotSpec:spec});
+
+    const statusCap=status.level==='bad'
+      ? Math.min(px.maxRec,Math.max(px.low,Math.round(px.ideal*.90)))
+      : status.level==='warn'
+        ? Math.min(px.maxRec,Math.max(px.low,Math.round(px.ideal*.97)))
+        : px.maxRec;
+
+    const cap=Math.min(statusCap,adaptiveSlotCap(x.p.role,statusCap,x.index));
+
+    // Score finale: qualità per lo slot + valore individuale + preferiti,
+    // senza trasformare automaticamente un preferito nella prima scelta.
+    const hierarchyScore=
+      Number(x._pickScore||0) +
+      (px.strength-65)*.45 +
+      favoritePriorityBoost(x.p.name)*.35;
+
+    return {...x,_dynPx:px,_dynSpec:spec,_dynCap:Math.max(px.ideal,cap),_dynHierarchy:hierarchyScore};
   });
+
+  rows.sort((a,b)=>
+    b._dynHierarchy-a._dynHierarchy ||
+    b._dynPx.strength-a._dynPx.strength ||
+    a._dynPx.ideal-b._dynPx.ideal
+  );
+
+  // Evita cloni di prezzo visivi quando la valutazione individuale è diversa.
+  // Se due profili finiscono allo stesso ideale, il migliore prende +1,
+  // purché il budget/cap lo consenta.
+  for(let i=1;i<rows.length;i++){
+    const prev=rows[i-1], cur=rows[i];
+    if(prev.p.role===cur.p.role &&
+       prev._dynPx.ideal===cur._dynPx.ideal &&
+       prev._dynPx.strength>cur._dynPx.strength){
+      const bumped=Math.min(prev._dynCap,prev._dynPx.maxRec,prev._dynPx.ideal+1);
+      if(bumped>prev._dynPx.ideal){
+        prev._dynPx={...prev._dynPx,ideal:bumped,high:Math.max(bumped,prev._dynPx.high)};
+      }
+    }
+  }
+
+  return rows.slice(0,limit);
 }
 function dynamicPlanSavingTip(targets){
   const status=dynamicPlanStatus();
