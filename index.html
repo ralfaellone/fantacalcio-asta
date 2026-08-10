@@ -5244,6 +5244,11 @@ nav button .ico{font-size:19px!important}
 .liveDecisionAlt5{margin-top:8px;padding:8px 9px;border-radius:9px;background:#121b2c;border:1px solid rgba(119,155,255,.24);color:#b9cbff;font-weight:850;line-height:1.4}
 .astaVerdict b{font-size:7px;letter-spacing:.02em}
 
+
+/* V67.9 - AI 5.1 fasce rilancio + alternativa immediata */
+.liveDecisionAlt5.stopAlt{background:#251315;border-color:rgba(255,100,100,.48);color:#ffd0d0;font-size:7px}
+.astaLiveDecisionBadge.wait{border-color:rgba(246,204,70,.5)}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5254,7 +5259,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7960,12 +7965,15 @@ function liveAuctionDecision5(playerIndex,price){
   }else if(treasury.allow>0 && bid>normalStop && bid<=stop){
     action='SFORA COL TESORETTO'; level='treasury'; headline='OBIETTIVO STRATEGICO';
     why=`Il prezzo supera il tetto ordinario di ${normalStop} cr, ma l'AI autorizza il Tesoretto fino a ${stop} cr.`;
-  }else if(bid>=Math.max(a.high,Math.round(stop*.88))){
-    action='ULTIMI CREDITI'; level='danger'; headline='VICINO AL LIMITE';
-    why=`Sei nella zona finale: massimo ${stop} cr. Ogni credito in più riduce il margine per gli slot successivi.`;
-  }else if(bid>=a.ideal){
-    action=`PUOI SALIRE FINO A ${stop}`; level='wait'; headline='FASCIA ALTA';
-    why=`Sei sopra il prezzo ideale di ${a.ideal} cr, ma l'acquisto è ancora sostenibile fino a ${stop}.`;
+  }else if(bid>=Math.max(a.high,stop-1)){
+    action=`ATTENZIONE · MAX ${stop}`; level='danger'; headline='ZONA FINALE';
+    why=`Sei a ${bid} cr: resta solo ${Math.max(0,stop-bid)} cr di margine. Se il prezzo arriva a ${stop}, quello è l'ultimo credito.`;
+  }else if(bid>a.ideal){
+    action=`PUOI RILANCIARE · MAX ${stop}`; level='wait'; headline='SOPRA L’IDEALE';
+    why=`Hai superato l'ideale di ${a.ideal} cr, ma il giocatore è ancora acquistabile. Non oltrepassare ${stop} cr.`;
+  }else if(bid===a.ideal){
+    action='COMPRA'; level='buy'; headline='PREZZO IDEALE';
+    why=`Sei esattamente sul prezzo ideale AI di ${a.ideal} cr.`;
   }else if(bid>=a.low){
     action='COMPRA'; level='buy'; headline='PREZZO GIUSTO';
     why=`Sei nella fascia conveniente ${a.low}-${a.ideal} cr per questo profilo e per la tua rosa.`;
@@ -7988,9 +7996,11 @@ function liveAuctionDecision5(playerIndex,price){
   }
 
   let alternativeText='';
-  if((level==='stop'||level==='danger'||bid>=a.ideal) && bestAlt){
+  if((level==='stop'||level==='danger'||level==='wait'||bid>=a.ideal) && bestAlt){
     const save=bestAlt._liveSaving;
-    alternativeText=`Lascia ${p.name} a ${bid} → punta ${bestAlt.p.name} fino a ${bestAlt._liveMax} cr${save>0?` · risparmio stimato ${save} cr`:''}.`;
+    alternativeText=level==='stop'
+      ? `🔁 ALTERNATIVA IMMEDIATA: ${bestAlt.p.name} · obiettivo ${bestAlt._liveIdeal} cr · NON OLTRE ${bestAlt._liveMax} cr${save>0?` · puoi risparmiare circa ${save} cr`:''}.`
+      : `🔁 Piano B: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · risparmio potenziale ${save} cr`:''}.`;
   }
 
   return {
@@ -8079,7 +8089,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 5.0</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 5.1</div>
           <div class="astaDecisionText">${marketModeText()} · decisione live su prezzo, rosa, piano ${activeFormationPlan().name}, budget, preferiti, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
@@ -8196,7 +8206,7 @@ function evaluateAstaLiveBid(){
     badge.textContent=d.action;
   }
   out.className=`astaVerdict ${verdictClass}`;
-  out.innerHTML=`<b>${esc(d.headline)}</b><br>${esc(d.why)}${d.alternativeText?`<div class="liveDecisionAlt5">${esc(d.alternativeText)}</div>`:''}`;
+  out.innerHTML=`<b>${esc(d.headline)}</b><br>${esc(d.why)}${d.alternativeText?`<div class="liveDecisionAlt5 ${d.level==='stop'?'stopAlt':''}">${esc(d.alternativeText)}</div>`:''}`;
 
   if(delta){
     const idealGap=a.ideal-price;
