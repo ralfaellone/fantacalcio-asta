@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7105,13 +7105,20 @@ function adaptiveRoleShares(){
 
 function aiTreasury(){
   const d=purchasePlanDelta(state.me);
-  const cash=budget(state.me);
+  const cash=Math.max(0,Number(budget(state.me))||0);
   const slots=remainingRosterSlots(state.me);
   const saving=Math.max(0,Math.round(Number(d.delta)||0));
   if(saving<=0 || !slots)return {value:0,label:'NESSUN TESORETTO',delta:d.delta};
-  // Il tesoretto è il risparmio REALE ottenuto rispetto al prezzo ideale
-  // fotografato prima degli acquisti. Non viene redistribuito nei reparti.
-  const value=Math.min(saving,Math.max(0,cash-slots));
+
+  // V69.7 BUDGET GUARD:
+  // il tesoretto è solo una parte del risparmio realmente disponibile.
+  // Prima vengono SEMPRE protetti:
+  // 1) almeno 1 cr per ogni slot ancora vuoto;
+  // 2) la riserva strategica minima del piano.
+  const safety=Math.min(cash,Math.max(slots,Math.round((Number(state.initialBudget)||INITIAL||600)*.04)));
+  const hardCompletionReserve=Math.max(slots,safety);
+  const maxTreasury=Math.max(0,cash-hardCompletionReserve);
+  const value=Math.min(saving,maxTreasury);
   return {value,label:value>0?'TESORETTO DISPONIBILE':'NESSUN TESORETTO',delta:d.delta};
 }
 
@@ -7217,10 +7224,34 @@ function adaptiveBudgetPlan(){
     roles[r]={missing,allocation,avg:missing?Math.max(1,Math.round(allocation/missing)):0,temp};
   });
 
-  const pd=roles.P.allocation+roles.D.allocation;
-  const ca=roles.C.allocation+roles.A.allocation;
-  const totalAllocated=pd+ca+safety+treasury.value;
-  return {cash,slots,safety,treasury,usable,shares,roles,delta,pd,ca,totalAllocated};
+  // V69.7: guardia finale di coerenza.
+  // Il totale mostrato non può MAI superare i crediti reali.
+  let pd=roles.P.allocation+roles.D.allocation;
+  let ca=roles.C.allocation+roles.A.allocation;
+  let treasuryValue=Math.min(treasury.value,Math.max(0,cash-safety-pd-ca));
+
+  // Se per arrotondamenti/vecchi snapshot resta budget non allocato,
+  // torna ai reparti ancora aperti, mai al tesoretto.
+  let allocated=pd+ca+safety+treasuryValue;
+  let free=Math.max(0,cash-allocated);
+  const openNow=['P','D','C','A'].filter(r=>roles[r].missing>0);
+  if(free>0 && openNow.length){
+    let i=0;
+    while(free>0){
+      const r=openNow[i%openNow.length];
+      roles[r].allocation+=1;
+      free--; i++;
+    }
+    ['P','D','C','A'].forEach(r=>{
+      roles[r].avg=roles[r].missing?Math.max(1,Math.round(roles[r].allocation/roles[r].missing)):0;
+    });
+    pd=roles.P.allocation+roles.D.allocation;
+    ca=roles.C.allocation+roles.A.allocation;
+  }
+
+  const treasurySafe={...treasury,value:treasuryValue};
+  const totalAllocated=Math.min(cash,pd+ca+safety+treasuryValue);
+  return {cash,slots,safety,treasury:treasurySafe,usable:pd+ca,shares,roles,delta,pd,ca,totalAllocated};
 }
 function adaptiveSlotCap(role,baseCap,playerIndex=null){
   const ap=adaptiveBudgetPlan(),rp=ap.roles[role];
