@@ -5228,6 +5228,16 @@ nav button .ico{font-size:19px!important}
   color:#9decc6;font-size:6.5px;line-height:1.42;border:1px solid rgba(57,217,138,.20)
 }
 
+
+/* V67.7 - Tesoretto AI */
+.budgetEquation{grid-template-columns:1fr auto 1fr auto 1fr auto 1fr auto 1fr!important}
+.budgetEquation>div.treasury{border-color:rgba(242,201,76,.45);background:#251f0b}
+.budgetEquation>div.treasury b{color:#f6d66d}
+.treasuryBox{margin-top:7px;padding:8px 9px;border-radius:10px;background:#241f0c;border:1px solid rgba(242,201,76,.34)}
+.treasuryBox>div{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.treasuryBox span{font-size:6px;font-weight:950;color:#f6d66d}.treasuryBox b{font-size:9px;color:#f6d66d}
+.treasuryBox p{margin:4px 0 0;font-size:6px;line-height:1.4;color:#c8b982}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5238,7 +5248,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6814,7 +6824,7 @@ function favoriteStrongRows(){
   if(Number(meta.target)>0)ideal=Math.round(ideal*.82+Number(meta.target)*.18);
   const low=Math.max(1,Math.round(ideal*(x.p.role==='P'?.76:.78)));
   let maxRec=Math.max(ideal,Math.round(ideal*(slotScore>=82?1.24:slotScore>=68?1.18:1.12)));
-  maxRec=Math.max(ideal,Math.min(maxRec,adaptiveSlotCap(x.p.role,maxRec)));
+  maxRec=Math.max(ideal,Math.min(maxRec,adaptiveSlotCap(x.p.role,maxRec,x.index)));
   const px={...bp,low,ideal,maxRec}, userMax=Number(meta.max)||0;
   const priceFit=userMax?clamp(78+(userMax-ideal)*2.2,20,99):clamp(82-(ideal-Math.max(1,fvm))*.7,35,95);
   const fit=Math.round(clamp(slotScore*.62+priceFit*.18+q*.12+favoritePriorityBoost(x.p.name)*.65,1,99));
@@ -7028,22 +7038,74 @@ function adaptiveRoleShares(){
   open.forEach(r=>out[r]=base[r]/den);
   return out;
 }
+
+function aiTreasury(){
+  const d=purchasePlanDelta(state.me);
+  const cash=budget(state.me);
+  const slots=remainingRosterSlots(state.me);
+  if(d.delta<=0 || !slots)return {value:0,label:'NESSUN TESORETTO',delta:d.delta};
+  // Conserva la maggior parte del vantaggio; non oltre il 12% del budget residuo.
+  const value=Math.max(0,Math.min(
+    Math.round(d.delta*.75),
+    Math.round(cash*.12),
+    Math.max(0,cash-slots)
+  ));
+  return {value,label:value>0?'TESORETTO DISPONIBILE':'NESSUN TESORETTO',delta:d.delta};
+}
+
+function treasuryBestUse(){
+  const t=aiTreasury();
+  if(!t.value)return {role:null,text:'Nessun credito extra da destinare.',target:null};
+  const targets=strongRosterTargets(8);
+  if(!targets.length)return {role:null,text:`Conserva i ${t.value} cr finché non compare un obiettivo ad alto impatto.`,target:null};
+
+  const ranked=[...targets].sort((a,b)=>{
+    const af=isFavorite(a.p.name)?8:0,bf=isFavorite(b.p.name)?8:0;
+    const ah=(favoriteLiveHierarchy(a.index)?.isFirst?10:0), bh=(favoriteLiveHierarchy(b.index)?.isFirst?10:0);
+    return (Number(b._pickScore||b.score||0)+bf+bh)-(Number(a._pickScore||a.score||0)+af+ah);
+  });
+  const x=ranked[0];
+  const role=x.p.role;
+  const fit=Math.round(Number(x._pickScore||x.score||0));
+  const tag=isFavorite(x.p.name)?'preferito ': '';
+  return {
+    role,target:x,
+    text:`Conserva il tesoretto per ${tag}${x.p.name} (${role}) o per un profilo equivalente ad alto impatto.`
+  };
+}
+
+function treasuryCanBoost(playerIndex){
+  const t=aiTreasury(), p=PLAYER_ARCHIVE[playerIndex];
+  if(!p||t.value<=0)return {allow:0,reason:''};
+  const h=favoriteLiveHierarchy(playerIndex);
+  const impact=strongRosterProfile(playerIndex,state.me);
+  const best=treasuryBestUse();
+  let priority=0;
+  if(h?.isFirst)priority+=3;
+  if(isFavorite(p.name))priority+=2;
+  if(best.target?.index===playerIndex)priority+=3;
+  if((impact?.score||0)>=82)priority+=2;
+  if(priority<4)return {allow:0,reason:'Tesoretto protetto per obiettivi più strategici.'};
+  const allow=Math.min(t.value,Math.max(1,Math.round(t.value*.45)));
+  return {allow,reason:`Il D.S. autorizza fino a ${allow} cr del tesoretto su questo obiettivo.`};
+}
+
 function adaptiveBudgetPlan(){
   const cash=budget(state.me),slots=remainingRosterSlots(state.me);
   const safety=Math.min(cash,Math.max(slots,Math.round((Number(state.initialBudget)||INITIAL||600)*.04)));
-  const usable=Math.max(0,cash-safety);
+  const treasury=aiTreasury();
+  const usable=Math.max(0,cash-safety-treasury.value);
   const shares=adaptiveRoleShares();
   const delta=purchasePlanDelta(state.me);
   const open=['P','D','C','A'].filter(r=>roleCount(state.me,r)<LIMITS[r]);
 
-  // Integer allocations with exact reconciliation: sum(P,D,C,A)+safety === cash.
   const raw=open.map(r=>({r,v:usable*(shares[r]||0)}));
   const ints={P:0,D:0,C:0,A:0};
   let assigned=0;
   raw.forEach(x=>{ints[x.r]=Math.floor(x.v);assigned+=ints[x.r]});
   let rem=usable-assigned;
   raw.sort((a,b)=>(b.v-Math.floor(b.v))-(a.v-Math.floor(a.v)));
-  for(let i=0;i<rem;i++)ints[raw[i%raw.length].r]++;
+  for(let i=0;i<rem;i++)ints[raw[i%Math.max(1,raw.length)].r]++;
 
   const roles={};
   ['P','D','C','A'].forEach(r=>{
@@ -7055,19 +7117,25 @@ function adaptiveBudgetPlan(){
 
   const pd=roles.P.allocation+roles.D.allocation;
   const ca=roles.C.allocation+roles.A.allocation;
-  const totalAllocated=pd+ca+safety;
-  return {cash,slots,safety,usable,shares,roles,delta,pd,ca,totalAllocated};
+  const totalAllocated=pd+ca+safety+treasury.value;
+  return {cash,slots,safety,treasury,usable,shares,roles,delta,pd,ca,totalAllocated};
 }
-function adaptiveSlotCap(role,baseCap){
+function adaptiveSlotCap(role,baseCap,playerIndex=null){
   const ap=adaptiveBudgetPlan(),rp=ap.roles[role];
   if(!rp||!rp.missing)return 0;
   const reserveForRest=Math.max(0,rp.missing-1);
   const roleHard=Math.max(1,rp.allocation-reserveForRest);
   let cap=Math.min(baseCap,roleHard);
-  // Savings can be partially reinvested, overspend tightens the cap.
-  if(ap.delta.delta>0)cap+=Math.min(Math.round(ap.delta.delta*.30),Math.max(1,Math.round(baseCap*.12)));
-  if(ap.delta.delta<0)cap-=Math.min(Math.round(Math.abs(ap.delta.delta)*.22),Math.max(1,Math.round(baseCap*.10)));
+
+  if(ap.delta.delta<0){
+    cap-=Math.min(Math.round(Math.abs(ap.delta.delta)*.22),Math.max(1,Math.round(baseCap*.10)));
+  }
   if(rp.temp.ratio>1.15)cap=Math.round(cap*.96);
+
+  if(playerIndex!=null){
+    const boost=treasuryCanBoost(playerIndex);
+    cap+=boost.allow;
+  }
   return Math.max(1,Math.min(safeMaxBid(state.me),cap));
 }
 
@@ -7078,7 +7146,7 @@ function dynamicPlanReserve(){
   const futureRoles=(isInitialMarket()&&currentInitialPhase()==='PD')?['C','A']:[];
   const futureMissing=futureRoles.reduce((s,r)=>s+Math.max(0,LIMITS[r]-roleCount(state.me,r)),0);
   const futureBudget=futureRoles.reduce((s,r)=>s+(ap.roles[r]?.allocation||0),0);
-  const reserve=Math.min(ap.cash,futureBudget+ap.safety);
+  const reserve=Math.min(ap.cash,futureBudget+ap.safety+ap.treasury.value);
   const spendable=Math.max(0,ap.cash-reserve);
   return {cash:ap.cash,currentMissing,futureMissing,reserve,spendable,futureRoles,futureBudget,adaptive:ap};
 }
@@ -7132,6 +7200,8 @@ function renderDynamicRosterPlan(){
       <div><span>C + A</span><b>${ap.ca}</b></div>
       <strong>+</strong>
       <div><span>RISERVA MINIMA</span><b>${ap.safety}</b></div>
+      <strong>+</strong>
+      <div class="treasury"><span>TESORETTO AI</span><b>${ap.treasury.value}</b></div>
       <strong>=</strong>
       <div class="total"><span>TOTALE</span><b>${ap.totalAllocated}</b></div>
     </div>
@@ -7144,6 +7214,11 @@ function renderDynamicRosterPlan(){
       <div><span>VS PIANO</span><b class="${d>=0?'pos':'neg'}">${d>=0?'+':''}${d} cr</b><small>${d>0?'RISPARMIO':d<0?'EXTRA SPESA':'IN LINEA'}</small></div>
       ${['P','D','C','A'].map(r=>`<div><span>${r} DISPONIBILE</span><b>${ap.roles[r].allocation}</b><small>${ap.roles[r].temp.label}${ap.roles[r].temp.pct?` ${ap.roles[r].temp.pct>0?'+':''}${ap.roles[r].temp.pct}%`:''}</small></div>`).join('')}
     </div>`})()}
+    ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(),use=treasuryBestUse();return ap.treasury.value?`
+    <div class="treasuryBox">
+      <div><span>💰 TESORETTO AI</span><b>${ap.treasury.value} cr</b></div>
+      <p>${esc(use.text)}</p>
+    </div>`:''})()}
     <div class="dynamicPlanGoal"><div class="dynamicPlanGoalTitle">🎯 COSA FARE ADESSO</div>
     <div class="dynamicPlanGoalText">${s.reason} Budget futuro C+A: <b>${s.futureBudget} cr</b> · Riserva minima: <b>${(s.adaptive||adaptiveBudgetPlan()).safety} cr</b>.</div></div>
     <div class="dynamicPlanTargets">${targets.map((x,n)=>`<div class="dynamicPlanTarget" onclick="openAIForPlayer(${x.index})">
@@ -7623,7 +7698,7 @@ function simulatedRosterImpact(playerIndex,price){
 }
 
 
-/* V67.6 - Gerarchia Preferiti collegata ad Asta Live */
+/* V67.7 - Tesoretto AI collegata ad Asta Live */
 function favoriteLiveHierarchy(playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
   if(!p || !isFavorite(p.name))return null;
@@ -7647,7 +7722,7 @@ function favoriteLiveHierarchy(playerIndex){
     me._favoritePx.ideal,
     Math.min(
       safeMaxBid(state.me),
-      adaptiveSlotCap(p.role,aggressiveBase),
+      adaptiveSlotCap(p.role,aggressiveBase,playerIndex),
       aggressiveBase
     )
   );
@@ -7690,7 +7765,7 @@ function auctionSimulatorDecision(playerIndex,price){
   const bid=Math.max(0,Number(price)||0);
   const safe=safeMaxBid(state.me);
   const rawStop=Math.max(1,Math.min(a.maxRec,safe));
-  const stop=Math.max(1,Math.min(rawStop,adaptiveSlotCap(p.role,rawStop)));
+  const stop=Math.max(1,Math.min(rawStop,adaptiveSlotCap(p.role,rawStop,playerIndex)));
   const impact=simulatedRosterImpact(playerIndex,bid);
   const rivals=rivalLiveSummary(playerIndex,bid);
   const alts=liveStrategicAlternatives(playerIndex,3);
@@ -7727,7 +7802,11 @@ function auctionSimulatorDecision(playerIndex,price){
 
   if(rivals.strong>=2 && cls!=='stop')why+=` Pressione rivali alta: ${rivals.strong} avversari forti.`;
   const bestAlt=alts[0]||null;
-  if(budgetPlan.delta.delta>4 && cls!=='stop')why+=` Hai ${budgetPlan.delta.delta} cr di vantaggio rispetto al piano acquisti.`;
+  const treasuryBoost=treasuryCanBoost(playerIndex);
+  if(budgetPlan.treasury.value>0 && cls!=='stop'){
+    why+=` Tesoretto AI: ${budgetPlan.treasury.value} cr protetti.`;
+    if(treasuryBoost.allow>0)why+=` ${treasuryBoost.reason}`;
+  }
   if(budgetPlan.delta.delta<-4)why+=` Sei ${Math.abs(budgetPlan.delta.delta)} cr sopra il piano: il D.S. sta comprimendo i tetti successivi.`;
   return {action,cls,why,stop,impact,rivals,bestAlt,budgetPlan};
 }
