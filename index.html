@@ -5265,7 +5265,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8042,26 +8042,38 @@ function liveAuctionDecision5(playerIndex,price){
   const stop=Math.max(1,treasuryStop);
   const alts=liveAuctionAlternativeAdvice(playerIndex,bid,3);
   const bestAlt=alts[0]||null;
+  const roleOwned=roleCount(state.me,p.role);
+  const roleRemaining=Math.max(0,LIMITS[p.role]-roleOwned);
+  const isLastRoleSlot=roleRemaining===1;
+  // V68.6: ultimo slot = scelta di reparto. Il tetto deve tenere conto
+  // dell'alternativa reale, non solo del valore assoluto del giocatore.
+  let strategicStop=stop;
+  if(isLastRoleSlot && bestAlt){
+    const altMax=Math.max(1,Number(bestAlt._liveMax)||0);
+    const qualityPremium=Math.max(2,Math.round((Number(a.score||0)-Number(bestAlt.ai?.score||0))/6));
+    strategicStop=Math.max(a.ideal,Math.min(stop,altMax+qualityPremium));
+  }
+  const effectiveStop=Math.max(1,strategicStop);
   const overPlan=Math.max(0,Number(ap.delta?.delta)<0?Math.abs(Number(ap.delta.delta)):0);
 
   let action='COMPRA',level='buy',headline='PREZZO CONVENIENTE',why='';
   if(!marketRoleAllowed(p.role)||roleCount(state.me,p.role)>=LIMITS[p.role]){
     action='LASCIA';level='stop';headline='NON SERVE ALLA ROSA';
     why=!marketRoleAllowed(p.role)?`Il ruolo ${p.role} non appartiene al blocco d'asta attivo.`:`Hai già completato il reparto ${p.role}.`;
-  }else if(bid>stop){
+  }else if(bid>effectiveStop){
     action='LASCIA';level='stop';headline='OLTRE IL LIMITE STRATEGICO';
     why=`A ${bid} cr non conviene più. Il limite AI aggiornato è ${stop} cr.`;
-  }else if(bid===stop){
+  }else if(bid===effectiveStop){
     action='ULTIMO CREDITO';level='danger';headline='TETTO ASSOLUTO';
-    why=`Puoi arrivare a ${stop} cr, ma non fare il rilancio successivo.`;
-  }else if(treasury.allow>0&&bid>normalStop&&bid<=stop){
+    why=`Puoi arrivare a ${effectiveStop} cr, ma non fare il rilancio successivo.`;
+  }else if(treasury.allow>0&&bid>normalStop&&bid<=effectiveStop){
     action='SFORA COL TESORETTO';level='treasury';headline='OBIETTIVO STRATEGICO';
-    why=`Superi il tetto ordinario di ${normalStop} cr, ma il Tesoretto autorizza fino a ${stop} cr.`;
-  }else if(bid>=Math.max(a.high,stop-1)){
-    action=`ATTENZIONE · MAX ${stop}`;level='danger';headline='ZONA FINALE';
-    why=`Resta solo ${Math.max(0,stop-bid)} cr di margine.`;
+    why=`Superi il tetto ordinario di ${normalStop} cr, ma il Tesoretto autorizza fino a ${effectiveStop} cr.`;
+  }else if(bid>=Math.max(a.high,effectiveStop-1)){
+    action=`ATTENZIONE · MAX ${effectiveStop}`;level='danger';headline='ZONA FINALE';
+    why=`Resta solo ${Math.max(0,effectiveStop-bid)} cr di margine.`;
   }else if(bid>a.ideal){
-    action=`PUOI RILANCIARE · MAX ${stop}`;level='wait';headline='SOPRA L’IDEALE';
+    action=`PUOI RILANCIARE · MAX ${effectiveStop}`;level='wait';headline='SOPRA L’IDEALE';
     why=`Hai superato l'ideale aggiornato di ${a.ideal} cr, ma sei ancora coperto.`;
   }else if(bid===a.ideal){
     action='COMPRA';level='buy';headline='PREZZO IDEALE';
@@ -8072,6 +8084,16 @@ function liveAuctionDecision5(playerIndex,price){
   }else{
     action='COMPRA';level='buy';headline='AFFARE';
     why=`Sei sotto il valore minimo AI aggiornato di ${a.low} cr.`;
+  }
+
+  if(isLastRoleSlot && level!=='stop'){
+    headline=`ULTIMO SLOT ${p.role} · ${headline}`;
+    if(bestAlt){
+      const save=Math.max(0,effectiveStop-(Number(bestAlt._liveMax)||0));
+      why+=` È l'ultimo posto disponibile nel reparto ${p.role}: l'AI confronta questa scelta con ${bestAlt.p.name} e protegge il budget degli altri reparti.`;
+    }else{
+      why+=` È l'ultimo posto disponibile nel reparto ${p.role}: l'AI applica maggiore selettività per chiudere il reparto.`;
+    }
   }
 
   if(a.market.count){
@@ -8088,14 +8110,17 @@ function liveAuctionDecision5(playerIndex,price){
   }
 
   let alternativeText='';
-  if((level==='stop'||level==='danger'||level==='wait'||bid>=a.ideal)&&bestAlt){
+  if(isLastRoleSlot&&bestAlt){
+    const save=Math.max(0,effectiveStop-(Number(bestAlt._liveMax)||0));
+    alternativeText=`🔒 ULTIMO SLOT ${p.role}: ${p.name} fino a ${effectiveStop} cr. Oltre, passa a ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · proteggi circa ${save} cr per gli altri reparti`:''}.`;
+  }else if((level==='stop'||level==='danger'||level==='wait'||bid>=a.ideal)&&bestAlt){
     const save=bestAlt._liveSaving;
     alternativeText=level==='stop'
       ?`🔁 PIANO B AUTOMATICO: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · NON OLTRE ${bestAlt._liveMax} cr${save>0?` · risparmio circa ${save} cr`:''}.`
       :`🔁 Piano B: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · risparmio potenziale ${save} cr`:''}.`;
   }
 
-  return {action,level,headline,why,stop,normalStop,treasuryStop,treasuryAllow:treasury.allow||0,impact,bestAlt,alts,alternativeText,ap,calibrated:a};
+  return {action,level,headline,why,stop:effectiveStop,normalStop,treasuryStop,treasuryAllow:treasury.allow||0,impact,bestAlt,alts,alternativeText,ap,calibrated:a};
 }
 
 function auctionSimulatorDecision(playerIndex,price){
@@ -8147,7 +8172,7 @@ function renderAstaLiveSelected(){
     decision.innerHTML='<div class="empty">Cerca il giocatore chiamato per attivare l’assistente Asta Live.</div>';
     return;
   }
-  const a=liveAuctionAI(ASTA_LIVE_PLAYER);
+  const a=calibratedLivePrices(ASTA_LIVE_PLAYER);
   if(!a){
     selected.innerHTML='';
     decision.innerHTML='<div class="empty">Analisi non disponibile.</div>';
