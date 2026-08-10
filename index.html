@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8018,8 +8018,26 @@ function calibratedLivePrices(playerIndex){
   const low=Math.max(1,Math.round(a.low*mult));
   const ideal=Math.max(low,Math.round(a.ideal*mult));
   const high=Math.max(ideal,Math.round(a.high*mult));
-  const maxRec=Math.max(high,Math.min(safe,Math.round(a.maxRec*mult)));
-  return enforceAuctionBaseFloor({...a,low,ideal,high,maxRec,market:signal,marketTier:tier,comparableCount:sameTier.count,adjustment:Math.round(adj*100)},p);
+  let maxRec=Math.max(high,Math.min(safe,Math.round(a.maxRec*mult)));
+  let out={...a,low,ideal,high,maxRec,market:signal,marketTier:tier,comparableCount:sameTier.count,adjustment:Math.round(adj*100)};
+  // V69.3: per ogni portiere, incluso il P1 non ancora acquistato, riserva SEMPRE
+  // le QI minime dei portieri necessari a completare il blocco della stessa squadra.
+  if(p.role==='P'){
+    const kr=keeperCandidateReserve(p,state.me);
+    const blockCap=keeperCandidateHardCap(p,state.me);
+    out.keeperBlockReserve=kr.reserve;
+    out.keeperBlockBases=kr.bases||[];
+    out.keeperBlockPossible=kr.possible;
+    out.keeperBlockTeam=kr.team||String(p.team||'').trim();
+    if(!kr.possible){ out.baseTooHigh=true; out.maxRec=0; }
+    else{
+      out.maxRec=Math.min(out.maxRec,blockCap);
+      out.high=Math.min(out.high,out.maxRec);
+      out.ideal=Math.min(out.ideal,out.maxRec);
+      out.low=Math.min(out.low,out.maxRec);
+    }
+  }
+  return enforceAuctionBaseFloor(out,p);
 }
 
 function auctionLeaguePulse(){
@@ -8135,6 +8153,7 @@ function liveAuctionDecision5(playerIndex,price){
   let action='COMPRA',level='buy',headline='PREZZO CONVENIENTE',why='';
   const basePrice=auctionBasePrice(p);
   const baseOverStrategic=Boolean(a.baseTooHigh);
+  const keeperProtection=(p.role==='P')?keeperCandidateReserve(p,state.me):null;
 
   if(wrongKeeperBlock){
     action='LASCIA';level='stop';headline='FUORI BLOCCO PORTIERI';
@@ -8320,6 +8339,7 @@ function renderAstaLiveSelected(){
         <div class="astaAiMetric"><span>IDEALE</span><b>${a.ideal}</b></div>
         <div class="astaAiMetric"><span>MAX RANGE</span><b>${a.high}</b></div>
         <div class="astaAiMetric"><span>NON OLTRE</span><b>${absoluteCap}</b></div>
+        ${p.role==='P' && a.keeperBlockPossible ? `<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:var(--muted);padding-top:6px">🧤 BLOCCO ${esc(a.keeperBlockTeam||p.team)} · riserva P2/P3: <b>${a.keeperBlockReserve} cr</b> (QI ${esc((a.keeperBlockBases||[]).join(' + '))}) · MAX P1 protetto: <b>${absoluteCap} cr</b></div>` : ''}
       </div>
 
       <input id="astaLivePrice" class="astaPriceInput" type="number" min="${auctionBasePrice(p)}" inputmode="numeric"
@@ -9260,6 +9280,33 @@ function keeperRemainingBaseReserve(team,buyerIndex=state.me,excludeName=''){
 function keeperBlockLabel(){
   const team=keeperBlockTeam(state.me);
   return team?`BLOCCO ${team.toUpperCase()}`:'BLOCCO SQUADRA · scegli P1';
+}
+
+// V69.3 - Protezione economica BLOCCO PORTIERI anche PRIMA dell'acquisto del P1.
+// Il tetto del P1/P2 non può consumare i crediti QI necessari a completare P2/P3 della stessa squadra.
+function keeperCandidateReserve(p,buyerIndex=state.me){
+  if(!p || p.role!=='P')return {reserve:0,possible:true,missingAfter:0,bases:[]};
+  const owned=roleCount(buyerIndex,'P');
+  const missingAfter=Math.max(0,LIMITS.P-owned-1);
+  if(!missingAfter)return {reserve:0,possible:true,missingAfter,bases:[]};
+  const team=keeperBlockTeam(buyerIndex)||String(p.team||'').trim();
+  if(!team)return {reserve:Infinity,possible:false,missingAfter,bases:[]};
+  const ownedNames=new Set(roster(buyerIndex).filter(x=>x.role==='P').map(x=>normalizePlayerText(x.name)));
+  const current=normalizePlayerText(p.name);
+  const bases=PLAYER_ARCHIVE.filter(x=>x.role==='P' && String(x.team||'').trim()===team)
+    .filter(x=>normalizePlayerText(x.name)!==current && !ownedNames.has(normalizePlayerText(x.name)))
+    .filter(x=>!purchaseForArchivePlayer(x.name) && !isUnavailablePlayer(x.name))
+    .map(x=>auctionBasePrice(x)).sort((a,b)=>a-b);
+  if(bases.length<missingAfter)return {reserve:Infinity,possible:false,missingAfter,bases};
+  return {reserve:bases.slice(0,missingAfter).reduce((a,b)=>a+b,0),possible:true,missingAfter,bases:bases.slice(0,missingAfter),team};
+}
+function keeperCandidateHardCap(p,buyerIndex=state.me){
+  if(!p || p.role!=='P')return Infinity;
+  const k=keeperCandidateReserve(p,buyerIndex);
+  if(!k.possible)return 0;
+  const ap=adaptiveBudgetPlan();
+  const roleBudget=Math.max(0,Number(ap.roles?.P?.allocation)||0);
+  return Math.max(0,roleBudget-k.reserve);
 }
 
 function liveTop5Candidate(index,role){
