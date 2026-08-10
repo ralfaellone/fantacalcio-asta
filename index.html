@@ -5265,7 +5265,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7943,14 +7943,14 @@ function liveAuctionAlternativeAdvice(playerIndex,price,limit=2){
 }
 
 
-/* V68.3 - Asta Live AI 6.2: valore individuale ancorato + mercato secondario */
+/* V68.4 - Asta Live AI 6.3: mercato come correttore unico, anti-deriva */
 
 /*
   V68.2 riparte con una nuova epoca di apprendimento mercato.
   Gli acquisti gia presenti restano nelle rose, ma i test eseguiti con V68.1
   non alterano le nuove soglie. L'epoca viene salvata una sola volta.
 */
-const MARKET_LEARNING_EPOCH_KEY='astaFantaMarketLearningV682';
+const MARKET_LEARNING_EPOCH_KEY='astaFantaMarketLearningV684';
 function marketLearningEpoch(){
   let t=Number(localStorage.getItem(MARKET_LEARNING_EPOCH_KEY)||0);
   if(!t){t=Date.now();localStorage.setItem(MARKET_LEARNING_EPOCH_KEY,String(t));}
@@ -7994,8 +7994,9 @@ function liveMarketLearning(role=null,tier=null){
   const mean=trimmed.reduce((s,x)=>s+x,0)/trimmed.length;
   // Media robusta: la mediana impedisce a un singolo acquisto anomalo di spostare tutto.
   const observed=mean*.55+median*.45;
-  // Prime osservazioni volutamente prudenti: 1-3 quasi non muovono le soglie.
-  const confidence=samples.length<=3?samples.length*.08:Math.min(.72,.24+(samples.length-3)*.08);
+  // V68.4: apprendimento lento. I primi 3 risultati servono soprattutto a capire
+  // la direzione del mercato; solo con molti campioni la correzione diventa significativa.
+  const confidence=samples.length<=3?samples.length*.04:Math.min(.50,.12+(samples.length-3)*.055);
   const ratio=1+(observed-1)*confidence;
   const pct=Math.round((observed-1)*100);
   const label=pct>=15?'MOLTO CARO':pct>=6?'CARO':pct<=-15?'MOLTO ECONOMICO':pct<=-6?'ECONOMICO':'IN LINEA';
@@ -8014,9 +8015,9 @@ function calibratedLivePrices(playerIndex){
   let rawAdj=(signal.ratio-1);
   // Variazione massima stretta: il mercato adatta l'AI, non la riscrive.
   let adj=Math.max(-.04,Math.min(.04,rawAdj));
-  // Con meno di 4 vendite comparabili il movimento massimo e' solo +/-2%.
+  // Anti-deriva: 1-3 comparabili max +/-1%; 4-7 max +/-2%; 8+ max +/-4%.
   if(sameTier.count<4)adj=Math.max(-.01,Math.min(.01,adj));
-  if(sameTier.count<8)adj=Math.max(-.02,Math.min(.02,adj));
+  else if(sameTier.count<8)adj=Math.max(-.02,Math.min(.02,adj));
   const mult=1+adj,safe=safeMaxBid(state.me);
   const low=Math.max(1,Math.round(a.low*mult));
   const ideal=Math.max(low,Math.round(a.ideal*mult));
@@ -11711,17 +11712,19 @@ function aiPlayerAnalysisRaw(index,buyerIndex=state.me){
   const futureBudget=aiCore3FutureBudgetStress(p.role,buyerIndex);
   const formation=typeof formationRoleFit==='function'?formationRoleFit(p.role,buyerIndex):50;
 
-  // Adaptive modifier: one centralized correction for all app surfaces.
+  // V68.4: il valore individuale NON incorpora piu' direttamente il trend mercato.
+  // Il mercato viene applicato una sola volta in calibratedLivePrices(), con un tetto stretto.
+  // Questo elimina il doppio feedback che faceva salire 18/21/24/25 fino a 28/32/33/33.
   let adaptive=1;
-  adaptive*=market.factor;
 
-  // True scarcity: when comparable alternatives are running out, prices accelerate.
-  if(supply.comparable<=2)adaptive*=1.12;
-  else if(supply.comparable<=4)adaptive*=1.07;
-  else if(supply.comparable<=7)adaptive*=1.035;
+  // La scarsita' reale puo' muovere leggermente il valore, ma non deve riscriverlo
+  // dopo appena 2-3 acquisti degli avversari.
+  if(supply.comparable<=2)adaptive*=1.035;
+  else if(supply.comparable<=4)adaptive*=1.025;
+  else if(supply.comparable<=7)adaptive*=1.015;
 
-  // Rival pressure, softened so it never dominates player quality.
-  adaptive*=1+clamp((rivals.score-45)/100,-.05,.10);
+  // Pressione rivali volutamente secondaria: massimo circa +/-3%.
+  adaptive*=1+clamp((rivals.score-45)/180,-.02,.03);
 
   // Auction phase: avoid overpaying early; allow stronger moves late if slots are scarce.
   if(stage.id==='EARLY')adaptive*=.97;
@@ -11788,7 +11791,7 @@ function aiPlayerAnalysisRaw(index,buyerIndex=state.me){
   reasons.unshift(`AI Core 3.2: confidenza ${confidence}% · fase ${stage.label.toLowerCase()} · pressione rivali ${rivals.score}/100 · scarsità ${Math.round(supply.scarcity*100)}/100.`);
   if(market.role.count){
     const delta=Math.round((market.role.factor-1)*100);
-    reasons.unshift(`Mercato adattivo ${p.role}: ${market.role.count} acquisti osservati, correzione ${delta>=0?'+':''}${delta}% con apprendimento progressivo.`);
+    reasons.unshift(`Mercato osservato ${p.role}: ${market.role.count} acquisti; in V68.4 il trend non altera direttamente il valore individuale e viene applicato solo come correttore prudente nell'Asta Live.`);
   }
   reasons.unshift(`Disponibilità: ${supply.comparable} alternative di fascia comparabile ancora libere; sostenibilità futura ${futureBudget}/100.`);
   if(zeroStats) reasons.unshift(`Affidabilità giocatore limitata: storico assente o insufficiente, quindi il modello riduce score e confidenza.`);
