@@ -5248,7 +5248,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7058,55 +7058,65 @@ function aiTreasury(){
   const d=purchasePlanDelta(state.me);
   const cash=budget(state.me);
   const slots=remainingRosterSlots(state.me);
-  if(d.delta<=0 || !slots)return {value:0,label:'NESSUN TESORETTO',delta:d.delta};
-  // Conserva la maggior parte del vantaggio; non oltre il 12% del budget residuo.
-  const value=Math.max(0,Math.min(
-    Math.round(d.delta*.75),
-    Math.round(cash*.12),
-    Math.max(0,cash-slots)
-  ));
+  const saving=Math.max(0,Math.round(Number(d.delta)||0));
+  if(saving<=0 || !slots)return {value:0,label:'NESSUN TESORETTO',delta:d.delta};
+  // Il tesoretto è il risparmio REALE ottenuto rispetto al prezzo ideale
+  // fotografato prima degli acquisti. Non viene redistribuito nei reparti.
+  const value=Math.min(saving,Math.max(0,cash-slots));
   return {value,label:value>0?'TESORETTO DISPONIBILE':'NESSUN TESORETTO',delta:d.delta};
 }
 
 function treasuryBestUse(){
   const t=aiTreasury();
   if(!t.value)return {role:null,text:'Nessun credito extra da destinare.',target:null};
-  const targets=strongRosterTargets(8);
-  if(!targets.length)return {role:null,text:`Conserva i ${t.value} cr finché non compare un obiettivo ad alto impatto.`,target:null};
+
+  let targets=[];
+  try{ targets=strongRosterTargets(8)||[]; }catch(e){ targets=[]; }
+  if(!targets.length){
+    return {role:null,text:`Conserva i ${t.value} cr finché non compare un obiettivo ad alto impatto.`,target:null};
+  }
 
   const ranked=[...targets].sort((a,b)=>{
-    const af=isFavorite(a.p.name)?8:0,bf=isFavorite(b.p.name)?8:0;
-    const ah=(favoriteLiveHierarchy(a.index)?.isFirst?10:0), bh=(favoriteLiveHierarchy(b.index)?.isFirst?10:0);
-    return (Number(b._pickScore||b.score||0)+bf+bh)-(Number(a._pickScore||a.score||0)+af+ah);
+    const af=isFavorite(a.p.name)?8:0;
+    const bf=isFavorite(b.p.name)?8:0;
+    const ap=goalMeta(a.p.name)?.priority==='high'?5:0;
+    const bp=goalMeta(b.p.name)?.priority==='high'?5:0;
+    return (Number(b._pickScore||b.score||0)+bf+bp)-
+           (Number(a._pickScore||a.score||0)+af+ap);
   });
+
   const x=ranked[0];
-  const role=x.p.role;
-  const fit=Math.round(Number(x._pickScore||x.score||0));
-  const tag=isFavorite(x.p.name)?'preferito ': '';
+  const tag=isFavorite(x.p.name)?'preferito ':'';
   return {
-    role,target:x,
-    text:`Conserva il tesoretto per ${tag}${x.p.name} (${role}) o per un profilo equivalente ad alto impatto.`
+    role:x.p.role,
+    target:x,
+    text:`Conserva il tesoretto per ${tag}${x.p.name} (${x.p.role}) o per un profilo equivalente ad alto impatto.`
   };
 }
 
 function treasuryCanBoost(playerIndex){
-  const t=aiTreasury(), p=PLAYER_ARCHIVE[playerIndex];
-  if(!p||t.value<=0)return {allow:0,reason:''};
+  const t=aiTreasury();
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p || t.value<=0)return {allow:0,reason:''};
 
-  // IMPORTANTE: questa funzione viene chiamata mentre si calcolano i prezzi
-  // dei candidati. Non deve richiamare treasuryBestUse()/strongRosterTargets(),
-  // altrimenti, appena nasce un tesoretto dopo il primo acquisto, si crea
-  // ricorsione infinita: prezzi -> budget -> tesoretto -> target -> prezzi.
-  const hierarchy=favoriteLiveHierarchy(playerIndex);
-  const impact=strongRosterProfile(playerIndex,state.me);
+  // NESSUNA chiamata a favoriteLiveHierarchy, strongRosterProfile,
+  // strongRosterTargets, adaptiveBudgetPlan o funzioni prezzo:
+  // questa routine può essere invocata proprio durante il calcolo dei prezzi.
+  const meta=goalMeta(p.name)||{};
+  const fav=isFavorite(p.name);
+  const priority=meta.priority==='high'?3:meta.priority==='medium'?2:meta.priority==='low'?1:0;
+  const fvm=Number(p.fvm)||0;
+  const qi=Number(p.qi)||0;
 
-  let priority=0;
-  if(hierarchy?.isFirst)priority+=4;
-  if(isFavorite(p.name))priority+=2;
-  if((impact?.score||0)>=86)priority+=3;
-  else if((impact?.score||0)>=82)priority+=2;
+  let score=0;
+  if(fav)score+=3;
+  score+=priority;
+  if(fvm>=60)score+=2;
+  else if(fvm>=35)score+=1;
+  if(qi>=18)score+=1;
 
-  if(priority<4)return {allow:0,reason:'Tesoretto protetto per obiettivi più strategici.'};
+  if(score<5)return {allow:0,reason:'Tesoretto protetto per un obiettivo più importante.'};
+
   const allow=Math.min(t.value,Math.max(1,Math.round(t.value*.45)));
   return {allow,reason:`Il D.S. autorizza fino a ${allow} cr del tesoretto su questo obiettivo.`};
 }
@@ -7207,47 +7217,48 @@ function dynamicPlanSavingTip(targets){
 }
 function renderDynamicRosterPlan(){
   const el=document.getElementById('dashboardDynamicPlan');if(!el)return;
-  const s=dynamicPlanStatus(),targets=dynamicPlanTargets(3);
-  const mode=isInitialMarket()?`BLOCCO ${initialBlockLabel()}`:`${activeMarketSession().name} · LIBERO`;
-  const reserveText=s.futureRoles.length?`${s.reserve} cr per ${s.futureRoles.join('+')}`:'nessun blocco futuro vincolato';
-  el.innerHTML=`<div class="dynamicPlanCard">
-    <div class="dynamicPlanHead"><div><div class="dynamicPlanTitle">Piano Rosa · aggiornamento live</div>
-    <div class="dynamicPlanSub">${mode} · ${roster(state.me).length}/25 giocatori · ${s.cash} cr rimasti</div></div>
-    <div class="dynamicPlanStatus ${s.level}">${s.label}</div></div>
-    ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(); const d=ap.delta.delta; return `
-    <div class="budgetEquation">
-      <div><span>P + D</span><b>${ap.pd}</b></div>
-      <strong>+</strong>
-      <div><span>C + A</span><b>${ap.ca}</b></div>
-      <strong>+</strong>
-      <div><span>RISERVA MINIMA</span><b>${ap.safety}</b></div>
-      <strong>+</strong>
-      <div class="treasury"><span>TESORETTO AI</span><b>${ap.treasury.value}</b></div>
-      <strong>=</strong>
-      <div class="total"><span>TOTALE</span><b>${ap.totalAllocated}</b></div>
-    </div>
-    <div class="dynamicPlanMetrics">
-      <div class="dynamicPlanMetric"><span>SPENDIBILE BLOCCO ATTUALE</span><b>${s.spendable}</b></div>
-      <div class="dynamicPlanMetric"><span>PROTETTO BLOCCHI FUTURI</span><b>${s.futureBudget}</b></div>
-      <div class="dynamicPlanMetric"><span>MEDIA / SLOT</span><b>${s.avg}</b></div>
-    </div>
-    <div class="dynamicBudgetLive">
-      <div><span>VS PIANO</span><b class="${d>=0?'pos':'neg'}">${d>=0?'+':''}${d} cr</b><small>${d>0?'RISPARMIO':d<0?'EXTRA SPESA':'IN LINEA'}</small></div>
-      ${['P','D','C','A'].map(r=>`<div><span>${r} DISPONIBILE</span><b>${ap.roles[r].allocation}</b><small>${ap.roles[r].temp.label}${ap.roles[r].temp.pct?` ${ap.roles[r].temp.pct>0?'+':''}${ap.roles[r].temp.pct}%`:''}</small></div>`).join('')}
-    </div>`})()}
-    ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(),use=treasuryBestUse();return ap.treasury.value?`
-    <div class="treasuryBox">
-      <div><span>💰 TESORETTO AI</span><b>${ap.treasury.value} cr</b></div>
-      <p>${esc(use.text)}</p>
-    </div>`:''})()}
-    <div class="dynamicPlanGoal"><div class="dynamicPlanGoalTitle">🎯 COSA FARE ADESSO</div>
-    <div class="dynamicPlanGoalText">${s.reason} Budget futuro C+A: <b>${s.futureBudget} cr</b> · Riserva minima: <b>${(s.adaptive||adaptiveBudgetPlan()).safety} cr</b>.</div></div>
-    <div class="dynamicPlanTargets">${targets.map((x,n)=>`<div class="dynamicPlanTarget" onclick="openAIForPlayer(${x.index})">
-      <div class="dynamicPlanRank">${n+1}</div><div><div class="dynamicPlanName">${esc(x.p.name)}</div>
-      <div class="dynamicPlanMeta">${x._dynSpec.label} · ${x._dynSpec.intent} · ${strongRosterTargetReason(x)}</div></div>
-      <div class="dynamicPlanPrice">${x._dynPx.ideal}<small>MAX PIANO ${x._dynCap}</small></div></div>`).join('')||'<div class="empty">Nessun obiettivo aperto nel mercato corrente.</div>'}</div>
-    <div class="dynamicPlanSave">💡 ${dynamicPlanSavingTip(targets)}</div>
-  </div>`;
+  try{
+    const s=dynamicPlanStatus(),targets=dynamicPlanTargets(3);
+    const mode=isInitialMarket()?`BLOCCO ${initialBlockLabel()}`:`${activeMarketSession().name} · LIBERO`;
+    el.innerHTML=`<div class="dynamicPlanCard">
+      <div class="dynamicPlanHead"><div><div class="dynamicPlanTitle">Piano Rosa · aggiornamento live</div>
+      <div class="dynamicPlanSub">${mode} · ${roster(state.me).length}/25 giocatori · ${s.cash} cr rimasti</div></div>
+      <div class="dynamicPlanStatus ${s.level}">${s.label}</div></div>
+      ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(); const d=ap.delta.delta; return `
+      <div class="budgetEquation">
+        <div><span>P + D</span><b>${ap.pd}</b></div><strong>+</strong>
+        <div><span>C + A</span><b>${ap.ca}</b></div><strong>+</strong>
+        <div><span>RISERVA MINIMA</span><b>${ap.safety}</b></div><strong>+</strong>
+        <div class="treasury"><span>TESORETTO AI</span><b>${ap.treasury.value}</b></div><strong>=</strong>
+        <div class="total"><span>TOTALE</span><b>${ap.totalAllocated}</b></div>
+      </div>
+      <div class="dynamicPlanMetrics">
+        <div class="dynamicPlanMetric"><span>SPENDIBILE BLOCCO ATTUALE</span><b>${s.spendable}</b></div>
+        <div class="dynamicPlanMetric"><span>PROTETTO BLOCCHI FUTURI</span><b>${s.futureBudget}</b></div>
+        <div class="dynamicPlanMetric"><span>MEDIA / SLOT</span><b>${s.avg}</b></div>
+      </div>
+      <div class="dynamicBudgetLive">
+        <div><span>VS PIANO</span><b class="${d>=0?'pos':'neg'}">${d>=0?'+':''}${d} cr</b><small>${d>0?'RISPARMIO':d<0?'EXTRA SPESA':'IN LINEA'}</small></div>
+        ${['P','D','C','A'].map(r=>`<div><span>${r} DISPONIBILE</span><b>${ap.roles[r].allocation}</b><small>${ap.roles[r].temp.label}${ap.roles[r].temp.pct?` ${ap.roles[r].temp.pct>0?'+':''}${ap.roles[r].temp.pct}%`:''}</small></div>`).join('')}
+      </div>`})()}
+      ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(),use=treasuryBestUse();return ap.treasury.value?`
+      <div class="treasuryBox"><div><span>💰 TESORETTO AI</span><b>${ap.treasury.value} cr</b></div><p>${esc(use.text)}</p></div>`:''})()}
+      <div class="dynamicPlanGoal"><div class="dynamicPlanGoalTitle">🎯 COSA FARE ADESSO</div>
+      <div class="dynamicPlanGoalText">${s.reason} Budget futuro C+A: <b>${s.futureBudget} cr</b> · Riserva minima: <b>${(s.adaptive||adaptiveBudgetPlan()).safety} cr</b>.</div></div>
+      <div class="dynamicPlanTargets">${targets.map((x,n)=>`<div class="dynamicPlanTarget" onclick="openAIForPlayer(${x.index})">
+        <div class="dynamicPlanRank">${n+1}</div><div><div class="dynamicPlanName">${esc(x.p.name)}</div>
+        <div class="dynamicPlanMeta">${x._dynSpec.label} · ${x._dynSpec.intent} · ${strongRosterTargetReason(x)}</div></div>
+        <div class="dynamicPlanPrice">${x._dynPx.ideal}<small>MAX PIANO ${x._dynCap}</small></div></div>`).join('')||'<div class="empty">Nessun obiettivo aperto nel mercato corrente.</div>'}</div>
+      <div class="dynamicPlanSave">💡 ${dynamicPlanSavingTip(targets)}</div>
+    </div>`;
+  }catch(err){
+    console.error('Piano Rosa Dinamico AI',err);
+    const t=aiTreasury();
+    el.innerHTML=`<div class="dynamicPlanCard"><div class="dynamicPlanTitle">Piano Rosa · recupero sicuro</div>
+      <div class="dynamicPlanSub">${roster(state.me).length}/25 giocatori · ${budget(state.me)} cr rimasti</div>
+      <div class="treasuryBox"><div><span>💰 TESORETTO AI</span><b>${t.value} cr</b></div>
+      <p>Il budget è salvo. Ricalcolo strategico temporaneamente semplificato.</p></div></div>`;
+  }
 }
 function renderStrongRosterAI(){
   const el=document.getElementById('dashboardStrongRoster');
