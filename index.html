@@ -5157,7 +5157,7 @@ nav button .ico{font-size:19px!important}
 .dsModuleBtn.active{border-color:#39d98a;background:#0d3827;color:#58e7a4}
 
 
-/* V67.1 - Budget AI Dinamico */
+/* V67.2 - Budget AI Dinamico */
 .dynamicBudgetLive{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:7px}
 .dynamicBudgetLive>div{padding:6px 3px;text-align:center;border-radius:8px;background:#081321;border:1px solid rgba(142,164,189,.10)}
 .dynamicBudgetLive span{display:block;font-size:5px;color:var(--muted)}
@@ -5165,12 +5165,31 @@ nav button .ico{font-size:19px!important}
 .dynamicBudgetLive small{display:block;margin-top:2px;font-size:4.8px;color:#9aa9bb}
 
 
-/* V67.1 - contabilità budget sempre riconciliata */
+/* V67.2 - contabilità budget sempre riconciliata */
 .budgetEquation{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:4px;align-items:center;margin-top:7px}
 .budgetEquation>div{padding:7px 3px;text-align:center;border-radius:9px;background:#081321;border:1px solid rgba(142,164,189,.12)}
 .budgetEquation>div.total{border-color:rgba(57,217,138,.45);background:#0b251d}
 .budgetEquation span{display:block;font-size:5px;color:var(--muted);font-weight:800}.budgetEquation b{display:block;margin-top:2px;font-size:9px}
 .budgetEquation strong{text-align:center;font-size:8px;color:#8393a7}
+
+
+/* V67.2 - Preferiti analizzati dal Direttore Sportivo */
+.favAiSection{margin-top:10px;padding:8px;border-radius:12px;background:#10172a;border:1px solid rgba(242,201,76,.28)}
+.favAiHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:6px}
+.favAiHead b{display:block;font-size:8px;color:#f6d66d}.favAiHead span{font-size:5.8px;color:var(--muted);line-height:1.35}
+.favAiHead>span{white-space:nowrap;padding:3px 5px;border-radius:999px;background:#251f0c;color:#f6d66d}
+.favAiCard{padding:7px;border-radius:10px;background:#081321;border:1px solid rgba(142,164,189,.12);margin-top:5px}
+.favAiCard.top{border-color:rgba(57,217,138,.46);background:#092119}.favAiCard.warn{border-color:rgba(242,201,76,.35)}
+.favAiCard.bad{border-color:rgba(255,90,90,.28);background:#201014}
+.favAiMain{display:flex;justify-content:space-between;gap:7px;align-items:center}
+.favAiName{font-size:8.5px;font-weight:950}.favAiName span{font-size:6px;color:#8be8b7}
+.favAiMeta,.favAiWhy,.favAiAlts{font-size:5.8px;color:var(--muted);margin-top:2px;line-height:1.4}
+.favAiVerdict{font-size:6px;font-weight:950;padding:4px 6px;border-radius:999px;white-space:nowrap}
+.favAiVerdict.top,.favAiVerdict.good{background:#0d3827;color:#58e7a4}.favAiVerdict.warn{background:#3a2b08;color:#ffd66b}.favAiVerdict.bad{background:#3b1118;color:#ff8994}
+.favAiPrices{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px}
+.favAiPrices span{text-align:center;padding:5px 3px;border-radius:8px;background:#0a1727;font-size:5px;color:var(--muted)}
+.favAiPrices b{display:block;font-size:8px;color:#eef4fb;margin-top:1px}
+.favAiAlts{margin-top:5px;color:#c9b7f7}
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -5182,7 +5201,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6740,6 +6759,73 @@ function strongRosterTargetReason(x){
   return (bits.length?bits:['equilibrio qualità/prezzo']).slice(0,3).join(' · ');
 }
 
+
+function favoritePriorityBoost(name){
+  if(!isFavorite(name))return 0;
+  const m=goalMeta(name);
+  return m.priority==='high'?14:m.priority==='low'?5:9;
+}
+
+function favoriteStrongRows(){
+  const roles=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
+  return PLAYER_ARCHIVE
+    .map((p,index)=>({p,index}))
+    .filter(x=>
+      isFavorite(x.p.name) &&
+      roles.includes(x.p.role) &&
+      roleCount(state.me,x.p.role)<LIMITS[x.p.role] &&
+      !purchaseForArchivePlayer(x.p.name) &&
+      !isUnavailablePlayer(x.p.name)
+    )
+    .map(x=>{
+      const s=strongRosterProfile(x.index,state.me);
+      if(!s)return null;
+      const spec=nextSlotSpec(x.p.role);
+      const slotScore=slotCandidateScore(s,spec);
+      const px=liveTop5StrategicPrices({...s,p:x.p,index:x.index});
+      const meta=goalMeta(x.p.name);
+      const maxUser=Number(meta.max)||0;
+      const targetUser=Number(meta.target)||0;
+      const priceFit=maxUser>0?Math.round(clamp((maxUser-px.ideal+12)*4,0,99)):65;
+      const fit=Math.round(clamp(slotScore*.72 + priceFit*.18 + favoritePriorityBoost(x.p.name)*1.1,1,99));
+
+      let verdict='BUONO';
+      let cls='good';
+      if(fit>=82){verdict='PUNTA';cls='top';}
+      else if(fit>=68){verdict='BUONO';cls='good';}
+      else if(fit>=55){verdict='SOLO A PREZZO';cls='warn';}
+      else {verdict='NON PRIORITARIO';cls='bad';}
+
+      const base={...s,p:x.p,index:x.index,_slotSpec:spec,_favoriteFit:fit,_favoriteVerdict:verdict,_favoriteClass:cls,_favoriteMeta:meta,_favoritePx:px};
+      const alts=slotAlternatives(base,x.p.role,spec).slice(0,3);
+      return {...base,_favoriteAlts:alts};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>
+      favoritePriorityBoost(b.p.name)-favoritePriorityBoost(a.p.name) ||
+      b._favoriteFit-a._favoriteFit
+    );
+}
+
+function favoriteVerdictWhy(x){
+  const bits=[];
+  const spec=x._slotSpec;
+  if(x._favoriteFit>=82)bits.push(`molto adatto allo slot ${spec.label}`);
+  else if(x._favoriteFit>=68)bits.push(`adatto allo slot ${spec.label}`);
+  else bits.push(`fit limitato per lo slot ${spec.label}`);
+
+  if(x.bonusScore>=72)bits.push('buon potenziale bonus');
+  if(x.disciplineScore>=75)bits.push('pochi malus');
+  if(x.availabilityScore>=72)bits.push('buona continuità');
+  if(x._favoritePx.ideal<=adaptiveSlotCap(x.p.role,x._favoritePx.maxRec))bits.push('prezzo sostenibile');
+  else bits.push('prezzo da controllare');
+
+  const meta=x._favoriteMeta||{};
+  if(Number(meta.target)>0)bits.push(`tuo target ${meta.target} cr`);
+  if(Number(meta.max)>0)bits.push(`tuo max ${meta.max} cr`);
+  return bits.slice(0,4).join(' · ');
+}
+
 function strongRosterTargets(limit=5){
   const roles=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
   const openRoles=roles.filter(r=>roleCount(state.me,r)<LIMITS[r]);
@@ -6754,14 +6840,30 @@ function strongRosterTargets(limit=5){
       const capPenalty=(x.slotPlan?.cap>0 && px.ideal>x.slotPlan.cap)
         ? Math.min(18,Math.round((px.ideal/x.slotPlan.cap-1)*20))
         : 0;
+      const favBoost=favoritePriorityBoost(x.p.name);
       pool.push({
         ...x,
         _role:role,
         _rank:rank,
         _slotSpec:spec,
         _slotScore:slotScore,
-        _pickScore:slotScore + need*10 + (rank===0?5:rank===1?2:0) - capPenalty
+        _favoriteBoost:favBoost,
+        _pickScore:slotScore + need*10 + (rank===0?5:rank===1?2:0) + favBoost - capPenalty
       });
+    });
+  });
+
+  favoriteStrongRows().forEach(f=>{
+    if(pool.some(x=>x.index===f.index))return;
+    const need=(LIMITS[f.p.role]-roleCount(state.me,f.p.role))/LIMITS[f.p.role];
+    pool.push({
+      ...f,
+      _role:f.p.role,
+      _rank:99,
+      _slotSpec:f._slotSpec,
+      _slotScore:f._favoriteFit,
+      _favoriteBoost:favoritePriorityBoost(f.p.name),
+      _pickScore:f._favoriteFit + need*10 + favoritePriorityBoost(f.p.name)
     });
   });
 
@@ -7061,6 +7163,34 @@ function renderStrongRosterAI(){
         </div>
       </div>
 
+      ${(()=>{const favs=favoriteStrongRows(); return favs.length?`
+      <div class="favAiSection">
+        <div class="favAiHead">
+          <div><b>⭐ I TUOI PREFERITI · ANALISI AI</b><span>L'AI li considera prima, ma ti dice anche quando NON conviene inseguirli.</span></div>
+          <span>${favs.length} disponibili</span>
+        </div>
+        ${favs.slice(0,6).map(x=>`
+          <div class="favAiCard ${x._favoriteClass}" onclick="openAIForPlayer(${x.index})">
+            <div class="favAiMain">
+              <div>
+                <div class="favAiName">⭐ ${esc(x.p.name)} <span>${x._favoriteFit}/99</span></div>
+                <div class="favAiMeta">${x.p.role} · ${esc(x.p.team)} · ${x._slotSpec.label}</div>
+              </div>
+              <div class="favAiVerdict ${x._favoriteClass}">${x._favoriteVerdict}</div>
+            </div>
+            <div class="favAiWhy">${favoriteVerdictWhy(x)}</div>
+            <div class="favAiPrices">
+              <span>MIN <b>${x._favoritePx.low}</b></span>
+              <span>IDEALE <b>${x._favoritePx.ideal}</b></span>
+              <span>NON OLTRE <b>${Math.min(x._favoritePx.maxRec,adaptiveSlotCap(x.p.role,x._favoritePx.maxRec))}</b></span>
+            </div>
+            ${x._favoriteAlts.length?`<div class="favAiAlts"><b>Alternative:</b> ${x._favoriteAlts.map(a=>{
+              const ap=liveTop5StrategicPrices(a.x);
+              return `${a.type} ${esc(a.x.p.name)} ${ap.low}-${ap.maxRec}`;
+            }).join(' · ')}</div>`:''}
+          </div>`).join('')}
+      </div>`:''})()}
+
       <div class="rosaForteTargetsTitle">🎯 5 ACQUISTI CHE MIGLIORANO DI PIÙ LA TUA ROSA ADESSO</div>
       ${targets.length?targets.map((x,n)=>{
         const px=liveTop5StrategicPrices(x);
@@ -7069,7 +7199,7 @@ function renderStrongRosterAI(){
         return `<div class="rosaForteTarget" onclick="openAIForPlayer(${x.index})">
           <div class="rosaForteTargetRank">${n+1}</div>
           <div>
-            <div class="rosaForteTargetName">${esc(x.p.name)} <span class="strongScore ${strongScoreClass(x.score)}">${Math.round(x.score)}/99</span></div>
+            <div class="rosaForteTargetName">${isFavorite(x.p.name)?'⭐ ':''}${esc(x.p.name)} <span class="strongScore ${strongScoreClass(x.score)}">${Math.round(x.score)}/99</span></div>
             <div class="rosaForteTargetMeta">${x.p.role} · ${esc(x.p.team)} · ${strongRosterTargetReason(x)}</div>
             <span class="rosaForteSlot">${spec.label}</span>
             <span class="slotIntent">${spec.intent}</span>
@@ -7998,6 +8128,8 @@ function toggleFavorite(name,event){
   persist();
   renderListone();
   renderHomeLive();
+  try{renderStrongRosterAI();}catch(e){}
+  try{renderDynamicRosterPlan();}catch(e){}
 }
 
 function setListoneFilter(filter,btn){
