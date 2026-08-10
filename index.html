@@ -5215,6 +5215,19 @@ nav button .ico{font-size:19px!important}
 .fav675Alts span{display:inline-block;padding:4px 6px;border-radius:7px;background:#11182a;color:#c8d2df}
 .fav675Alts strong{color:#c9b7f7}
 
+
+/* V67.6 - Preferiti ↔ Rosa Forte ↔ Asta Live */
+.liveFavRank{
+  display:inline-block;margin-top:5px;padding:4px 7px;border-radius:999px;
+  font-size:6px;font-weight:950;letter-spacing:.03em
+}
+.liveFavRank.first{background:#0d3827;color:#62efad;border:1px solid rgba(57,217,138,.42)}
+.liveFavRank.alt{background:#171d2c;color:#c7b7f5;border:1px solid rgba(173,151,240,.30)}
+.liveFavExplain{
+  margin-top:6px;padding:7px 8px;border-radius:9px;background:#0b1d19;
+  color:#9decc6;font-size:6.5px;line-height:1.42;border:1px solid rgba(57,217,138,.20)
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5225,7 +5238,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7609,9 +7622,70 @@ function simulatedRosterImpact(playerIndex,price){
   return {before,overallAfter,cashBefore,cashAfter,slotsBefore,slotsAfter,spec,roleBefore,roleAfter,budgetLabel,futureReserve,profileScore};
 }
 
+
+/* V67.6 - Gerarchia Preferiti collegata ad Asta Live */
+function favoriteLiveHierarchy(playerIndex){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p || !isFavorite(p.name))return null;
+
+  const rows=favoriteStrongRows();
+  const me=rows.find(x=>x.index===playerIndex);
+  if(!me)return null;
+
+  const group=rows
+    .filter(x=>x.p.role===p.role && (x._slotSpec?.label||'')===(me._slotSpec?.label||''))
+    .sort((a,b)=>(a._slotRank||99)-(b._slotRank||99));
+
+  const rank=group.findIndex(x=>x.index===playerIndex);
+  if(rank<0)return null;
+
+  const firstChoice=group[0]||me;
+  const isFirst=rank===0;
+  const baseMax=Math.max(me._favoritePx.ideal,me._favoritePx.maxRec);
+  const aggressiveBase=isFirst?Math.ceil(baseMax*1.06):baseMax;
+  const liveMax=Math.max(
+    me._favoritePx.ideal,
+    Math.min(
+      safeMaxBid(state.me),
+      adaptiveSlotCap(p.role,aggressiveBase),
+      aggressiveBase
+    )
+  );
+
+  return {
+    me,
+    group,
+    rank,
+    isFirst,
+    firstChoice,
+    liveMax,
+    label:isFirst
+      ? `⭐ PRIMA SCELTA AI · ${me._slotSpec.label}`
+      : `⭐ ALTERNATIVA ${rank} · ${me._slotSpec.label}`
+  };
+}
+
+function liveAuctionAI(playerIndex){
+  const base=aiPlayerAnalysis(playerIndex,state.me);
+  if(!base)return null;
+
+  const h=favoriteLiveHierarchy(playerIndex);
+  if(!h)return {...base,_favoriteHierarchy:null};
+
+  const px=h.me._favoritePx;
+  return {
+    ...base,
+    low:px.low,
+    ideal:px.ideal,
+    high:Math.max(px.ideal,px.maxRec),
+    maxRec:h.liveMax,
+    _favoriteHierarchy:h
+  };
+}
+
 function auctionSimulatorDecision(playerIndex,price){
   const p=PLAYER_ARCHIVE[playerIndex];
-  const a=aiPlayerAnalysis(playerIndex,state.me);
+  const a=liveAuctionAI(playerIndex);
   if(!p||!a)return null;
   const bid=Math.max(0,Number(price)||0);
   const safe=safeMaxBid(state.me);
@@ -7695,7 +7769,7 @@ function renderAstaLiveSelected(){
     decision.innerHTML='<div class="empty">Cerca il giocatore chiamato per attivare l’assistente Asta Live.</div>';
     return;
   }
-  const a=aiPlayerAnalysis(ASTA_LIVE_PLAYER,state.me);
+  const a=liveAuctionAI(ASTA_LIVE_PLAYER);
   if(!a){
     selected.innerHTML='';
     decision.innerHTML='<div class="empty">Analisi non disponibile.</div>';
@@ -7704,13 +7778,20 @@ function renderAstaLiveSelected(){
 
   const safe=safeMaxBid(state.me);
   const absoluteCap=Math.max(1,Math.min(a.maxRec,safe));
-  const alts=liveStrategicAlternatives(ASTA_LIVE_PLAYER,3);
+  const hierarchy=a._favoriteHierarchy;
+  const alts=hierarchy
+    ? hierarchy.group.filter(x=>x.index!==ASTA_LIVE_PLAYER).slice(0,3).map(x=>({
+        p:x.p,index:x.index,
+        ai:{low:x._favoritePx.low,maxRec:x._favoritePx.maxRec,score:x._favoriteFit}
+      }))
+    : liveStrategicAlternatives(ASTA_LIVE_PLAYER,3);
 
   selected.innerHTML=`
     <div class="astaSelectedCard">
       <div>
         <div class="astaSelectedName">${esc(p.name)}</div>
         <div class="astaSelectedMeta">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm}</div>
+        ${hierarchy?`<div class="liveFavRank ${hierarchy.isFirst?'first':'alt'}">${esc(hierarchy.label)}</div>`:''}
       </div>
       <button class="astaClear" onclick="clearAstaLivePlayer()">✕</button>
     </div>`;
@@ -7721,6 +7802,9 @@ function renderAstaLiveSelected(){
         <div>
           <div class="astaDecisionTitle">🤖 Asta Live Smart</div>
           <div class="astaDecisionText">${marketModeText()} · decisione basata su prezzo, piano ${activeFormationPlan().name}, budget, mercato e alternative ancora libere.</div>
+          ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
+            ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
+            : `${esc(hierarchy.firstChoice.p.name)} è ancora la prima scelta per ${esc(hierarchy.me._slotSpec.label)}. Questo giocatore è l'alternativa n.${hierarchy.rank}.`}</div>`:''}
         </div>
         <div style="display:flex;gap:4px;align-items:center">
           ${(()=>{const sr=strongRosterProfile(ASTA_LIVE_PLAYER,state.me);return sr?`<span class="strongScore ${strongScoreClass(sr.score)}">ROSA ${sr.score}/99</span>`:''})()}
@@ -7786,7 +7870,7 @@ function addAstaLiveBid(v){
   el.value=Math.max(0,Number(el.value||0))+v;evaluateAstaLiveBid();
 }
 function setAstaLiveMax(){
-  const a=aiPlayerAnalysis(ASTA_LIVE_PLAYER,state.me);
+  const a=liveAuctionAI(ASTA_LIVE_PLAYER);
   const el=document.getElementById('astaLivePrice');
   if(a&&el){
     el.value=Math.max(1,Math.min(a.maxRec,safeMaxBid(state.me)));
@@ -7794,7 +7878,7 @@ function setAstaLiveMax(){
   }
 }
 function evaluateAstaLiveBid(){
-  const a=aiPlayerAnalysis(ASTA_LIVE_PLAYER,state.me);
+  const a=liveAuctionAI(ASTA_LIVE_PLAYER);
   const el=document.getElementById('astaLivePrice');
   const out=document.getElementById('astaLiveVerdict');
   const badge=document.getElementById('astaLiveDecisionBadge');
@@ -7828,6 +7912,24 @@ function evaluateAstaLiveBid(){
   let cls=sim?.cls==='stop'?'stop':sim?.cls==='wait'?'wait':'go';
   let verdictClass=sim?.cls==='stop'?'bad':sim?.cls==='wait'?'warn':'good';
   let text=sim?.why||'Valutazione aggiornata.';
+  const hierarchy=a._favoriteHierarchy;
+
+  if(hierarchy){
+    if(hierarchy.isFirst){
+      if(cls!=='stop')text=`⭐ PRIMA SCELTA AI per ${hierarchy.me._slotSpec.label}. ${text}`;
+    }else{
+      const first=hierarchy.firstChoice;
+      const firstStillFree=first && !purchaseForArchivePlayer(first.p.name) && !isUnavailablePlayer(first.p.name);
+      if(firstStillFree && price>=a.ideal && cls!=='stop'){
+        action='VALUTA DI ASPETTARE';
+        cls='wait';
+        verdictClass='warn';
+        text=`${first.p.name} è ancora libero ed è la PRIMA SCELTA AI per ${hierarchy.me._slotSpec.label}. Non forzare ${PLAYER_ARCHIVE[ASTA_LIVE_PLAYER]?.name||'questa alternativa'} oltre ${a.ideal} cr.`;
+      }else if(cls!=='stop'){
+        text=`⭐ ALTERNATIVA ${hierarchy.rank} per ${hierarchy.me._slotSpec.label}. ${text}`;
+      }
+    }
+  }
 
   if(badge){
     badge.className=`astaLiveDecisionBadge ${cls}`;
