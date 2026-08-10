@@ -5144,7 +5144,7 @@ nav button .ico{font-size:19px!important}
 .dsAiTabs{position:sticky;top:0;z-index:6;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:rgba(7,16,29,.96);backdrop-filter:blur(14px);padding:8px 0 10px;margin:6px 0 4px}
 .dsAiTabs button{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:13px;padding:10px 4px;font-weight:900;font-size:11px}
 .dsAiTabs button.active{border-color:#d8a91f;color:#ffd13b;background:#2a230d}
-.dsSection{scroll-margin-top:58px;margin-top:12px}.dsSection>h2{margin-bottom:4px}
+.dsSection{scroll-margin-top:58px;margin-top:12px;display:none}.dsSection.active{display:block}.dsSection>h2{margin-bottom:4px}
 
 /* V67 - Modulo sempre visibile nel Direttore Sportivo */
 .dsModuleBox{margin:10px 0 8px;padding:9px;border-radius:13px;background:#0a1727;border:1px solid rgba(142,164,189,.14)}
@@ -5229,7 +5229,7 @@ nav button .ico{font-size:19px!important}
 }
 
 
-/* V67.7 - Tesoretto AI */
+/* V67.7.1 - Fix tab D.S. AI */
 .budgetEquation{grid-template-columns:1fr auto 1fr auto 1fr auto 1fr auto 1fr!important}
 .budgetEquation>div.treasury{border-color:rgba(242,201,76,.45);background:#251f0b}
 .budgetEquation>div.treasury b{color:#f6d66d}
@@ -5248,7 +5248,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5296,7 +5296,7 @@ nav button .ico{font-size:19px!important}
     <button onclick="dsJump('dsStrong',this)">🏆 Rosa</button>
     <button onclick="dsJump('dsStrategy',this)">🧠 Strategia</button>
   </div>
-  <div id="dsDynamic" class="section dsSection"><h2>🧭 Piano Rosa Dinamico AI</h2><div class="hint">Come spendere: budget protetto, spendibile ora e prossimi obiettivi.</div><div id="dashboardDynamicPlan" style="margin-top:8px"></div></div>
+  <div id="dsDynamic" class="section dsSection active"><h2>🧭 Piano Rosa Dinamico AI</h2><div class="hint">Come spendere: budget protetto, spendibile ora e prossimi obiettivi.</div><div id="dashboardDynamicPlan" style="margin-top:8px"></div></div>
   <div id="dsStrong" class="section dsSection"><h2>🏆 Rosa Forte AI</h2><div class="hint">Quanto è forte la rosa: bonus, anti-malus, continuità e acquisti utili. Il modificatore pesa solo con un modulo che lo attiva.</div><div id="dashboardStrongRoster" style="margin-top:8px"></div></div>
   <div id="dsStrategy" class="section dsSection"><h2>🧠 Strategia d'Asta AI 4.0</h2><div class="hint">Dove intervenire: priorità dei reparti, budget e alternative.</div><div id="dashboardStrategy40" style="margin-top:8px"></div></div>
   <div id="dsDirectorEngine" style="display:none"><div id="dashboardDirectorAI"></div></div>
@@ -6296,7 +6296,15 @@ function openDSAI(){
 function dsJump(id,btn){
   document.querySelectorAll('.dsAiTabs button').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});
+
+  document.querySelectorAll('#dsai .dsSection').forEach(sec=>sec.classList.remove('active'));
+  const target=document.getElementById(id);
+  if(target)target.classList.add('active');
+
+  // Mantiene fissi modulo + tab; mostra solo il contenuto scelto.
+  if(id==='dsDynamic')try{renderDynamicRosterPlan();}catch(e){}
+  if(id==='dsStrong')try{renderStrongRosterAI();}catch(e){}
+  if(id==='dsStrategy')try{renderStrategy40();}catch(e){}
 }
 
 function homePlayerMatches(){
@@ -7698,7 +7706,7 @@ function simulatedRosterImpact(playerIndex,price){
 }
 
 
-/* V67.7 - Tesoretto AI collegata ad Asta Live */
+/* V67.7.1 - Fix tab D.S. AI collegata ad Asta Live */
 function favoriteLiveHierarchy(playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
   if(!p || !isFavorite(p.name))return null;
@@ -8206,6 +8214,12 @@ function render(){
   }else if(id==='dsai'){
     // Carica tutti i motori del Direttore Sportivo anche entrando direttamente dalla tab.
     // La Dashboard Compact resta separata e non viene ricostruita qui.
+    try{
+      const activeTab=document.querySelector('#dsai .dsAiTabs button.active');
+      if(!document.querySelector('#dsai .dsSection.active')){
+        document.getElementById('dsDynamic')?.classList.add('active');
+      }
+    }catch(e){}
     try{ renderDSModuleSelector(); }catch(err){ console.error('Modulo D.S. AI',err); }
     try{ renderDirectorSportivoAI(); }catch(err){ console.error('Direttore Sportivo AI',err); }
     try{ renderDynamicRosterPlan(); }catch(err){ console.error('Piano Rosa Dinamico AI',err); }
