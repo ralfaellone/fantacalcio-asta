@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7110,16 +7110,34 @@ function aiTreasury(){
   const saving=Math.max(0,Math.round(Number(d.delta)||0));
   if(saving<=0 || !slots)return {value:0,label:'NESSUN TESORETTO',delta:d.delta};
 
-  // V69.7 BUDGET GUARD:
-  // il tesoretto è solo una parte del risparmio realmente disponibile.
-  // Prima vengono SEMPRE protetti:
-  // 1) almeno 1 cr per ogni slot ancora vuoto;
-  // 2) la riserva strategica minima del piano.
-  const safety=Math.min(cash,Math.max(slots,Math.round((Number(state.initialBudget)||INITIAL||600)*.04)));
-  const hardCompletionReserve=Math.max(slots,safety);
-  const maxTreasury=Math.max(0,cash-hardCompletionReserve);
+  // V69.8 - TESORETTO EQUILIBRATO
+  // Il tesoretto NON può più assorbire il budget operativo dei reparti ancora aperti.
+  const safety=Math.min(
+    cash,
+    Math.max(slots,Math.round((Number(state.initialBudget)||INITIAL||600)*.04))
+  );
+
+  // Budget minimo realmente spendibile sui giocatori ancora mancanti:
+  // almeno 4 cr per slot, ma mai meno del 45% del saldo dopo la riserva.
+  const afterSafety=Math.max(0,cash-safety);
+  const minimumOperatingBudget=Math.min(
+    afterSafety,
+    Math.max(slots*4,Math.round(afterSafety*.45))
+  );
+
+  // Il tesoretto resta strategico, ma non oltre il 25% del saldo reale
+  // e mai a scapito del budget operativo necessario per completare la rosa.
+  const pctCap=Math.round(cash*.25);
+  const completionCap=Math.max(0,afterSafety-minimumOperatingBudget);
+  const maxTreasury=Math.max(0,Math.min(pctCap,completionCap));
+
   const value=Math.min(saving,maxTreasury);
-  return {value,label:value>0?'TESORETTO DISPONIBILE':'NESSUN TESORETTO',delta:d.delta};
+  return {
+    value,
+    label:value>0?'TESORETTO DISPONIBILE':'NESSUN TESORETTO',
+    delta:d.delta,
+    minimumOperatingBudget
+  };
 }
 
 function treasuryBestUse(){
@@ -7244,6 +7262,33 @@ function adaptiveBudgetPlan(){
     }
     ['P','D','C','A'].forEach(r=>{
       roles[r].avg=roles[r].missing?Math.max(1,Math.round(roles[r].allocation/roles[r].missing)):0;
+    });
+    pd=roles.P.allocation+roles.D.allocation;
+    ca=roles.C.allocation+roles.A.allocation;
+  }
+
+  // V69.8 - Se esistono ancora ruoli aperti, il budget operativo non può essere zero.
+  const missingTotal=['P','D','C','A'].reduce((sum,r)=>sum+roles[r].missing,0);
+  if(missingTotal>0 && (pd+ca)===0){
+    const forcedOperating=Math.min(
+      Math.max(0,cash-safety),
+      Math.max(missingTotal*4,Math.round(Math.max(0,cash-safety)*.45))
+    );
+    treasuryValue=Math.min(treasuryValue,Math.max(0,cash-safety-forcedOperating));
+
+    const active=['P','D','C','A'].filter(r=>roles[r].missing>0);
+    let remain=forcedOperating;
+    active.forEach((r,i)=>{
+      const add=i===active.length-1
+        ? remain
+        : Math.floor(forcedOperating*(roles[r].missing/missingTotal));
+      roles[r].allocation=Math.max(roles[r].allocation,add);
+      remain-=add;
+    });
+    ['P','D','C','A'].forEach(r=>{
+      roles[r].avg=roles[r].missing
+        ? Math.max(1,Math.round(roles[r].allocation/roles[r].missing))
+        : 0;
     });
     pd=roles.P.allocation+roles.D.allocation;
     ca=roles.C.allocation+roles.A.allocation;
