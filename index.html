@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5916,6 +5916,22 @@ function isInitialMarket(){
 }
 function currentInitialPhase(){
   return ['PD','CA'].includes(state.initialAuctionPhase)?state.initialAuctionPhase:'PD';
+}
+
+// V69.6: chiusura automatica del primo blocco.
+// Appena P=3/3 e D=8/8, l'asta iniziale passa definitivamente a C+A.
+function syncInitialAuctionPhase(){
+  if(!isInitialMarket())return false;
+  if(currentInitialPhase()!=='PD')return false;
+  const pdComplete=roleCount(state.me,'P')>=LIMITS.P && roleCount(state.me,'D')>=LIMITS.D;
+  if(!pdComplete)return false;
+  state.initialAuctionPhase='CA';
+  nextMoveSelectedRole='C';
+  if(typeof TOP5_ROLE_FILTER!=='undefined')TOP5_ROLE_FILTER='ALL';
+  if(typeof BUY_NOW_ROLE!=='undefined')BUY_NOW_ROLE='ALL';
+  if(typeof advisorRole!=='undefined')advisorRole='C';
+  try{localStorage.setItem('astaFantaV1',JSON.stringify(state));}catch(e){}
+  return true;
 }
 
 function initialBlockRoles(block=currentInitialPhase()){
@@ -7379,6 +7395,7 @@ function dynamicPlanSavingTip(targets){
   return `Dove risparmiare: non superare ${expensive._dynCap} cr su ${expensive.p.name}; proteggi il budget degli slot successivi.`;
 }
 function renderDynamicRosterPlan(){
+  syncInitialAuctionPhase();
   const el=document.getElementById('dashboardDynamicPlan');if(!el)return;
   try{
     const s=dynamicPlanStatus(),targets=dynamicPlanTargets(3);
@@ -8677,6 +8694,7 @@ function activePageId(){
   return active?active.id:'home';
 }
 function render(){
+  syncInitialAuctionPhase();
   renderCommonHeader();
   const id=activePageId();
   if(id==='home'){
