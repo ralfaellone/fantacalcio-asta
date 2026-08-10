@@ -5250,7 +5250,7 @@ nav button .ico{font-size:19px!important}
 .astaLiveDecisionBadge.wait{border-color:rgba(246,204,70,.5)}
 
 
-/* V68.1 - Asta Live AI 6.0 */
+/* V68.1 - Asta Live AI 6.1 */
 .auctionPulse6{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
 .auctionPulse6 span{padding:6px 4px;border-radius:8px;background:#111a2a;border:1px solid rgba(120,150,210,.18);font-size:5.5px;color:#8090ad;text-align:center;font-weight:850}
 .auctionPulse6 b{display:block;margin-top:2px;color:#dce7ff;font-size:6px}
@@ -5265,7 +5265,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8036,45 +8036,63 @@ function liveAuctionDecision5(playerIndex,price){
   const impact=simulatedRosterImpact(playerIndex,bid);
   const hierarchy=a._favoriteHierarchy;
   const treasury=treasuryCanBoost(playerIndex);
+
   const baseStop=Math.max(1,Math.min(a.maxRec,safe));
   const normalStop=Math.max(1,Math.min(baseStop,adaptiveSlotCap(p.role,baseStop,null)));
-  const treasuryStop=treasury.allow>0?Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow)):normalStop;
-  const stop=Math.max(1,treasuryStop);
+  const treasuryStop=treasury.allow>0
+    ? Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow))
+    : normalStop;
+
   const alts=liveAuctionAlternativeAdvice(playerIndex,bid,3);
   const bestAlt=alts[0]||null;
-  const roleOwned=roleCount(state.me,p.role);
-  const roleRemaining=Math.max(0,LIMITS[p.role]-roleOwned);
-  const isLastRoleSlot=roleRemaining===1;
-  // V68.6: ultimo slot = scelta di reparto. Il tetto deve tenere conto
-  // dell'alternativa reale, non solo del valore assoluto del giocatore.
-  let strategicStop=stop;
+
+  const roleLimit=LIMITS[p.role]||0;
+  const currentRoleCount=roleCount(state.me,p.role);
+  const isLastRoleSlot=(roleLimit>0 && currentRoleCount===roleLimit-1);
+
+  // V68.7: un solo tetto decisionale usato da barra, testo, badge e logica ultimo slot.
+  let decisionMax=Math.max(1,treasuryStop);
+
+  // Sull'ultimo slot possiamo diventare più selettivi, ma MAI sotto il MAX AI visualizzato.
+  // La convenienza dell'alternativa influisce solo se il divario di costo è molto alto.
   if(isLastRoleSlot && bestAlt){
-    const altMax=Math.max(1,Number(bestAlt._liveMax)||0);
-    const qualityPremium=Math.max(2,Math.round((Number(a.score||0)-Number(bestAlt.ai?.score||0))/6));
-    strategicStop=Math.max(a.ideal,Math.min(stop,altMax+qualityPremium));
+    const altMax=Math.max(1,Number(bestAlt._liveMax)||1);
+    const altIdeal=Math.max(1,Number(bestAlt._liveIdeal)||1);
+    const qualityGap=Math.max(0,(Number(a.score)||0)-(Number(bestAlt.ai?.score)||0));
+    const savingAtBase=Math.max(0,decisionMax-altIdeal);
+
+    // Solo se l'alternativa è nettamente più economica e non molto peggiore
+    // restringiamo di massimo 2 crediti, mai sotto a.high.
+    if(savingAtBase>=15 && qualityGap<=10){
+      decisionMax=Math.max(a.high,decisionMax-2);
+    }
   }
-  const effectiveStop=Math.max(1,strategicStop);
+
+  const stop=decisionMax;
   const overPlan=Math.max(0,Number(ap.delta?.delta)<0?Math.abs(Number(ap.delta.delta)):0);
 
   let action='COMPRA',level='buy',headline='PREZZO CONVENIENTE',why='';
-  if(!marketRoleAllowed(p.role)||roleCount(state.me,p.role)>=LIMITS[p.role]){
+
+  if(!marketRoleAllowed(p.role)||currentRoleCount>=roleLimit){
     action='LASCIA';level='stop';headline='NON SERVE ALLA ROSA';
-    why=!marketRoleAllowed(p.role)?`Il ruolo ${p.role} non appartiene al blocco d'asta attivo.`:`Hai già completato il reparto ${p.role}.`;
-  }else if(bid>effectiveStop){
+    why=!marketRoleAllowed(p.role)
+      ? `Il ruolo ${p.role} non appartiene al blocco d'asta attivo.`
+      : `Hai già completato il reparto ${p.role}.`;
+  }else if(bid>stop){
     action='LASCIA';level='stop';headline='OLTRE IL LIMITE STRATEGICO';
     why=`A ${bid} cr non conviene più. Il limite AI aggiornato è ${stop} cr.`;
-  }else if(bid===effectiveStop){
+  }else if(bid===stop){
     action='ULTIMO CREDITO';level='danger';headline='TETTO ASSOLUTO';
-    why=`Puoi arrivare a ${effectiveStop} cr, ma non fare il rilancio successivo.`;
-  }else if(treasury.allow>0&&bid>normalStop&&bid<=effectiveStop){
+    why=`${isLastRoleSlot?`Ultimo slot ${p.role}. `:''}Puoi arrivare a ${stop} cr, ma non fare il rilancio successivo.`;
+  }else if(treasury.allow>0&&bid>normalStop&&bid<=stop){
     action='SFORA COL TESORETTO';level='treasury';headline='OBIETTIVO STRATEGICO';
-    why=`Superi il tetto ordinario di ${normalStop} cr, ma il Tesoretto autorizza fino a ${effectiveStop} cr.`;
-  }else if(bid>=Math.max(a.high,effectiveStop-1)){
-    action=`ATTENZIONE · MAX ${effectiveStop}`;level='danger';headline='ZONA FINALE';
-    why=`Resta solo ${Math.max(0,effectiveStop-bid)} cr di margine.`;
+    why=`Superi il tetto ordinario di ${normalStop} cr, ma il Tesoretto autorizza fino a ${stop} cr.`;
+  }else if(bid>=Math.max(a.high,stop-1)){
+    action=`ATTENZIONE · MAX ${stop}`;level='danger';headline='ZONA FINALE';
+    why=`${isLastRoleSlot?`Ultimo slot ${p.role}. `:''}Resta solo ${Math.max(0,stop-bid)} cr di margine.`;
   }else if(bid>a.ideal){
-    action=`PUOI RILANCIARE · MAX ${effectiveStop}`;level='wait';headline='SOPRA L’IDEALE';
-    why=`Hai superato l'ideale aggiornato di ${a.ideal} cr, ma sei ancora coperto.`;
+    action=`PUOI RILANCIARE · MAX ${stop}`;level='wait';headline='SOPRA L’IDEALE';
+    why=`Hai superato l'ideale aggiornato di ${a.ideal} cr, ma sei ancora coperto fino a ${stop} cr.`;
   }else if(bid===a.ideal){
     action='COMPRA';level='buy';headline='PREZZO IDEALE';
     why=`Sei esattamente sul prezzo ideale AI aggiornato di ${a.ideal} cr.`;
@@ -8086,23 +8104,15 @@ function liveAuctionDecision5(playerIndex,price){
     why=`Sei sotto il valore minimo AI aggiornato di ${a.low} cr.`;
   }
 
-  if(isLastRoleSlot && level!=='stop'){
-    headline=`ULTIMO SLOT ${p.role} · ${headline}`;
-    if(bestAlt){
-      const save=Math.max(0,effectiveStop-(Number(bestAlt._liveMax)||0));
-      why+=` È l'ultimo posto disponibile nel reparto ${p.role}: l'AI confronta questa scelta con ${bestAlt.p.name} e protegge il budget degli altri reparti.`;
-    }else{
-      why+=` È l'ultimo posto disponibile nel reparto ${p.role}: l'AI applica maggiore selettività per chiudere il reparto.`;
-    }
-  }
-
   if(a.market.count){
     const sign=a.market.pct>0?'+':'';
-    why+=` Mercato osservato: ${a.market.label} (${sign}${a.market.pct}%, ${a.market.count} campioni; ${a.comparableCount||0} comparabili per fascia); soglie AI calibrate ${a.adjustment>0?'+':''}${a.adjustment}%.`;
+    why+=` Mercato osservato: ${a.market.label} (${sign}${a.market.pct}%, ${a.market.count} campioni${a.market.comparableCount!=null?`; ${a.market.comparableCount} comparabili per fascia`:''}); soglie AI calibrate ${a.adjustment>0?'+':''}${a.adjustment}%.`;
   }
-  if(hierarchy?.isFirst&&level!=='stop')why=`⭐ Prima scelta AI. ${why}`;
-  else if(hierarchy&&!hierarchy.isFirst&&level!=='stop')why=`Alternativa n.${hierarchy.rank}. ${why}`;
-  if(overPlan>0&&level!=='stop')why+=` Sei già ${overPlan} cr sopra il piano: prudenza.`;
+
+  if(hierarchy?.isFirst&&level!=='stop') why=`⭐ Prima scelta AI. ${why}`;
+  else if(hierarchy&&!hierarchy.isFirst&&level!=='stop') why=`Alternativa n.${hierarchy.rank}. ${why}`;
+
+  if(overPlan>0&&level!=='stop') why+=` Sei già ${overPlan} cr sopra il piano: prudenza.`;
 
   if(impact.budgetLabel==='CRITICO'&&bid>=a.low&&level!=='stop'&&level!=='treasury'){
     action='ULTIMI CREDITI';level='danger';headline='BUDGET SOTTO PRESSIONE';
@@ -8110,17 +8120,24 @@ function liveAuctionDecision5(playerIndex,price){
   }
 
   let alternativeText='';
-  if(isLastRoleSlot&&bestAlt){
-    const save=Math.max(0,effectiveStop-(Number(bestAlt._liveMax)||0));
-    alternativeText=`🔒 ULTIMO SLOT ${p.role}: ${p.name} fino a ${effectiveStop} cr. Oltre, passa a ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · proteggi circa ${save} cr per gli altri reparti`:''}.`;
-  }else if((level==='stop'||level==='danger'||level==='wait'||bid>=a.ideal)&&bestAlt){
-    const save=bestAlt._liveSaving;
-    alternativeText=level==='stop'
-      ?`🔁 PIANO B AUTOMATICO: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · NON OLTRE ${bestAlt._liveMax} cr${save>0?` · risparmio circa ${save} cr`:''}.`
-      :`🔁 Piano B: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · risparmio potenziale ${save} cr`:''}.`;
+  if(bestAlt){
+    const save=Math.max(0,Math.round(stop-bestAlt._liveIdeal));
+    if(isLastRoleSlot){
+      alternativeText=`🔒 ULTIMO SLOT ${p.role}: ${p.name} fino a ${stop} cr. Oltre, passa a ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · proteggi circa ${save} cr per gli altri reparti`:''}.`;
+    }else if(level==='stop'){
+      alternativeText=`🔁 PIANO B AUTOMATICO: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · NON OLTRE ${bestAlt._liveMax} cr${bestAlt._liveSaving>0?` · risparmio circa ${bestAlt._liveSaving} cr`:''}.`;
+    }else if(level==='danger'||level==='wait'||bid>=a.ideal){
+      alternativeText=`🔁 Piano B: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${bestAlt._liveSaving>0?` · risparmio potenziale ${bestAlt._liveSaving} cr`:''}.`;
+    }
   }
 
-  return {action,level,headline,why,stop:effectiveStop,normalStop,treasuryStop,treasuryAllow:treasury.allow||0,impact,bestAlt,alts,alternativeText,ap,calibrated:a};
+  return {
+    action,level,headline,why,
+    stop,decisionMax,normalStop,treasuryStop,
+    treasuryAllow:treasury.allow||0,
+    impact,bestAlt,alts,alternativeText,ap,
+    calibrated:a,isLastRoleSlot
+  };
 }
 
 function auctionSimulatorDecision(playerIndex,price){
@@ -8203,7 +8220,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 6.0</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 6.1</div>
           <div class="astaDecisionText">${marketModeText()} · decisione live su prezzo, rosa, piano ${activeFormationPlan().name}, budget, preferiti, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
