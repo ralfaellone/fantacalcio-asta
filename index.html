@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6846,7 +6846,7 @@ function favoritePriorityBoost(name){
 
 function favoriteStrongRows(){
  const roles=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
- const rows=PLAYER_ARCHIVE.map((p,index)=>({p,index})).filter(x=>isFavorite(x.p.name)&&roles.includes(x.p.role)&&roleCount(state.me,x.p.role)<LIMITS[x.p.role]&&!purchaseForArchivePlayer(x.p.name)&&!isUnavailablePlayer(x.p.name)).map(x=>{
+ const rows=PLAYER_ARCHIVE.map((p,index)=>({p,index})).filter(x=>isFavorite(x.p.name)&&roles.includes(x.p.role)&&roleCount(state.me,x.p.role)<LIMITS[x.p.role]&&!purchaseForArchivePlayer(x.p.name)&&!isUnavailablePlayer(x.p.name)&&(x.p.role!=='P'||keeperAllowedPlayer(x.p,state.me))).map(x=>{
   const s=strongRosterProfile(x.index,state.me); if(!s)return null;
   const spec=nextSlotSpec(x.p.role), slotScore=slotCandidateScore(s,spec), meta=goalMeta(x.p.name);
   const bp=liveTop5StrategicPrices({...s,p:x.p,index:x.index});
@@ -6949,6 +6949,14 @@ function strongRosterTargets(limit=5){
       _pickScore:f._favoriteFit + need*10 + favoritePriorityBoost(f.p.name)
     });
   });
+
+  // V69.5 - BLOCCO PORTIERI: dopo P1 nessun candidato P di altra squadra
+  // può entrare nel Piano, nemmeno tramite preferiti/fallback.
+  if(keeperBlockLocked(state.me)){
+    for(let i=pool.length-1;i>=0;i--){
+      if(pool[i]._role==='P' && !keeperAllowedPlayer(pool[i].p,state.me)) pool.splice(i,1);
+    }
+  }
 
   pool.sort((a,b)=>b._pickScore-a._pickScore);
 
@@ -7348,13 +7356,20 @@ function dynamicPlanTargets(limit=3){
     }
   }
 
-  return rows.slice(0,limit);
+  const lockedTeam=keeperBlockTeam(state.me);
+  const safeRows=lockedTeam
+    ? rows.filter(x=>x.p.role!=='P' || String(x.p.team||'').trim()===lockedTeam)
+    : rows;
+  return safeRows.slice(0,limit);
 }
 function dynamicPlanSavingTip(targets){
   const status=dynamicPlanStatus();
   if(!targets.length)return 'Nessun risparmio necessario: completa gli slot rimasti senza forzare.';
   const expensive=[...targets].sort((a,b)=>b._dynPx.ideal-a._dynPx.ideal)[0];
-  const alts=slotAlternatives(expensive,expensive.p.role,expensive._dynSpec);
+  let alts=slotAlternatives(expensive,expensive.p.role,expensive._dynSpec);
+  if(expensive.p.role==='P' && keeperBlockLocked(state.me)){
+    alts=alts.filter(a=>keeperAllowedPlayer(a.x?.p,state.me));
+  }
   const cheap=alts.find(a=>a.type==='Risparmio')||alts[alts.length-1];
   if(status.level==='good'&&!cheap)return 'Piano in equilibrio: non serve tagliare aggressivamente i tetti.';
   if(cheap){
@@ -7804,6 +7819,10 @@ function renderAstaLiveSuggestions(){
 }
 function selectAstaLivePlayer(index){
   const chosen=PLAYER_ARCHIVE[index];
+  if(chosen && chosen.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(chosen,state.me)){
+    alert(`Blocco portieri ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`);
+    return;
+  }
   if(chosen && !marketRoleAllowed(chosen.role)){
     alert(`Asta iniziale: blocco ${initialBlockLabel()}. Puoi chiamare ${allowedInitialRoleText()}.`);
     return;
@@ -7963,7 +7982,7 @@ function liveAuctionAlternativeAdvice(playerIndex,price,limit=2){
 }
 
 
-/* V68.2 - Asta Live AI 6.1: apprendimento progressivo per fascia giocatore */
+/* V68.2 - Asta Live AI 6.2: apprendimento progressivo per fascia giocatore */
 
 /*
   V68.2 riparte con una nuova epoca di apprendimento mercato.
@@ -10805,7 +10824,7 @@ function renderAdvisor(){
     ? `<strong style="color:var(--ok)">Modalità statistica reale attiva</strong><br>${n} giocatori con dati storici importati. Il ranking combina statistiche, bonus/malus, FVM, prezzo AI e bisogni della tua rosa.`
     : `<strong style="color:var(--accent)">Modalità base</strong><br>Non hai ancora importato le statistiche. I consigli usano FVM, prezzo AI, crediti e necessità della rosa senza inventare dati statistici.`;
 
-  const free=PLAYER_ARCHIVE.filter(p=>p.role===advisorRole&&!purchaseForArchivePlayer(p.name)&&!isUnavailablePlayer(p.name));
+  const free=PLAYER_ARCHIVE.filter(p=>p.role===advisorRole&&!purchaseForArchivePlayer(p.name)&&!isUnavailablePlayer(p.name)&&(p.role!=='P'||keeperAllowedPlayer(p,state.me)));
   const ranked=free.map(p=>{
     const index=PLAYER_ARCHIVE.indexOf(p);
     return {p,index,...advisorScore(p,index)};
@@ -12668,6 +12687,10 @@ function searchPlayers(){
 function selectArchivePlayer(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p || alreadyBoughtPlayer(p.name)) return;
+  if(p.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(p,state.me)){
+    alert(`Blocco portieri ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`);
+    return;
+  }
   selectedArchivePlayer=p;
   document.getElementById('pname').value=p.name;
   const priceInput=document.getElementById('pprice');
@@ -12857,6 +12880,14 @@ function saveBuy(){
   const hint=document.getElementById('buyHint');
 
   if(!name||!price||price<1){hint.textContent='Inserisci nome e prezzo.';hint.className='hint danger';updateBuyPreview();return}
+  if(role==='P' && keeperBlockLocked(buyer)){
+    const locked=keeperBlockTeam(buyer);
+    const pcheck=PLAYER_ARCHIVE.find(p=>normalizePlayerText(p.name)===normalizePlayerText(name));
+    if(pcheck && String(pcheck.team||'').trim()!==locked){
+      hint.textContent=`Blocco portieri ${locked}: P2 e P3 devono essere della stessa squadra del P1.`;
+      hint.className='hint danger'; updateBuyPreview(); return;
+    }
+  }
   if(!marketRoleAllowed(role)){
     hint.textContent=`Asta iniziale: blocco ${initialBlockLabel()}. Puoi registrare ${allowedInitialRoleText()}.`;
     hint.className='hint danger';
