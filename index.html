@@ -5249,6 +5249,12 @@ nav button .ico{font-size:19px!important}
 .liveDecisionAlt5.stopAlt{background:#251315;border-color:rgba(255,100,100,.48);color:#ffd0d0;font-size:7px}
 .astaLiveDecisionBadge.wait{border-color:rgba(246,204,70,.5)}
 
+
+/* V68.0 - Asta Live AI 6.0 */
+.auctionPulse6{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
+.auctionPulse6 span{padding:6px 4px;border-radius:8px;background:#111a2a;border:1px solid rgba(120,150,210,.18);font-size:5.5px;color:#8090ad;text-align:center;font-weight:850}
+.auctionPulse6 b{display:block;margin-top:2px;color:#dce7ff;font-size:6px}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5259,7 +5265,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7926,9 +7932,64 @@ function liveAuctionAlternativeAdvice(playerIndex,price,limit=2){
     .slice(0,limit);
 }
 
+
+/* V68.0 - Asta Live AI 6.0: apprendimento dai prezzi reali della lega */
+function liveMarketLearning(role=null){
+  const rows=(state.purchases||[]).filter(x=>!role||x.role===role);
+  const samples=[];
+  rows.forEach(buy=>{
+    const snap=buy.aiSnapshot||{};
+    const expected=Math.max(1,Number(snap.ideal)||Number(snap.slotTarget)||0);
+    const paid=Math.max(0,Number(buy.price)||0);
+    if(expected>0 && paid>0) samples.push({ratio:paid/expected,paid,expected,role:buy.role});
+  });
+  if(!samples.length)return {count:0,ratio:1,pct:0,label:'IN ATTESA',confidence:0};
+  // Riduce l'effetto dei singoli acquisti estremi.
+  const ratios=samples.map(x=>Math.max(.55,Math.min(1.65,x.ratio))).sort((a,b)=>a-b);
+  const trimmed=ratios.length>=5?ratios.slice(1,-1):ratios;
+  const ratio=trimmed.reduce((s,x)=>s+x,0)/trimmed.length;
+  const pct=Math.round((ratio-1)*100);
+  const confidence=Math.min(1,samples.length/8);
+  const label=pct>=15?'MOLTO CARO':pct>=6?'CARO':pct<=-15?'MOLTO ECONOMICO':pct<=-6?'ECONOMICO':'IN LINEA';
+  return {count:samples.length,ratio,pct,label,confidence};
+}
+
+function calibratedLivePrices(playerIndex){
+  const a=liveAuctionAI(playerIndex);
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!a||!p)return null;
+  const all=liveMarketLearning();
+  const role=liveMarketLearning(p.role);
+  // La calibrazione cresce con i campioni; mai inseguire ciecamente il mercato.
+  const signal=(role.count>=2?role:all);
+  const rawAdj=(signal.ratio-1)*Math.min(.55,signal.confidence);
+  const adj=Math.max(-.12,Math.min(.12,rawAdj));
+  const mult=1+adj;
+  const safe=safeMaxBid(state.me);
+  return {
+    ...a,
+    low:Math.max(1,Math.round(a.low*mult)),
+    ideal:Math.max(1,Math.round(a.ideal*mult)),
+    high:Math.max(1,Math.round(a.high*mult)),
+    maxRec:Math.max(1,Math.min(safe,Math.round(a.maxRec*mult))),
+    market:signal,adjustment:Math.round(adj*100)
+  };
+}
+
+function auctionLeaguePulse(){
+  const all=liveMarketLearning();
+  const ap=adaptiveBudgetPlan();
+  const delta=Number(ap.delta?.delta)||0;
+  return {
+    market:all,
+    budget:delta>6?'IN VANTAGGIO':delta<-6?'SOTTO PRESSIONE':'IN LINEA',
+    delta,
+    treasury:Number(ap.treasury?.value)||0
+  };
+}
 function liveAuctionDecision5(playerIndex,price){
   const p=PLAYER_ARCHIVE[playerIndex];
-  const a=liveAuctionAI(playerIndex);
+  const a=calibratedLivePrices(playerIndex);
   if(!p||!a)return null;
 
   const bid=Math.max(0,Number(price)||0);
@@ -7939,74 +8000,64 @@ function liveAuctionDecision5(playerIndex,price){
   const treasury=treasuryCanBoost(playerIndex);
   const baseStop=Math.max(1,Math.min(a.maxRec,safe));
   const normalStop=Math.max(1,Math.min(baseStop,adaptiveSlotCap(p.role,baseStop,null)));
-
-  // Il tesoretto è EXTRA solo per un obiettivo realmente autorizzato.
-  const treasuryStop=treasury.allow>0
-    ? Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow))
-    : normalStop;
-
+  const treasuryStop=treasury.allow>0?Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow)):normalStop;
   const stop=Math.max(1,treasuryStop);
   const alts=liveAuctionAlternativeAdvice(playerIndex,bid,3);
   const bestAlt=alts[0]||null;
   const overPlan=Math.max(0,Number(ap.delta?.delta)<0?Math.abs(Number(ap.delta.delta)):0);
 
   let action='COMPRA',level='buy',headline='PREZZO CONVENIENTE',why='';
-  if(!marketRoleAllowed(p.role) || roleCount(state.me,p.role)>=LIMITS[p.role]){
-    action='LASCIA'; level='stop'; headline='NON SERVE ALLA ROSA';
-    why=!marketRoleAllowed(p.role)
-      ? `Il ruolo ${p.role} non appartiene al blocco d'asta attivo.`
-      : `Hai già completato il reparto ${p.role}.`;
+  if(!marketRoleAllowed(p.role)||roleCount(state.me,p.role)>=LIMITS[p.role]){
+    action='LASCIA';level='stop';headline='NON SERVE ALLA ROSA';
+    why=!marketRoleAllowed(p.role)?`Il ruolo ${p.role} non appartiene al blocco d'asta attivo.`:`Hai già completato il reparto ${p.role}.`;
   }else if(bid>stop){
-    action='LASCIA'; level='stop'; headline='OLTRE IL LIMITE STRATEGICO';
-    why=`A ${bid} cr il rapporto qualità/budget non conviene più. Il limite attuale è ${stop} cr.`;
+    action='LASCIA';level='stop';headline='OLTRE IL LIMITE STRATEGICO';
+    why=`A ${bid} cr non conviene più. Il limite AI aggiornato è ${stop} cr.`;
   }else if(bid===stop){
-    action='ULTIMO CREDITO'; level='danger'; headline='TETTO ASSOLUTO';
-    why=`Puoi arrivare a ${stop} cr, ma non devi fare il rilancio successivo.`;
-  }else if(treasury.allow>0 && bid>normalStop && bid<=stop){
-    action='SFORA COL TESORETTO'; level='treasury'; headline='OBIETTIVO STRATEGICO';
-    why=`Il prezzo supera il tetto ordinario di ${normalStop} cr, ma l'AI autorizza il Tesoretto fino a ${stop} cr.`;
+    action='ULTIMO CREDITO';level='danger';headline='TETTO ASSOLUTO';
+    why=`Puoi arrivare a ${stop} cr, ma non fare il rilancio successivo.`;
+  }else if(treasury.allow>0&&bid>normalStop&&bid<=stop){
+    action='SFORA COL TESORETTO';level='treasury';headline='OBIETTIVO STRATEGICO';
+    why=`Superi il tetto ordinario di ${normalStop} cr, ma il Tesoretto autorizza fino a ${stop} cr.`;
   }else if(bid>=Math.max(a.high,stop-1)){
-    action=`ATTENZIONE · MAX ${stop}`; level='danger'; headline='ZONA FINALE';
-    why=`Sei a ${bid} cr: resta solo ${Math.max(0,stop-bid)} cr di margine. Se il prezzo arriva a ${stop}, quello è l'ultimo credito.`;
+    action=`ATTENZIONE · MAX ${stop}`;level='danger';headline='ZONA FINALE';
+    why=`Resta solo ${Math.max(0,stop-bid)} cr di margine.`;
   }else if(bid>a.ideal){
-    action=`PUOI RILANCIARE · MAX ${stop}`; level='wait'; headline='SOPRA L’IDEALE';
-    why=`Hai superato l'ideale di ${a.ideal} cr, ma il giocatore è ancora acquistabile. Non oltrepassare ${stop} cr.`;
+    action=`PUOI RILANCIARE · MAX ${stop}`;level='wait';headline='SOPRA L’IDEALE';
+    why=`Hai superato l'ideale aggiornato di ${a.ideal} cr, ma sei ancora coperto.`;
   }else if(bid===a.ideal){
-    action='COMPRA'; level='buy'; headline='PREZZO IDEALE';
-    why=`Sei esattamente sul prezzo ideale AI di ${a.ideal} cr.`;
+    action='COMPRA';level='buy';headline='PREZZO IDEALE';
+    why=`Sei esattamente sul prezzo ideale AI aggiornato di ${a.ideal} cr.`;
   }else if(bid>=a.low){
-    action='COMPRA'; level='buy'; headline='PREZZO GIUSTO';
-    why=`Sei nella fascia conveniente ${a.low}-${a.ideal} cr per questo profilo e per la tua rosa.`;
+    action='COMPRA';level='buy';headline='PREZZO GIUSTO';
+    why=`Sei nella fascia conveniente ${a.low}-${a.ideal} cr.`;
   }else{
-    action='COMPRA'; level='buy'; headline='AFFARE';
-    why=`Sei sotto il valore minimo AI di ${a.low} cr. Il prezzo è molto favorevole.`;
+    action='COMPRA';level='buy';headline='AFFARE';
+    why=`Sei sotto il valore minimo AI aggiornato di ${a.low} cr.`;
   }
 
-  if(hierarchy?.isFirst && level!=='stop')
-    why=`⭐ Prima scelta AI per ${hierarchy.me._slotSpec.label}. ${why}`;
-  else if(hierarchy && !hierarchy.isFirst && level!=='stop')
-    why=`Alternativa n.${hierarchy.rank} per ${hierarchy.me._slotSpec.label}. ${why}`;
+  if(a.market.count){
+    const sign=a.market.pct>0?'+':'';
+    why+=` Mercato osservato: ${a.market.label} (${sign}${a.market.pct}%, ${a.market.count} acquisti); soglie AI calibrate ${a.adjustment>0?'+':''}${a.adjustment}%.`;
+  }
+  if(hierarchy?.isFirst&&level!=='stop')why=`⭐ Prima scelta AI. ${why}`;
+  else if(hierarchy&&!hierarchy.isFirst&&level!=='stop')why=`Alternativa n.${hierarchy.rank}. ${why}`;
+  if(overPlan>0&&level!=='stop')why+=` Sei già ${overPlan} cr sopra il piano: prudenza.`;
 
-  if(overPlan>0 && level!=='stop')
-    why+=` Sei già ${overPlan} cr sopra il piano complessivo: prudenza sui rilanci.`;
-
-  if(impact.budgetLabel==='CRITICO' && bid>=a.low && level!=='stop' && level!=='treasury'){
-    action='ULTIMI CREDITI'; level='danger'; headline='BUDGET SOTTO PRESSIONE';
+  if(impact.budgetLabel==='CRITICO'&&bid>=a.low&&level!=='stop'&&level!=='treasury'){
+    action='ULTIMI CREDITI';level='danger';headline='BUDGET SOTTO PRESSIONE';
     why+=` Dopo l'acquisto il budget per gli slot rimanenti diventerebbe critico.`;
   }
 
   let alternativeText='';
-  if((level==='stop'||level==='danger'||level==='wait'||bid>=a.ideal) && bestAlt){
+  if((level==='stop'||level==='danger'||level==='wait'||bid>=a.ideal)&&bestAlt){
     const save=bestAlt._liveSaving;
     alternativeText=level==='stop'
-      ? `🔁 ALTERNATIVA IMMEDIATA: ${bestAlt.p.name} · obiettivo ${bestAlt._liveIdeal} cr · NON OLTRE ${bestAlt._liveMax} cr${save>0?` · puoi risparmiare circa ${save} cr`:''}.`
-      : `🔁 Piano B: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · risparmio potenziale ${save} cr`:''}.`;
+      ?`🔁 PIANO B AUTOMATICO: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · NON OLTRE ${bestAlt._liveMax} cr${save>0?` · risparmio circa ${save} cr`:''}.`
+      :`🔁 Piano B: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · risparmio potenziale ${save} cr`:''}.`;
   }
 
-  return {
-    action,level,headline,why,stop,normalStop,treasuryStop,
-    treasuryAllow:treasury.allow||0,impact,bestAlt,alts,alternativeText,ap
-  };
+  return {action,level,headline,why,stop,normalStop,treasuryStop,treasuryAllow:treasury.allow||0,impact,bestAlt,alts,alternativeText,ap,calibrated:a};
 }
 
 function auctionSimulatorDecision(playerIndex,price){
@@ -8089,7 +8140,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 5.1</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 6.0</div>
           <div class="astaDecisionText">${marketModeText()} · decisione live su prezzo, rosa, piano ${activeFormationPlan().name}, budget, preferiti, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
@@ -8206,7 +8257,15 @@ function evaluateAstaLiveBid(){
     badge.textContent=d.action;
   }
   out.className=`astaVerdict ${verdictClass}`;
-  out.innerHTML=`<b>${esc(d.headline)}</b><br>${esc(d.why)}${d.alternativeText?`<div class="liveDecisionAlt5 ${d.level==='stop'?'stopAlt':''}">${esc(d.alternativeText)}</div>`:''}`;
+  const pulse=auctionLeaguePulse();
+  const mp=pulse.market;
+  out.innerHTML=`<b>${esc(d.headline)}</b><br>${esc(d.why)}
+    <div class="auctionPulse6">
+      <span>MERCATO <b>${esc(mp.label)}${mp.count?` ${mp.pct>0?'+':''}${mp.pct}%`:''}</b></span>
+      <span>BUDGET <b>${esc(pulse.budget)} ${pulse.delta>0?'+':''}${pulse.delta}</b></span>
+      <span>TESORETTO <b>${pulse.treasury} cr</b></span>
+    </div>
+    ${d.alternativeText?`<div class="liveDecisionAlt5 ${d.level==='stop'?'stopAlt':''}">${esc(d.alternativeText)}</div>`:''}`;
 
   if(delta){
     const idealGap=a.ideal-price;
