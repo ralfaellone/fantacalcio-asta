@@ -5248,7 +5248,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7092,14 +7092,20 @@ function treasuryBestUse(){
 function treasuryCanBoost(playerIndex){
   const t=aiTreasury(), p=PLAYER_ARCHIVE[playerIndex];
   if(!p||t.value<=0)return {allow:0,reason:''};
-  const h=favoriteLiveHierarchy(playerIndex);
+
+  // IMPORTANTE: questa funzione viene chiamata mentre si calcolano i prezzi
+  // dei candidati. Non deve richiamare treasuryBestUse()/strongRosterTargets(),
+  // altrimenti, appena nasce un tesoretto dopo il primo acquisto, si crea
+  // ricorsione infinita: prezzi -> budget -> tesoretto -> target -> prezzi.
+  const hierarchy=favoriteLiveHierarchy(playerIndex);
   const impact=strongRosterProfile(playerIndex,state.me);
-  const best=treasuryBestUse();
+
   let priority=0;
-  if(h?.isFirst)priority+=3;
+  if(hierarchy?.isFirst)priority+=4;
   if(isFavorite(p.name))priority+=2;
-  if(best.target?.index===playerIndex)priority+=3;
-  if((impact?.score||0)>=82)priority+=2;
+  if((impact?.score||0)>=86)priority+=3;
+  else if((impact?.score||0)>=82)priority+=2;
+
   if(priority<4)return {allow:0,reason:'Tesoretto protetto per obiettivi più strategici.'};
   const allow=Math.min(t.value,Math.max(1,Math.round(t.value*.45)));
   return {allow,reason:`Il D.S. autorizza fino a ${allow} cr del tesoretto su questo obiettivo.`};
