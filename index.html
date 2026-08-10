@@ -5250,13 +5250,13 @@ nav button .ico{font-size:19px!important}
 .astaLiveDecisionBadge.wait{border-color:rgba(246,204,70,.5)}
 
 
-/* V68.1 - Asta Live AI 6.1 */
+/* V68.1 - Asta Live AI 6.2 */
 .auctionPulse6{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
 .auctionPulse6 span{padding:6px 4px;border-radius:8px;background:#111a2a;border:1px solid rgba(120,150,210,.18);font-size:5.5px;color:#8090ad;text-align:center;font-weight:850}
 .auctionPulse6 b{display:block;margin-top:2px;color:#dce7ff;font-size:6px}
 
 
-/* V68.9 - Difesa AI */
+/* V69.0 - Difesa AI */
 .defenseLive689{margin-top:8px;padding:8px 9px;border-radius:10px;background:#10231e;border:1px solid rgba(74,211,154,.25)}
 .defenseLive689 span{font-size:6px;font-weight:950;color:#76e2b1}.defenseLive689 b{display:block;margin-top:2px;font-size:7px;color:#d9fff0}
 .defenseLive689 small{display:block;margin-top:2px;font-size:5.5px;color:#86a89a}
@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8108,6 +8108,9 @@ function liveAuctionDecision5(playerIndex,price){
     }
   }
 
+  // V69.0: NON OLTRE è il tetto assoluto. Nessuna logica di slot/tesoretto può superarlo.
+  decisionMax=Math.max(1,Math.min(decisionMax,a.maxRec));
+
   // Sull'ultimo slot possiamo diventare più selettivi, ma MAI sotto il MAX AI visualizzato.
   // La convenienza dell'alternativa influisce solo se il divario di costo è molto alto.
   if(isLastRoleSlot && bestAlt){
@@ -8133,21 +8136,21 @@ function liveAuctionDecision5(playerIndex,price){
     why=!marketRoleAllowed(p.role)
       ? `Il ruolo ${p.role} non appartiene al blocco d'asta attivo.`
       : `Hai già completato il reparto ${p.role}.`;
-  }else if(bid>stop){
+  }else if(bid>decisionMax){
     action='LASCIA';level='stop';headline='OLTRE IL LIMITE STRATEGICO';
-    why=`A ${bid} cr non conviene più. Il limite AI aggiornato è ${stop} cr.`;
-  }else if(bid===stop){
+    why=`A ${bid} cr non conviene più. Il limite AI aggiornato è ${decisionMax} cr.`;
+  }else if(bid===decisionMax){
     action='ULTIMO CREDITO';level='danger';headline='TETTO ASSOLUTO';
     why=`${isLastRoleSlot?`Ultimo slot ${p.role}. `:''}Puoi arrivare a ${stop} cr, ma non fare il rilancio successivo.`;
   }else if(treasury.allow>0&&bid>normalStop&&bid<=stop){
     action='SFORA COL TESORETTO';level='treasury';headline='OBIETTIVO STRATEGICO';
-    why=`Superi il tetto ordinario di ${normalStop} cr, ma il Tesoretto autorizza fino a ${stop} cr.`;
+    why=`Superi il tetto ordinario di ${normalStop} cr, ma il Tesoretto autorizza fino a ${decisionMax} cr.`;
   }else if(bid>=Math.max(a.high,stop-1)){
-    action=`ATTENZIONE · MAX ${stop}`;level='danger';headline='ZONA FINALE';
-    why=`${isLastRoleSlot?`Ultimo slot ${p.role}. `:''}Resta solo ${Math.max(0,stop-bid)} cr di margine.`;
+    action=`ATTENZIONE · MAX ${decisionMax}`;level='danger';headline='ZONA FINALE';
+    why=`${isLastRoleSlot?`Ultimo slot ${p.role}. `:''}Resta solo ${Math.max(0,decisionMax-bid)} cr di margine.`;
   }else if(bid>a.ideal){
-    action=`PUOI RILANCIARE · MAX ${stop}`;level='wait';headline='SOPRA L’IDEALE';
-    why=`Hai superato l'ideale aggiornato di ${a.ideal} cr, ma sei ancora coperto fino a ${stop} cr.`;
+    action=`PUOI RILANCIARE · MAX ${decisionMax}`;level='wait';headline='SOPRA L’IDEALE';
+    why=`Hai superato l'ideale aggiornato di ${a.ideal} cr, ma sei ancora coperto fino a ${decisionMax} cr.`;
   }else if(bid===a.ideal){
     action='COMPRA';level='buy';headline='PREZZO IDEALE';
     why=`Sei esattamente sul prezzo ideale AI aggiornato di ${a.ideal} cr.`;
@@ -8160,7 +8163,7 @@ function liveAuctionDecision5(playerIndex,price){
   }
 
   if(defenderCtx && level!=='stop'){
-    why=`🛡️ DIFESA ${defenderCtx.phase} · slot D${defenderCtx.next} ${defenderCtx.spec.label}. Priorità: ${defenderCtx.priority}. ${why}`;
+    why=`🛡️ DIFESA ${defenderCtx.phase} · slot D${defenderCtx.next} · ${String(defenderCtx.spec.label||'').replace(/^D\d+\s*/,'')}. Priorità: ${defenderCtx.priority}. ${why}`;
     if(defenderCtx.mod && defenderCtx.next<=4){
       why+=` Modificatore attivo: sui primi 4 difensori l'AI protegge qualità, voto e continuità.`;
     }else if(!defenderCtx.mod && defenderCtx.next<=4){
@@ -8188,11 +8191,11 @@ function liveAuctionDecision5(playerIndex,price){
 
   let alternativeText='';
   if(bestAlt){
-    const save=Math.max(0,Math.round(stop-bestAlt._liveIdeal));
+    const save=Math.max(0,Math.round(decisionMax-bestAlt._liveIdeal));
     if(defenderCtx && !isLastRoleSlot && (level==='stop'||level==='danger'||level==='wait'||bid>=a.ideal)){
       alternativeText=`🛡️ PIANO B DIFESA D${defenderCtx.next}: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · proteggi circa ${save} cr`:''} · obiettivo ${defenderCtx.priority}.`;
     }else if(isLastRoleSlot){
-      alternativeText=`🔒 ULTIMO SLOT ${p.role}: ${p.name} fino a ${stop} cr. Oltre, passa a ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · proteggi circa ${save} cr per gli altri reparti`:''}.`;
+      alternativeText=`🔒 ULTIMO SLOT ${p.role}: ${p.name} fino a ${decisionMax} cr. Oltre, passa a ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · proteggi circa ${save} cr per gli altri reparti`:''}.`;
     }else if(level==='stop'){
       alternativeText=`🔁 PIANO B AUTOMATICO: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · NON OLTRE ${bestAlt._liveMax} cr${bestAlt._liveSaving>0?` · risparmio circa ${bestAlt._liveSaving} cr`:''}.`;
     }else if(level==='danger'||level==='wait'||bid>=a.ideal){
