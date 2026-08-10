@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7370,7 +7370,7 @@ function renderDynamicRosterPlan(){
       ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(),use=treasuryBestUse();return ap.treasury.value?`
       <div class="treasuryBox"><div><span>💰 TESORETTO AI</span><b>${ap.treasury.value} cr</b></div><p>${esc(use.text)}</p></div>`:''})()}
       <div class="dynamicPlanGoal"><div class="dynamicPlanGoalTitle">🎯 COSA FARE ADESSO</div>
-      <div class="dynamicPlanGoalText">${s.reason} Budget futuro C+A: <b>${s.futureBudget} cr</b> · Riserva minima: <b>${(s.adaptive||adaptiveBudgetPlan()).safety} cr</b>.</div></div>
+      <div class="dynamicPlanGoalText">${roleCount(state.me,'P')<3?`🧤 <b>PORTIERI · ${esc(keeperBlockLabel())}</b> · ${keeperBlockLocked(state.me)?`P2/P3 vincolati alla stessa squadra del P1.`:`Il P1 determina automaticamente la squadra di P2 e P3.`}<br>`:''}${s.reason} Budget futuro C+A: <b>${s.futureBudget} cr</b> · Riserva minima: <b>${(s.adaptive||adaptiveBudgetPlan()).safety} cr</b>.</div></div>
       <div class="dynamicPlanTargets">${targets.map((x,n)=>`<div class="dynamicPlanTarget" onclick="openAIForPlayer(${x.index})">
         <div class="dynamicPlanRank">${n+1}</div><div><div class="dynamicPlanName">${esc(x.p.name)}</div>
         <div class="dynamicPlanMeta">${x._dynSpec.label} · ${x._dynSpec.intent} · ${strongRosterTargetReason(x)}</div></div>
@@ -8095,6 +8095,7 @@ function liveAuctionDecision5(playerIndex,price){
   const currentRoleCount=roleCount(state.me,p.role);
   const isLastRoleSlot=(roleLimit>0 && currentRoleCount===roleLimit-1);
   const defenderCtx=p.role==='D'?defenderAuctionContext(playerIndex):null;
+  const wrongKeeperBlock=(p.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(p,state.me));
 
   // V68.7: un solo tetto decisionale usato da barra, testo, badge e logica ultimo slot.
   let decisionMax=Math.max(1,treasuryStop);
@@ -8135,7 +8136,10 @@ function liveAuctionDecision5(playerIndex,price){
   const basePrice=auctionBasePrice(p);
   const baseOverStrategic=Boolean(a.baseTooHigh);
 
-  if(baseOverStrategic && bid>=basePrice){
+  if(wrongKeeperBlock){
+    action='LASCIA';level='stop';headline='FUORI BLOCCO PORTIERI';
+    why=`Hai scelto il blocco ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`;
+  }else if(baseOverStrategic && bid>=basePrice){
     action='LASCIA';level='stop';headline='BASE D’ASTA TROPPO ALTA';
     why=`La base ufficiale è ${basePrice} cr, ma il tetto strategico AI grezzo sarebbe più basso. Non entrare nell'asta a questo prezzo.`;
   }else if(!marketRoleAllowed(p.role)||currentRoleCount>=roleLimit){
@@ -9228,9 +9232,40 @@ function liveStrategicAlternatives(sourceIndex,limit=3){
   return value;
 }
 
+/* V69.2 - PORTIERI A BLOCCO SQUADRA
+   Regola utente: scelto P1, P2 e P3 devono appartenere alla stessa squadra. */
+function keeperBlockTeam(buyerIndex=state.me){
+  const keepers=roster(buyerIndex).filter(x=>x.role==='P' && x.team);
+  return keepers.length?String(keepers[0].team||'').trim():'';
+}
+function keeperBlockLocked(buyerIndex=state.me){ return roleCount(buyerIndex,'P')>0 && !!keeperBlockTeam(buyerIndex); }
+function keeperAllowedPlayer(p,buyerIndex=state.me){
+  if(!p || p.role!=='P')return true;
+  const team=keeperBlockTeam(buyerIndex);
+  return !team || String(p.team||'').trim()===team;
+}
+function keeperRemainingBaseReserve(team,buyerIndex=state.me,excludeName=''){
+  if(!team)return 0;
+  const missing=Math.max(0,LIMITS.P-roleCount(buyerIndex,'P'));
+  if(!missing)return 0;
+  const ownedNames=new Set(roster(buyerIndex).filter(x=>x.role==='P').map(x=>normalizePlayerText(x.name)));
+  const excluded=normalizePlayerText(excludeName||'');
+  const bases=PLAYER_ARCHIVE.filter(p=>p.role==='P' && String(p.team||'').trim()===team)
+    .filter(p=>!ownedNames.has(normalizePlayerText(p.name)) && normalizePlayerText(p.name)!==excluded)
+    .filter(p=>!purchaseForArchivePlayer(p.name) && !isUnavailablePlayer(p.name))
+    .map(p=>auctionBasePrice(p)).sort((a,b)=>a-b);
+  if(bases.length<missing)return Infinity;
+  return bases.slice(0,missing).reduce((a,b)=>a+b,0);
+}
+function keeperBlockLabel(){
+  const team=keeperBlockTeam(state.me);
+  return team?`BLOCCO ${team.toUpperCase()}`:'BLOCCO SQUADRA · scegli P1';
+}
+
 function liveTop5Candidate(index,role){
   const p=PLAYER_ARCHIVE[index];
   if(!p || p.role!==role)return null;
+  if(role==='P' && !keeperAllowedPlayer(p,state.me))return null;
   if(!marketRoleAllowed(role))return null;
   if(purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))return null;
   if(roleCount(state.me,role)>=LIMITS[role])return null;
@@ -11299,6 +11334,14 @@ function strategySlotPlan(role,buyerIndex=state.me){
   const premium=tier==='TITOLARE'?1.22:1.12;
   const cap=Math.max(1,Math.min(d.hardMax,Math.round(target*premium)));
   const min=Math.max(1,Math.round(target*(tier==='TITOLARE'?.78:.72)));
+  if(role==='P'){
+    const team=keeperBlockTeam(buyerIndex);
+    if(team){
+      const reserve=keeperRemainingBaseReserve(team,buyerIndex);
+      const blockCap=Number.isFinite(reserve)?Math.max(1,d.available-reserve):1;
+      return {target:Math.min(target,blockCap),cap:Math.min(cap,blockCap),min,tier,roleRemaining:d.recommendedRemaining,missing:d.missing,keeperBlockTeam:team,keeperReserve:reserve};
+    }
+  }
   return {target,cap,min,tier,roleRemaining:d.recommendedRemaining,missing:d.missing};
 }
 
