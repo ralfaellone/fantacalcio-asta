@@ -5238,6 +5238,12 @@ nav button .ico{font-size:19px!important}
 .treasuryBox span{font-size:6px;font-weight:950;color:#f6d66d}.treasuryBox b{font-size:9px;color:#f6d66d}
 .treasuryBox p{margin:4px 0 0;font-size:6px;line-height:1.4;color:#c8b982}
 
+
+/* V67.8 - Asta Live AI 5.0 */
+.astaLiveDecisionBadge.treasury{background:#2b2408!important;color:#f6d66d!important;border-color:rgba(246,214,109,.55)!important}
+.liveDecisionAlt5{margin-top:8px;padding:8px 9px;border-radius:9px;background:#121b2c;border:1px solid rgba(119,155,255,.24);color:#b9cbff;font-weight:850;line-height:1.4}
+.astaVerdict b{font-size:7px;letter-spacing:.02em}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5248,7 +5254,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7893,57 +7899,116 @@ function liveAuctionAI(playerIndex){
   };
 }
 
-function auctionSimulatorDecision(playerIndex,price){
+
+/* V67.8 - Asta Live AI 5.0 */
+function liveAuctionAlternativeAdvice(playerIndex,price,limit=2){
+  const a=liveAuctionAI(playerIndex);
+  if(!a)return [];
+  return liveStrategicAlternatives(playerIndex,5)
+    .map(x=>{
+      const px=liveAuctionAI(x.index)||x.ai;
+      const max=Math.max(1,Math.min(Number(px.maxRec||x.ai.maxRec||1),safeMaxBid(state.me)));
+      const ideal=Math.max(1,Number(px.ideal||x.ai.ideal||1));
+      const saving=Math.max(0,Math.round(Number(price||0)-ideal));
+      return {...x,_livePx:px,_liveMax:max,_liveIdeal:ideal,_liveSaving:saving};
+    })
+    .filter(x=>x._liveIdeal<Number(price||Infinity) || x.strategicScore>=75)
+    .sort((a,b)=>
+      b._liveSaving-a._liveSaving ||
+      b.strategicScore-a.strategicScore ||
+      a._liveIdeal-b._liveIdeal
+    )
+    .slice(0,limit);
+}
+
+function liveAuctionDecision5(playerIndex,price){
   const p=PLAYER_ARCHIVE[playerIndex];
   const a=liveAuctionAI(playerIndex);
   if(!p||!a)return null;
+
   const bid=Math.max(0,Number(price)||0);
   const safe=safeMaxBid(state.me);
-  const rawStop=Math.max(1,Math.min(a.maxRec,safe));
-  const stop=Math.max(1,Math.min(rawStop,adaptiveSlotCap(p.role,rawStop,playerIndex)));
+  const ap=adaptiveBudgetPlan();
   const impact=simulatedRosterImpact(playerIndex,bid);
-  const rivals=rivalLiveSummary(playerIndex,bid);
-  const alts=liveStrategicAlternatives(playerIndex,3);
-  const budgetPlan=adaptiveBudgetPlan();
-  const slotNeeded=roleCount(state.me,p.role)<LIMITS[p.role];
-  const roleAllowed=marketRoleAllowed(p.role);
+  const hierarchy=a._favoriteHierarchy;
+  const treasury=treasuryCanBoost(playerIndex);
+  const baseStop=Math.max(1,Math.min(a.maxRec,safe));
+  const normalStop=Math.max(1,Math.min(baseStop,adaptiveSlotCap(p.role,baseStop,null)));
 
-  let action='RILANCIA',cls='buy',why='';
-  if(!roleAllowed||!slotNeeded){
-    action='LASCIA';cls='stop';
-    why=!roleAllowed?`Il ruolo ${p.role} non appartiene al blocco attivo.`:`Il reparto ${p.role} è già completo.`;
-  }else if(bid>stop){
-    action='LASCIA';cls='stop';
-    why=`Hai superato il tetto massimo di ${stop} cr. Non rilanciare oltre.`;
-  }else if(bid===stop){
-    action='ULTIMO RILANCIO · TETTO MASSIMO';cls='wait';
-    why=`Sei esattamente al tetto massimo di ${stop} cr. Puoi arrivare a questo prezzo, ma a ${stop+1} devi lasciare.`;
-  }else if(bid>a.high){
-    action='LASCIA';cls='stop';
-    why=`Sei oltre il range di valore AI (${a.low}-${a.high}). Meglio lasciare anche se il tetto operativo è ${stop} cr.`;
-  }else if(impact.budgetLabel==='CRITICO' && bid>=a.low){
-    action=`SOLO SOTTO ${Math.max(1,a.low)}`;cls='wait';
-    why=`L'acquisto comprimerebbe troppo il budget: resterebbero circa ${impact.futureReserve} cr per slot.`;
-  }else if(bid>=a.ideal){
-    action=`RILANCIA FINO A ${stop}`;cls='wait';
-    why=`Giocatore utile per ${impact.spec.label}, ma sei già nella fascia alta. Non superare ${stop}.`;
-  }else if(bid>0 && bid<a.low){
-    action='COMPRA';cls='buy';
-    why=`Prezzo sotto il minimo AI ${a.low}: buon rapporto tra slot, qualità e costo.`;
-  }else{
-    action=`RILANCIA FINO A ${stop}`;cls='buy';
-    why=`Prezzo coerente con il piano per ${impact.spec.label}.`;
-  }
+  // Il tesoretto è EXTRA solo per un obiettivo realmente autorizzato.
+  const treasuryStop=treasury.allow>0
+    ? Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow))
+    : normalStop;
 
-  if(rivals.strong>=2 && cls!=='stop')why+=` Pressione rivali alta: ${rivals.strong} avversari forti.`;
+  const stop=Math.max(1,treasuryStop);
+  const alts=liveAuctionAlternativeAdvice(playerIndex,bid,3);
   const bestAlt=alts[0]||null;
-  const treasuryBoost=treasuryCanBoost(playerIndex);
-  if(budgetPlan.treasury.value>0 && cls!=='stop'){
-    why+=` Tesoretto AI: ${budgetPlan.treasury.value} cr protetti.`;
-    if(treasuryBoost.allow>0)why+=` ${treasuryBoost.reason}`;
+  const overPlan=Math.max(0,Number(ap.delta?.delta)<0?Math.abs(Number(ap.delta.delta)):0);
+
+  let action='COMPRA',level='buy',headline='PREZZO CONVENIENTE',why='';
+  if(!marketRoleAllowed(p.role) || roleCount(state.me,p.role)>=LIMITS[p.role]){
+    action='LASCIA'; level='stop'; headline='NON SERVE ALLA ROSA';
+    why=!marketRoleAllowed(p.role)
+      ? `Il ruolo ${p.role} non appartiene al blocco d'asta attivo.`
+      : `Hai già completato il reparto ${p.role}.`;
+  }else if(bid>stop){
+    action='LASCIA'; level='stop'; headline='OLTRE IL LIMITE STRATEGICO';
+    why=`A ${bid} cr il rapporto qualità/budget non conviene più. Il limite attuale è ${stop} cr.`;
+  }else if(bid===stop){
+    action='ULTIMO CREDITO'; level='danger'; headline='TETTO ASSOLUTO';
+    why=`Puoi arrivare a ${stop} cr, ma non devi fare il rilancio successivo.`;
+  }else if(treasury.allow>0 && bid>normalStop && bid<=stop){
+    action='SFORA COL TESORETTO'; level='treasury'; headline='OBIETTIVO STRATEGICO';
+    why=`Il prezzo supera il tetto ordinario di ${normalStop} cr, ma l'AI autorizza il Tesoretto fino a ${stop} cr.`;
+  }else if(bid>=Math.max(a.high,Math.round(stop*.88))){
+    action='ULTIMI CREDITI'; level='danger'; headline='VICINO AL LIMITE';
+    why=`Sei nella zona finale: massimo ${stop} cr. Ogni credito in più riduce il margine per gli slot successivi.`;
+  }else if(bid>=a.ideal){
+    action=`PUOI SALIRE FINO A ${stop}`; level='wait'; headline='FASCIA ALTA';
+    why=`Sei sopra il prezzo ideale di ${a.ideal} cr, ma l'acquisto è ancora sostenibile fino a ${stop}.`;
+  }else if(bid>=a.low){
+    action='COMPRA'; level='buy'; headline='PREZZO GIUSTO';
+    why=`Sei nella fascia conveniente ${a.low}-${a.ideal} cr per questo profilo e per la tua rosa.`;
+  }else{
+    action='COMPRA'; level='buy'; headline='AFFARE';
+    why=`Sei sotto il valore minimo AI di ${a.low} cr. Il prezzo è molto favorevole.`;
   }
-  if(budgetPlan.delta.delta<-4)why+=` Sei ${Math.abs(budgetPlan.delta.delta)} cr sopra il piano: il D.S. sta comprimendo i tetti successivi.`;
-  return {action,cls,why,stop,impact,rivals,bestAlt,budgetPlan};
+
+  if(hierarchy?.isFirst && level!=='stop')
+    why=`⭐ Prima scelta AI per ${hierarchy.me._slotSpec.label}. ${why}`;
+  else if(hierarchy && !hierarchy.isFirst && level!=='stop')
+    why=`Alternativa n.${hierarchy.rank} per ${hierarchy.me._slotSpec.label}. ${why}`;
+
+  if(overPlan>0 && level!=='stop')
+    why+=` Sei già ${overPlan} cr sopra il piano complessivo: prudenza sui rilanci.`;
+
+  if(impact.budgetLabel==='CRITICO' && bid>=a.low && level!=='stop' && level!=='treasury'){
+    action='ULTIMI CREDITI'; level='danger'; headline='BUDGET SOTTO PRESSIONE';
+    why+=` Dopo l'acquisto il budget per gli slot rimanenti diventerebbe critico.`;
+  }
+
+  let alternativeText='';
+  if((level==='stop'||level==='danger'||bid>=a.ideal) && bestAlt){
+    const save=bestAlt._liveSaving;
+    alternativeText=`Lascia ${p.name} a ${bid} → punta ${bestAlt.p.name} fino a ${bestAlt._liveMax} cr${save>0?` · risparmio stimato ${save} cr`:''}.`;
+  }
+
+  return {
+    action,level,headline,why,stop,normalStop,treasuryStop,
+    treasuryAllow:treasury.allow||0,impact,bestAlt,alts,alternativeText,ap
+  };
+}
+
+function auctionSimulatorDecision(playerIndex,price){
+  const d=liveAuctionDecision5(playerIndex,price);
+  if(!d)return null;
+  const cls=d.level==='stop'?'stop':(['wait','danger','treasury'].includes(d.level)?'wait':'buy');
+  return {
+    action:d.action,cls,why:d.why,stop:d.stop,
+    impact:d.impact,rivals:rivalLiveSummary(playerIndex,price),
+    bestAlt:d.bestAlt,budgetPlan:d.ap,
+    decision5:d
+  };
 }
 
 function renderAuctionSimulator(playerIndex,price){
@@ -8014,8 +8079,8 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live Smart</div>
-          <div class="astaDecisionText">${marketModeText()} · decisione basata su prezzo, piano ${activeFormationPlan().name}, budget, mercato e alternative ancora libere.</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 5.0</div>
+          <div class="astaDecisionText">${marketModeText()} · decisione live su prezzo, rosa, piano ${activeFormationPlan().name}, budget, preferiti, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
             : `${esc(hierarchy.firstChoice.p.name)} è ancora la prima scelta per ${esc(hierarchy.me._slotSpec.label)}. Questo giocatore è l'alternativa n.${hierarchy.rank}.`}</div>`:''}
@@ -8107,10 +8172,8 @@ function evaluateAstaLiveBid(){
   if(!a||!el||!out)return;
 
   const price=Math.max(0,Number(el.value)||0);
-  const safe=safeMaxBid(state.me);
-  const strong=strongRosterProfile(ASTA_LIVE_PLAYER,state.me);
-  const rivals=rivalLiveSummary(ASTA_LIVE_PLAYER,price);
-  const stop=Math.max(1,Math.min(a.maxRec,safe));
+  const d=liveAuctionDecision5(ASTA_LIVE_PLAYER,price);
+  const stop=d?.stop||Math.max(1,Math.min(a.maxRec,safeMaxBid(state.me)));
 
   if(marker){
     const scaleMax=Math.max(stop,a.high,a.ideal,1);
@@ -8119,48 +8182,27 @@ function evaluateAstaLiveBid(){
 
   if(!price){
     out.className='astaVerdict';
-    out.textContent='Inserisci il prezzo attuale per sapere se rilanciare.';
+    out.textContent='Inserisci il prezzo attuale per sapere se comprare, salire o lasciare.';
     if(badge){badge.className='astaLiveDecisionBadge';badge.textContent='INSERISCI PREZZO';}
-    if(delta)delta.textContent="L'AI aggiorna la decisione mentre rilanci.";
-    refreshRivalLiveBox();
-    refreshAuctionSimulator();
-    return;
+    if(delta)delta.textContent="AI 5.0: prezzo, rosa, budget, preferiti, alternative e tesoretto.";
+    refreshRivalLiveBox(); refreshAuctionSimulator(); return;
   }
 
-  const sim=auctionSimulatorDecision(ASTA_LIVE_PLAYER,price);
-  let action=sim?.action||'RILANCIA';
-  let cls=sim?.cls==='stop'?'stop':sim?.cls==='wait'?'wait':'go';
-  let verdictClass=sim?.cls==='stop'?'bad':sim?.cls==='wait'?'warn':'good';
-  let text=sim?.why||'Valutazione aggiornata.';
-  const hierarchy=a._favoriteHierarchy;
-
-  if(hierarchy){
-    if(hierarchy.isFirst){
-      if(cls!=='stop')text=`⭐ PRIMA SCELTA AI per ${hierarchy.me._slotSpec.label}. ${text}`;
-    }else{
-      const first=hierarchy.firstChoice;
-      const firstStillFree=first && !purchaseForArchivePlayer(first.p.name) && !isUnavailablePlayer(first.p.name);
-      if(firstStillFree && price>=a.ideal && cls!=='stop'){
-        action='VALUTA DI ASPETTARE';
-        cls='wait';
-        verdictClass='warn';
-        text=`${first.p.name} è ancora libero ed è la PRIMA SCELTA AI per ${hierarchy.me._slotSpec.label}. Non forzare ${PLAYER_ARCHIVE[ASTA_LIVE_PLAYER]?.name||'questa alternativa'} oltre ${a.ideal} cr.`;
-      }else if(cls!=='stop'){
-        text=`⭐ ALTERNATIVA ${hierarchy.rank} per ${hierarchy.me._slotSpec.label}. ${text}`;
-      }
-    }
-  }
+  const cls=d.level==='stop'?'stop':d.level==='buy'?'go':'wait';
+  const verdictClass=d.level==='stop'?'bad':d.level==='buy'?'good':'warn';
 
   if(badge){
-    badge.className=`astaLiveDecisionBadge ${cls}`;
-    badge.textContent=action;
+    badge.className=`astaLiveDecisionBadge ${cls} ${d.level==='treasury'?'treasury':''}`;
+    badge.textContent=d.action;
   }
   out.className=`astaVerdict ${verdictClass}`;
-  out.textContent=text;
+  out.innerHTML=`<b>${esc(d.headline)}</b><br>${esc(d.why)}${d.alternativeText?`<div class="liveDecisionAlt5">${esc(d.alternativeText)}</div>`:''}`;
 
   if(delta){
-    if(price<=a.ideal)delta.textContent=`${Math.max(0,a.ideal-price)} cr all'IDEALE · ${Math.max(0,stop-price)} cr al limite`;
-    else delta.textContent=`+${price-a.ideal} cr sopra IDEALE · ${Math.max(0,stop-price)} cr al limite`;
+    const idealGap=a.ideal-price;
+    delta.innerHTML=idealGap>=0
+      ? `${idealGap} cr all'IDEALE · <b>${Math.max(0,stop-price)} cr al limite</b>`
+      : `+${Math.abs(idealGap)} cr sopra IDEALE · <b>${Math.max(0,stop-price)} cr al limite</b>`;
   }
 
   refreshRivalLiveBox();
