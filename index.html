@@ -5265,7 +5265,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7033,20 +7033,30 @@ function purchasePlanDelta(buyerIndex=state.me){
   });
   return {expected,paid,delta:expected-paid}; // positive = risparmio/tesoretto
 }
+/* V68.3 - temperatura mercato prudente: non deve riscrivere il valore individuale */
 function roleMarketTemperature(role){
-  const buys=(state.purchases||[]).filter(x=>x.role===role);
-  if(buys.length<2)return {ratio:1,label:'NORMALE',pct:0};
-  let actual=0,expected=0,n=0;
+  // Usa soltanto gli acquisti della nuova epoca V68.2+ e soprattutto la fotografia
+  // del prezzo ideale salvata AL MOMENTO della vendita. In questo modo evitiamo
+  // il circuito: mercato -> budget reparto -> prezzo giocatore -> mercato.
+  const epoch=marketLearningEpoch();
+  const buys=(state.purchases||[]).filter(x=>x.role===role && Number(x.ts||0)>=epoch);
+  if(buys.length<4)return {ratio:1,label:'NORMALE',pct:0,count:buys.length};
+  const ratios=[];
   buys.forEach(b=>{
-    const idx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(b.name));
-    if(idx<0)return;
-    const a=aiPlayerAnalysis(idx,b.buyer);
-    if(!a)return;
-    actual+=Number(b.price)||0; expected+=Math.max(1,Number(a.ideal)||1); n++;
+    const expected=purchaseExpectedAtSale(b),paid=Number(b.price)||0;
+    if(expected>0&&paid>0)ratios.push(Math.max(.70,Math.min(1.35,paid/expected)));
   });
-  if(!n)return {ratio:1,label:'NORMALE',pct:0};
-  const ratio=actual/expected,pct=Math.round((ratio-1)*100);
-  return {ratio,label:ratio>1.12?'CARO':ratio<.90?'FAVOREVOLE':'NORMALE',pct};
+  if(ratios.length<4)return {ratio:1,label:'NORMALE',pct:0,count:ratios.length};
+  ratios.sort((a,b)=>a-b);
+  const trimmed=ratios.length>=7?ratios.slice(1,-1):ratios;
+  const median=trimmed[Math.floor(trimmed.length/2)];
+  const mean=trimmed.reduce((s,x)=>s+x,0)/trimmed.length;
+  const observed=mean*.45+median*.55;
+  // Il mercato modifica l'allocazione del reparto solo lentamente: massimo +/-3%.
+  const confidence=Math.min(.35,.08+(trimmed.length-4)*.045);
+  const ratio=1+Math.max(-.03,Math.min(.03,(observed-1)*confidence));
+  const pct=Math.round((ratio-1)*100);
+  return {ratio,label:pct>=2?'CARO':pct<=-2?'FAVOREVOLE':'NORMALE',pct,count:ratios.length};
 }
 function adaptiveRoleShares(){
   const plan=activeFormationPlan(state.me);
@@ -7933,7 +7943,7 @@ function liveAuctionAlternativeAdvice(playerIndex,price,limit=2){
 }
 
 
-/* V68.2 - Asta Live AI 6.1: apprendimento progressivo per fascia giocatore */
+/* V68.3 - Asta Live AI 6.2: valore individuale ancorato + mercato secondario */
 
 /*
   V68.2 riparte con una nuova epoca di apprendimento mercato.
@@ -8000,12 +8010,13 @@ function calibratedLivePrices(playerIndex){
   const sameRole=liveMarketLearning(p.role,null);
   const all=liveMarketLearning();
   // Preferisce confronti omogenei. Fallback graduale solo se mancano campioni.
-  const signal=sameTier.count>=4?sameTier:(sameRole.count>=6?sameRole:all);
+  const signal=sameTier.count>=4?sameTier:(sameRole.count>=8?sameRole:all);
   let rawAdj=(signal.ratio-1);
   // Variazione massima stretta: il mercato adatta l'AI, non la riscrive.
-  let adj=Math.max(-.06,Math.min(.06,rawAdj));
+  let adj=Math.max(-.04,Math.min(.04,rawAdj));
   // Con meno di 4 vendite comparabili il movimento massimo e' solo +/-2%.
-  if(sameTier.count<4)adj=Math.max(-.02,Math.min(.02,adj));
+  if(sameTier.count<4)adj=Math.max(-.01,Math.min(.01,adj));
+  if(sameTier.count<8)adj=Math.max(-.02,Math.min(.02,adj));
   const mult=1+adj,safe=safeMaxBid(state.me);
   const low=Math.max(1,Math.round(a.low*mult));
   const ideal=Math.max(low,Math.round(a.ideal*mult));
