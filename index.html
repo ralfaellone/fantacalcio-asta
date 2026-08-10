@@ -5250,7 +5250,7 @@ nav button .ico{font-size:19px!important}
 .astaLiveDecisionBadge.wait{border-color:rgba(246,204,70,.5)}
 
 
-/* V68.1 - Asta Live AI 6.2 */
+/* V68.1 - Asta Live AI 6.3 */
 .auctionPulse6{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
 .auctionPulse6 span{padding:6px 4px;border-radius:8px;background:#111a2a;border:1px solid rgba(120,150,210,.18);font-size:5.5px;color:#8090ad;text-align:center;font-weight:850}
 .auctionPulse6 b{display:block;margin-top:2px;color:#dce7ff;font-size:6px}
@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6853,10 +6853,12 @@ function favoriteStrongRows(){
   const fvm=Number(x.p.fvm)||0,qi=Number(x.p.qi)||0,q=Math.round((s.bonusScore+s.disciplineScore+s.availabilityScore)/3);
   let ideal=Math.max(1,Math.round(bp.ideal+(slotScore-65)/12+(fvm-20)/18+(qi-10)/16+(q-65)/18));
   if(Number(meta.target)>0)ideal=Math.round(ideal*.82+Number(meta.target)*.18);
-  const low=Math.max(1,Math.round(ideal*(x.p.role==='P'?.76:.78)));
+  const auctionBase=auctionBasePrice(x.p);
+  ideal=Math.max(auctionBase,ideal);
+  const low=Math.max(auctionBase,Math.round(ideal*(x.p.role==='P'?.76:.78)));
   let maxRec=Math.max(ideal,Math.round(ideal*(slotScore>=82?1.24:slotScore>=68?1.18:1.12)));
-  maxRec=Math.max(ideal,Math.min(maxRec,adaptiveSlotCap(x.p.role,maxRec,x.index)));
-  const px={...bp,low,ideal,maxRec}, userMax=Number(meta.max)||0;
+  maxRec=Math.max(ideal,Math.min(maxRec,Math.max(auctionBase,adaptiveSlotCap(x.p.role,maxRec,x.index))));
+  const px={...bp,...enforceAuctionBaseFloor({low,ideal,high:Math.max(ideal,bp.high||ideal),maxRec},x.p)}, userMax=Number(meta.max)||0;
   const priceFit=userMax?clamp(78+(userMax-ideal)*2.2,20,99):clamp(82-(ideal-Math.max(1,fvm))*.7,35,95);
   const fit=Math.round(clamp(slotScore*.62+priceFit*.18+q*.12+favoritePriorityBoost(x.p.name)*.65,1,99));
   let verdict='EVITA',cls='bad'; if(fit>=82&&slotScore>=76){verdict='PUNTA';cls='top'}else if(fit>=69&&slotScore>=64){verdict='BUONO';cls='good'}else if(fit>=55){verdict='SOLO SE SCENDE';cls='warn'}
@@ -7274,7 +7276,7 @@ function dynamicIndividualPrice(x){
   const low=Math.max(1,Math.min(ideal,Math.round(ideal*(strength>=75?.78:.74))));
   const high=Math.max(ideal,Math.min(maxRec,Math.round(ideal*1.10)));
 
-  return {low,ideal,high,maxRec,strength,pickScore};
+  return {...enforceAuctionBaseFloor({low,ideal,high,maxRec},x.p),strength,pickScore};
 }
 
 function dynamicPlanTargets(limit=3){
@@ -7899,21 +7901,21 @@ function favoriteLiveHierarchy(playerIndex){
 }
 
 function liveAuctionAI(playerIndex){
+  const p=PLAYER_ARCHIVE[playerIndex];
   const base=aiPlayerAnalysis(playerIndex,state.me);
   if(!base)return null;
+  const hierarchy=favoriteLiveHierarchy(playerIndex);
+  if(!hierarchy)return enforceAuctionBaseFloor({...base,_favoriteHierarchy:null},p);
 
-  const h=favoriteLiveHierarchy(playerIndex);
-  if(!h)return {...base,_favoriteHierarchy:null};
-
-  const px=h.me._favoritePx;
-  return {
+  const px=hierarchy.me._favoritePx;
+  return enforceAuctionBaseFloor({
     ...base,
     low:px.low,
     ideal:px.ideal,
     high:Math.max(px.ideal,px.maxRec),
-    maxRec:h.liveMax,
-    _favoriteHierarchy:h
-  };
+    maxRec:hierarchy.liveMax,
+    _favoriteHierarchy:hierarchy
+  },p);
 }
 
 
@@ -8017,7 +8019,7 @@ function calibratedLivePrices(playerIndex){
   const ideal=Math.max(low,Math.round(a.ideal*mult));
   const high=Math.max(ideal,Math.round(a.high*mult));
   const maxRec=Math.max(high,Math.min(safe,Math.round(a.maxRec*mult)));
-  return {...a,low,ideal,high,maxRec,market:signal,marketTier:tier,comparableCount:sameTier.count,adjustment:Math.round(adj*100)};
+  return enforceAuctionBaseFloor({...a,low,ideal,high,maxRec,market:signal,marketTier:tier,comparableCount:sameTier.count,adjustment:Math.round(adj*100)},p);
 }
 
 function auctionLeaguePulse(){
@@ -8130,8 +8132,13 @@ function liveAuctionDecision5(playerIndex,price){
   const overPlan=Math.max(0,Number(ap.delta?.delta)<0?Math.abs(Number(ap.delta.delta)):0);
 
   let action='COMPRA',level='buy',headline='PREZZO CONVENIENTE',why='';
+  const basePrice=auctionBasePrice(p);
+  const baseOverStrategic=Boolean(a.baseTooHigh);
 
-  if(!marketRoleAllowed(p.role)||currentRoleCount>=roleLimit){
+  if(baseOverStrategic && bid>=basePrice){
+    action='LASCIA';level='stop';headline='BASE D’ASTA TROPPO ALTA';
+    why=`La base ufficiale è ${basePrice} cr, ma il tetto strategico AI grezzo sarebbe più basso. Non entrare nell'asta a questo prezzo.`;
+  }else if(!marketRoleAllowed(p.role)||currentRoleCount>=roleLimit){
     action='LASCIA';level='stop';headline='NON SERVE ALLA ROSA';
     why=!marketRoleAllowed(p.role)
       ? `Il ruolo ${p.role} non appartiene al blocco d'asta attivo.`
@@ -8282,7 +8289,7 @@ function renderAstaLiveSelected(){
     <div class="astaSelectedCard">
       <div>
         <div class="astaSelectedName">${esc(p.name)}</div>
-        <div class="astaSelectedMeta">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm}</div>
+        <div class="astaSelectedMeta">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm} · BASE ASTA ${auctionBasePrice(p)}</div>
         ${hierarchy?`<div class="liveFavRank ${hierarchy.isFirst?'first':'alt'}">${esc(hierarchy.label)}</div>`:''}
       </div>
       <button class="astaClear" onclick="clearAstaLivePlayer()">✕</button>
@@ -8311,8 +8318,8 @@ function renderAstaLiveSelected(){
         <div class="astaAiMetric"><span>NON OLTRE</span><b>${absoluteCap}</b></div>
       </div>
 
-      <input id="astaLivePrice" class="astaPriceInput" type="number" min="1" inputmode="numeric"
-        placeholder="Prezzo attuale" oninput="evaluateAstaLiveBid()">
+      <input id="astaLivePrice" class="astaPriceInput" type="number" min="${auctionBasePrice(p)}" inputmode="numeric"
+        value="${auctionBasePrice(p)}" placeholder="Base ${auctionBasePrice(p)}" oninput="evaluateAstaLiveBid()">
 
       <div class="astaBidQuick">
         ${[1,2,3,5,10].map(v=>`<button onclick="addAstaLiveBid(${v})">+${v}</button>`).join('')}
@@ -8356,6 +8363,7 @@ function renderAstaLiveSelected(){
         <button class="primary" style="position:static" onclick="registerAstaLiveOutcome(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
       </div>
     </div>`;
+  setTimeout(()=>evaluateAstaLiveBid(),0);
 }
 function registerAstaLiveOutcome(index){
   const el=document.getElementById('astaLivePrice');
@@ -9306,13 +9314,17 @@ function liveTop5Rows(role){
 }
 
 function liveTop5StrategicPrices(x){
+  const base=auctionBasePrice(x.p);
   const sp=x.slotPlan||strategySlotPlan(x.p.role,state.me);
-  if(!sp || !sp.cap)return {low:x.ai.low,ideal:x.ai.ideal,high:x.ai.high,maxRec:x.ai.maxRec};
-  const maxRec=Math.max(1,Math.min(Number(x.ai.maxRec||sp.cap),sp.cap));
-  const ideal=Math.max(1,Math.min(Number(x.ai.ideal||sp.target),sp.target,maxRec));
-  const low=Math.max(1,Math.min(Number(x.ai.low||ideal),ideal));
-  const high=Math.max(low,Math.min(Number(x.ai.high||maxRec),maxRec));
-  return {low,ideal,high,maxRec};
+  if(!sp || !sp.cap){
+    return enforceAuctionBaseFloor({low:x.ai.low,ideal:x.ai.ideal,high:x.ai.high,maxRec:x.ai.maxRec},x.p);
+  }
+  const rawMax=Math.max(1,Math.min(Number(x.ai.maxRec||sp.cap),sp.cap));
+  const maxRec=Math.max(base,rawMax);
+  const ideal=Math.max(base,Math.min(Number(x.ai.ideal||sp.target),Math.max(base,sp.target),maxRec));
+  const low=Math.max(base,Math.min(Number(x.ai.low||ideal),ideal));
+  const high=Math.max(ideal,Math.min(Number(x.ai.high||maxRec),maxRec));
+  return enforceAuctionBaseFloor({low,ideal,high,maxRec},x.p);
 }
 
 function liveTop5Reason(x){
@@ -11919,10 +11931,33 @@ function aiPlayerAnalysisRaw(index,buyerIndex=state.me){
 
 
 
+
+/* V69.1 - BASE D'ASTA GLOBALE
+   QI = Quotazione Iniziale = prezzo minimo reale dell'asta. */
+function auctionBasePrice(p){
+  return Math.max(1,Math.round(Number(p?.qi)||1));
+}
+function enforceAuctionBaseFloor(ai,p){
+  if(!ai||!p)return ai;
+  const base=auctionBasePrice(p);
+  const rawLow=Number(ai.low)||1;
+  const rawIdeal=Number(ai.ideal)||rawLow;
+  const rawHigh=Number(ai.high)||rawIdeal;
+  const rawMax=Number(ai.maxRec)||rawHigh;
+  const baseTooHigh=rawMax<base;
+  const low=Math.max(base,Math.round(rawLow));
+  const ideal=Math.max(low,Math.round(rawIdeal));
+  const high=Math.max(ideal,Math.round(rawHigh));
+  const maxRec=Math.max(high,Math.round(rawMax));
+  return {...ai,low,ideal,high,maxRec,auctionBase:base,baseTooHigh,
+    rawBeforeBase:{low:rawLow,ideal:rawIdeal,high:rawHigh,maxRec:rawMax}};
+}
+
 function aiPlayerAnalysis(index,buyerIndex=state.me){
   const key=perfKey(index,buyerIndex);
   if(PERF_CACHE.ai.has(key))return PERF_CACHE.ai.get(key);
-  const value=aiPlayerAnalysisRaw(index,buyerIndex);
+  const raw=aiPlayerAnalysisRaw(index,buyerIndex);
+  const value=enforceAuctionBaseFloor(raw,PLAYER_ARCHIVE[index]);
   PERF_CACHE.ai.set(key,value);
   return value;
 }
@@ -12523,6 +12558,13 @@ function selectArchivePlayer(index){
   if(!p || alreadyBoughtPlayer(p.name)) return;
   selectedArchivePlayer=p;
   document.getElementById('pname').value=p.name;
+  const priceInput=document.getElementById('pprice');
+  if(priceInput){
+    const base=auctionBasePrice(p);
+    priceInput.min=String(base);
+    priceInput.placeholder=String(base);
+    priceInput.value=String(base);
+  }
   document.getElementById('playerSuggestions').classList.remove('show');
   selectBuyRole(p.role);
 
@@ -12594,7 +12636,7 @@ function renderBuyAiRange(){
       <div class="buyAiRangeBox"><span>NON OLTRE</span><b>${absolute}</b></div>
     </div>
     <div class="buyAiRangeNote">
-      Il NON OLTRE è il limite AI del singolo giocatore, già confrontato con la max sicura della squadra selezionata.
+      BASE ASTA = QI ufficiale (${auctionBasePrice(PLAYER_ARCHIVE[idx])} cr). Nessuna stima AI può scendere sotto la base. Il NON OLTRE è il tetto strategico del singolo giocatore.
     </div>`;
   box.classList.add('show');
 }
@@ -12680,6 +12722,8 @@ function openBuy(){
   sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)} · ${budget(i)} cr</option>`).join('');
   document.getElementById('pname').value='';
   document.getElementById('pprice').value='';
+  document.getElementById('pprice').min='1';
+  document.getElementById('pprice').placeholder='1';
   selectedArchivePlayer=null;
   document.getElementById('playerSelected').innerHTML='';
   document.getElementById('playerSelected').classList.remove('show');
@@ -12716,6 +12760,14 @@ function saveBuy(){
   let warning=price>safe?`\n\n⚠️ Il prezzo supera la max sicura di ${safe} crediti.`:'';
   const pidx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(name));
   if(pidx>=0){
+    const officialBase=auctionBasePrice(PLAYER_ARCHIVE[pidx]);
+    if(price<officialBase){
+      hint.textContent=`Prezzo non valido: ${name} ha base d'asta ${officialBase} crediti (QI).`;
+      hint.className='hint danger';
+      const pe=document.getElementById('pprice');if(pe)pe.value=officialBase;
+      updateBuyPreview();
+      return;
+    }
     const aiNow=aiPlayerAnalysis(pidx,buyer);
     if(aiNow && price>aiNow.maxRec){
       warning+=`\n\n🤖 ATTENZIONE AI: stai pagando ${price-aiNow.maxRec} crediti oltre il tetto AI del giocatore (${aiNow.maxRec}). La MAX SICURA generale resta un limite diverso.`;
