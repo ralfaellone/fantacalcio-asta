@@ -5229,7 +5229,7 @@ nav button .ico{font-size:19px!important}
 }
 
 
-/* V67.7.1 - Fix tab D.S. AI */
+/* V67.7.2 - Registra esito con ultimo prezzo Asta Live */
 .budgetEquation{grid-template-columns:1fr auto 1fr auto 1fr auto 1fr auto 1fr!important}
 .budgetEquation>div.treasury{border-color:rgba(242,201,76,.45);background:#251f0b}
 .budgetEquation>div.treasury b{color:#f6d66d}
@@ -5248,7 +5248,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7597,6 +7597,8 @@ function renderDashboardControl(){
 }
 
 let ASTA_LIVE_PLAYER=-1;
+let ASTA_LIVE_LAST_PRICE=null;
+
 
 function renderAstaLive(){
   renderMarketContextBars();
@@ -7948,9 +7950,15 @@ function renderAstaLiveSelected(){
 
       <div class="astaLiveDecisionActions">
         <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">🤖 ANALISI COMPLETA</button>
-        <button class="primary" style="position:static" onclick="buyFromListone(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
+        <button class="primary" style="position:static" onclick="registerAstaLiveOutcome(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
       </div>
     </div>`;
+}
+function registerAstaLiveOutcome(index){
+  const el=document.getElementById('astaLivePrice');
+  const price=Math.max(0,parseInt(el?.value,10)||0);
+  ASTA_LIVE_LAST_PRICE=price>0?price:null;
+  buyFromListone(index);
 }
 function addAstaLiveBid(v){
   const el=document.getElementById('astaLivePrice');if(!el)return;
@@ -11892,7 +11900,17 @@ function buyFromListone(index){
     return;
   }
   openBuy();
-  setTimeout(()=>selectArchivePlayer(index),0);
+  setTimeout(()=>{
+    selectArchivePlayer(index);
+    if(ASTA_LIVE_LAST_PRICE!=null){
+      const priceEl=document.getElementById('pprice');
+      if(priceEl){
+        priceEl.value=ASTA_LIVE_LAST_PRICE;
+        updateBuyPreview();
+      }
+      ASTA_LIVE_LAST_PRICE=null;
+    }
+  },0);
 }
 
 
