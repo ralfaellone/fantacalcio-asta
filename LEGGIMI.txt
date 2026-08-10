@@ -1,3 +1,6 @@
+VERSIONE V68.2
+AI mercato progressiva per ruolo e fascia giocatore; reset apprendimento test V68.1 senza cancellare le rose.
+
 ASTA FANTA — VERSIONE IPHONE
 
 Questa versione non usa Python e non richiede un PC acceso durante l'asta una volta pubblicata online.
