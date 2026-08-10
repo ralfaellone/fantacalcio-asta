@@ -5255,6 +5255,12 @@ nav button .ico{font-size:19px!important}
 .auctionPulse6 span{padding:6px 4px;border-radius:8px;background:#111a2a;border:1px solid rgba(120,150,210,.18);font-size:5.5px;color:#8090ad;text-align:center;font-weight:850}
 .auctionPulse6 b{display:block;margin-top:2px;color:#dce7ff;font-size:6px}
 
+
+/* V68.9 - Difesa AI */
+.defenseLive689{margin-top:8px;padding:8px 9px;border-radius:10px;background:#10231e;border:1px solid rgba(74,211,154,.25)}
+.defenseLive689 span{font-size:6px;font-weight:950;color:#76e2b1}.defenseLive689 b{display:block;margin-top:2px;font-size:7px;color:#d9fff0}
+.defenseLive689 small{display:block;margin-top:2px;font-size:5.5px;color:#86a89a}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5265,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V68.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8025,6 +8031,43 @@ function auctionLeaguePulse(){
     treasury:Number(ap.treasury?.value)||0
   };
 }
+
+/* V68.9 - Difesa AI: strategia per slot, modificatore e fase reparto */
+function defenderAuctionContext(playerIndex){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p || p.role!=='D')return null;
+
+  const owned=roleCount(state.me,'D');
+  const next=owned+1;
+  const mod=modifierActiveForPlan();
+  const spec=slotSpec('D',Math.min(8,next));
+  const plan=strategySlotPlan('D',state.me);
+
+  let phase='COSTRUZIONE';
+  let priority='QUALITÀ';
+  let capFactor=1;
+
+  if(next<=2){
+    phase='PILASTRI';
+    priority=mod?'QUALITÀ + MODIFICATORE':'QUALITÀ + BONUS';
+    capFactor=1.04;
+  }else if(next<=4){
+    phase=mod?'NUCLEO MODIFICATORE':'TITOLARI';
+    priority=mod?'VOTO + CONTINUITÀ':'TITOLARITÀ + BONUS';
+    capFactor=1.00;
+  }else if(next<=6){
+    phase='ROTAZIONE';
+    priority='VALORE + AFFIDABILITÀ';
+    capFactor=.94;
+  }else{
+    phase='COMPLETAMENTO';
+    priority='RISPARMIO + PROFONDITÀ';
+    capFactor=.86;
+  }
+
+  return {owned,next,mod,spec,plan,phase,priority,capFactor};
+}
+
 function liveAuctionDecision5(playerIndex,price){
   const p=PLAYER_ARCHIVE[playerIndex];
   const a=calibratedLivePrices(playerIndex);
@@ -8049,9 +8092,21 @@ function liveAuctionDecision5(playerIndex,price){
   const roleLimit=LIMITS[p.role]||0;
   const currentRoleCount=roleCount(state.me,p.role);
   const isLastRoleSlot=(roleLimit>0 && currentRoleCount===roleLimit-1);
+  const defenderCtx=p.role==='D'?defenderAuctionContext(playerIndex):null;
 
   // V68.7: un solo tetto decisionale usato da barra, testo, badge e logica ultimo slot.
   let decisionMax=Math.max(1,treasuryStop);
+
+  // V68.9: la difesa usa un tetto diverso in base allo slot che stai coprendo.
+  // D1-D2 possono ricevere un piccolo margine, D5-D8 diventano progressivamente più prudenti.
+  if(defenderCtx){
+    const adjusted=Math.round(decisionMax*defenderCtx.capFactor);
+    if(defenderCtx.next<=2){
+      decisionMax=Math.min(safe,Math.max(decisionMax,adjusted));
+    }else{
+      decisionMax=Math.max(a.high,Math.min(decisionMax,adjusted));
+    }
+  }
 
   // Sull'ultimo slot possiamo diventare più selettivi, ma MAI sotto il MAX AI visualizzato.
   // La convenienza dell'alternativa influisce solo se il divario di costo è molto alto.
@@ -8104,6 +8159,18 @@ function liveAuctionDecision5(playerIndex,price){
     why=`Sei sotto il valore minimo AI aggiornato di ${a.low} cr.`;
   }
 
+  if(defenderCtx && level!=='stop'){
+    why=`🛡️ DIFESA ${defenderCtx.phase} · slot D${defenderCtx.next} ${defenderCtx.spec.label}. Priorità: ${defenderCtx.priority}. ${why}`;
+    if(defenderCtx.mod && defenderCtx.next<=4){
+      why+=` Modificatore attivo: sui primi 4 difensori l'AI protegge qualità, voto e continuità.`;
+    }else if(!defenderCtx.mod && defenderCtx.next<=4){
+      why+=` Modificatore non attivo: evita sovrainvestimenti difensivi e conserva più budget per C/A.`;
+    }
+    if(defenderCtx.next>=7){
+      why+=` Slot finale di profondità: il prezzo conta più del nome.`;
+    }
+  }
+
   if(a.market.count){
     const sign=a.market.pct>0?'+':'';
     why+=` Mercato osservato: ${a.market.label} (${sign}${a.market.pct}%, ${a.market.count} campioni${a.market.comparableCount!=null?`; ${a.market.comparableCount} comparabili per fascia`:''}); soglie AI calibrate ${a.adjustment>0?'+':''}${a.adjustment}%.`;
@@ -8122,7 +8189,9 @@ function liveAuctionDecision5(playerIndex,price){
   let alternativeText='';
   if(bestAlt){
     const save=Math.max(0,Math.round(stop-bestAlt._liveIdeal));
-    if(isLastRoleSlot){
+    if(defenderCtx && !isLastRoleSlot && (level==='stop'||level==='danger'||level==='wait'||bid>=a.ideal)){
+      alternativeText=`🛡️ PIANO B DIFESA D${defenderCtx.next}: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · proteggi circa ${save} cr`:''} · obiettivo ${defenderCtx.priority}.`;
+    }else if(isLastRoleSlot){
       alternativeText=`🔒 ULTIMO SLOT ${p.role}: ${p.name} fino a ${stop} cr. Oltre, passa a ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · non oltre ${bestAlt._liveMax} cr${save>0?` · proteggi circa ${save} cr per gli altri reparti`:''}.`;
     }else if(level==='stop'){
       alternativeText=`🔁 PIANO B AUTOMATICO: ${bestAlt.p.name} · ideale ${bestAlt._liveIdeal} cr · NON OLTRE ${bestAlt._liveMax} cr${bestAlt._liveSaving>0?` · risparmio circa ${bestAlt._liveSaving} cr`:''}.`;
@@ -8136,7 +8205,7 @@ function liveAuctionDecision5(playerIndex,price){
     stop,decisionMax,normalStop,treasuryStop,
     treasuryAllow:treasury.allow||0,
     impact,bestAlt,alts,alternativeText,ap,
-    calibrated:a,isLastRoleSlot
+    calibrated:a,isLastRoleSlot,defenderCtx
   };
 }
 
@@ -8342,6 +8411,11 @@ function evaluateAstaLiveBid(){
   const pulse=auctionLeaguePulse();
   const mp=pulse.market;
   out.innerHTML=`<b>${esc(d.headline)}</b><br>${esc(d.why)}
+    ${d.defenderCtx?`<div class="defenseLive689">
+      <span>🛡️ D${d.defenderCtx.next}/8</span>
+      <b>${esc(d.defenderCtx.phase)}</b>
+      <small>${esc(d.defenderCtx.spec.label)} · ${d.defenderCtx.mod?'MODIFICATORE ON':'MODIFICATORE OFF'}</small>
+    </div>`:''}
     <div class="auctionPulse6">
       <span>MERCATO <b>${esc(mp.label)}${mp.count?` ${mp.pct>0?'+':''}${mp.pct}%`:''}</b></span>
       <span>BUDGET <b>${esc(pulse.budget)} ${pulse.delta>0?'+':''}${pulse.delta}</b></span>
