@@ -1349,6 +1349,28 @@ function adaptiveBudgetPlan(){
   raw.sort((a,b)=>(b.v-Math.floor(b.v))-(a.v-Math.floor(a.v)));
   for(let i=0;i<rem;i++)ints[raw[i%Math.max(1,raw.length)].r]++;
 
+  // V69.4 - Dopo l'acquisto del P1, il budget P non viene più ricalcolato come
+  // quota generica del reparto: resta solo la QI necessaria per completare P2/P3
+  // della stessa squadra. Il surplus torna ai reparti futuri C/A.
+  if(keeperBlockLocked(state.me) && roleCount(state.me,'P')<LIMITS.P){
+    const team=keeperBlockTeam(state.me);
+    const required=keeperRemainingBaseReserve(team,state.me);
+    if(Number.isFinite(required)){
+      const protectedP=Math.max(0,required);
+      const surplus=Math.max(0,(ints.P||0)-protectedP);
+      ints.P=protectedP;
+      const future=['C','A'].filter(r=>roleCount(state.me,r)<LIMITS[r]);
+      if(surplus>0 && future.length){
+        const weight=future.reduce((sum,r)=>sum+(shares[r]||0),0)||future.length;
+        let moved=0;
+        future.forEach((r,i)=>{
+          const add=i===future.length-1 ? surplus-moved : Math.floor(surplus*((shares[r]||1)/weight));
+          ints[r]=(ints[r]||0)+add; moved+=add;
+        });
+      }
+    }
+  }
+
   const roles={};
   ['P','D','C','A'].forEach(r=>{
     const missing=Math.max(0,LIMITS[r]-roleCount(state.me,r));
@@ -3406,7 +3428,7 @@ function liveTop5Candidate(index,role){
 }
 
 function liveTop5Rows(role){
-  const key=`${PERF_REV}:${state.me}:${role}`;
+  const key=`${PERF_REV}:${state.me}:${role}:${roleCount(state.me,'P')}:${keeperBlockTeam(state.me)}`;
   if(PERF_CACHE.top5.has(key))return PERF_CACHE.top5.get(key);
   const rows=PLAYER_ARCHIVE
     .map((p,index)=>liveTop5Candidate(index,role))
