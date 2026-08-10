@@ -5248,7 +5248,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V67.7.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6998,16 +6998,23 @@ function strongRosterVerdict(g){
 function purchasePlanDelta(buyerIndex=state.me){
   const rows=roster(buyerIndex);
   let expected=0,paid=0;
-  rows.forEach((buy,idx)=>{
-    const pidx=PLAYER_ARCHIVE.findIndex(p=>normalizePlayerText(p.name)===normalizePlayerText(buy.name));
-    let planned=Math.max(1,Number(buy.price)||1);
-    if(pidx>=0){
-      const a=aiPlayerAnalysis(pidx,buyerIndex);
-      planned=Math.max(1,Number(a?.ideal||a?.low||planned));
-    }
-    expected+=planned; paid+=Number(buy.price)||0;
+  rows.forEach(buy=>{
+    // Usa SEMPRE la fotografia del piano salvata prima dell'acquisto.
+    // Non ricalcola aiPlayerAnalysis qui: dopo il primo acquisto creava
+    // una dipendenza circolare con adaptiveBudgetPlan/tesoretto e svuotava
+    // le schede Piano/Rosa del D.S. AI.
+    const snap=buy.aiSnapshot||{};
+    const planned=Math.max(
+      1,
+      Number(snap.ideal)||
+      Number(snap.slotTarget)||
+      Number(buy.price)||
+      1
+    );
+    expected+=planned;
+    paid+=Number(buy.price)||0;
   });
-  return {expected,paid,delta:expected-paid}; // positive = saving
+  return {expected,paid,delta:expected-paid}; // positive = risparmio/tesoretto
 }
 function roleMarketTemperature(role){
   const buys=(state.purchases||[]).filter(x=>x.role===role);
