@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7735,11 +7735,15 @@ function dsFastPrice(index){
 }
 
 function dsFastCandidates(role,limit=5){
-  const key='cand|'+dsFastStateKey()+'|'+role+'|'+limit;
+  const key='candSmart724|'+dsFastStateKey()+'|'+role+'|'+limit;
   if(DS_FAST_CACHE.has(key))return DS_FAST_CACHE.get(key);
 
-  // Fase 1: pre-filtro leggero su tutto l'archivio.
+  const cash=Math.max(0,budget(state.me));
+  const openSlots=Math.max(1,remainingRosterSlots(state.me));
+  const reserveAfter=Math.max(0,openSlots-1);
+  const hardCap=Math.max(0,cash-reserveAfter);
   const quick=[];
+
   for(let index=0;index<PLAYER_ARCHIVE.length;index++){
     const p=PLAYER_ARCHIVE[index];
     if(!p || p.role!==role)continue;
@@ -7748,35 +7752,53 @@ function dsFastCandidates(role,limit=5){
 
     const q=dsFastPlayerQuality(p);
     const qi=Math.max(1,auctionBasePrice(p));
+    if(qi>hardCap)continue;
 
-    // V72.3 - HARD AFFORDABILITY GATE
-    // Un obiettivo operativo deve essere acquistabile ALLA BASE D'ASTA.
-    // Protegge almeno 1 credito per ciascuno degli altri slot ancora aperti.
-    const cash=Math.max(0,budget(state.me));
-    const openSlots=Math.max(1,remainingRosterSlots(state.me));
-    const hardAffordableCap=Math.max(0,cash-Math.max(0,openSlots-1));
-    if(qi>hardAffordableCap)continue;
-
+    // Pre-ranking economico: non premiare soltanto il prezzo basso.
     const fvm=Math.max(0,Number(p.fvm)||0);
-    const value=q + Math.min(14,fvm*.18) - Math.min(14,qi*.7);
-    quick.push({p,index,q,value,qi,hardAffordableCap});
+    const preScore=q*.78 + Math.min(10,fvm*.10) - Math.max(0,qi-3)*1.2;
+    quick.push({p,index,q,qi,preScore});
   }
 
-  quick.sort((a,b)=>b.value-a.value || b.q-a.q || a.qi-b.qi);
+  quick.sort((a,b)=>b.preScore-a.preScore || b.q-a.q || a.qi-b.qi);
 
-  // Fase 2: prezzi completi solo sui migliori 18 profili.
-  const finalists=quick.slice(0,24).map(x=>{
+  // Prezzi Asta Live solo sui candidati migliori per mantenere i tab veloci.
+  const finalists=quick.slice(0,28).map(x=>{
     const px=dsFastPrice(x.index);
+    const nonOltre=Math.max(0,Number(px.maxRec)||0);
+    if(!nonOltre || x.qi>nonOltre)return null;
 
-    // Deve essere realmente acquistabile anche secondo il motore unificato Asta Live.
-    if(x.qi>Number(px.maxRec||0))return null;
+    const planCost=Math.max(x.qi,Math.max(1,Number(px.ideal)||x.qi));
+    if(planCost>hardCap)return null;
 
-    const affordability=px.maxRec>0 ? Math.max(0,100-(px.ideal/Math.max(1,budget(state.me)))*180) : 0;
-    const fit=Math.round(clamp(x.q*.72 + affordability*.28,1,99));
-    return {...x,px,fit};
+    const leftAfter=Math.max(0,cash-planCost);
+    const surplusAfter=leftAfter-reserveAfter;
+    const efficiency=x.q/Math.max(1,planCost);
+    const spendShare=planCost/Math.max(1,cash);
+
+    // Qualità prima, ma con protezione reale del completamento rosa.
+    // Un costo 5 può superare un costo 3-4 se il salto di qualità lo giustifica.
+    let smartScore=x.q*.72 + Math.min(100,efficiency*7)*.18 + Math.max(0,100-spendShare*100)*.10;
+    if(planCost===hardCap && openSlots>1)smartScore-=14;       // ALL-IN: lascia 1 cr per ogni altro slot
+    else if(spendShare>.50 && openSlots>2)smartScore-=7;
+    else if(spendShare>.40 && openSlots>2)smartScore-=3;
+    if(surplusAfter>=2)smartScore+=2;                          // margine utile per i prossimi slot
+
+    return {...x,px,planCost,leftAfter,surplusAfter,efficiency,smartScore};
   }).filter(Boolean);
 
-  finalists.sort((a,b)=>b.fit-a.fit || b.q-a.q || a.px.ideal-b.px.ideal);
+  finalists.sort((a,b)=>b.smartScore-a.smartScore || b.q-a.q || a.planCost-b.planCost);
+  const cheapest=finalists.length?Math.min(...finalists.map(x=>x.planCost)):0;
+  const bestQ=finalists.length?Math.max(...finalists.map(x=>x.q)):0;
+
+  finalists.forEach((x,n)=>{
+    if(openSlots>1 && x.planCost===hardCap)x.smartLabel='ALL-IN';
+    else if(n===0)x.smartLabel='MIGLIOR EQUILIBRIO';
+    else if(x.q>=bestQ-2 && x.planCost>cheapest)x.smartLabel='UPGRADE QUALITÀ';
+    else if(x.planCost===cheapest)x.smartLabel='RISPARMIO';
+    else x.smartLabel='ALTERNATIVA';
+  });
+
   const out=finalists.slice(0,limit);
   DS_FAST_CACHE.set(key,out);
   return out;
@@ -7963,7 +7985,7 @@ function renderStrongRosterAIFast(){
     </div>
 
     <div class="rosaForteBlock"><b>🧠 Lettura AI:</b>
-      ${targetRole?`Priorità ${roleName(targetRole)}: ${roleCount(state.me,targetRole)}/${LIMITS[targetRole]} coperti. Budget ${cash} cr, ${slots} slot aperti. Il motore mostra solo profili acquistabili alla QI/base d'asta e protegge almeno 1 credito per ogni altro slot.`:'Rosa completa.'}
+      ${targetRole?`Priorità ${roleName(targetRole)}: ${roleCount(state.me,targetRole)}/${LIMITS[targetRole]} coperti. Budget ${cash} cr, ${slots} slot aperti. Il motore ordina solo profili acquistabili valutando qualità, prezzo e crediti necessari per completare gli altri slot.`:'Rosa completa.'}
     </div>
 
     ${targets.length?`
@@ -7974,7 +7996,7 @@ function renderStrongRosterAIFast(){
           <div class="rosaForteTargetName">${isFavorite(x.p.name)?'⭐ ':''}${esc(x.p.name)}
             <span class="strongScore ${strongScoreClass(x.q)}">${x.q}/99</span></div>
           <div class="rosaForteTargetMeta">${x.p.role} · ${esc(x.p.team)} · FVM ${x.p.fvm} · QI ${x.p.qi}</div>
-          <span class="rosaForteSlot">${op.items[0]?esc(op.items[0].label):'PROSSIMO SLOT'}</span>
+          <span class="rosaForteSlot">${esc(x.smartLabel||'ALTERNATIVA')} · ${op.items[0]?esc(op.items[0].label):'PROSSIMO SLOT'}</span>
         </div>
         <div class="rosaForteTargetPrice">${x.px.reserveBlocked?'LASCIA':`${x.px.low}-${x.px.maxRec}`}<small>MIN ${x.px.low} · IDEALE ${x.px.ideal} · MAX RANGE ${x.px.high} · NON OLTRE ${x.px.maxRec}</small></div>
       </div>`).join('')}
@@ -8033,7 +8055,7 @@ function renderStrategy40Fast(){
     ${candidates.length?`<div class="strategy40Targets">
       ${candidates.map((x,n)=>`<div class="strategy40Target" onclick="openAIForPlayer(${x.index})">
         <div><div class="strategy40TargetName">${n+1}. ${esc(x.p.name)}</div>
-        <div class="strategy40TargetMeta">${x.q>=70?'QUALITÀ':x.q>=55?'EQUILIBRIO':'VALORE'} · score ${x.q}/99 · FVM ${x.p.fvm} · QI ${x.p.qi}</div></div>
+        <div class="strategy40TargetMeta">${esc(x.smartLabel||'ALTERNATIVA')} · score ${x.q}/99 · FVM ${x.p.fvm} · QI ${x.p.qi}</div></div>
         <div class="strategy40TargetPrice">${x.px.reserveBlocked?'LASCIA':`${x.px.low}-${x.px.maxRec} cr`}<small style="display:block;font-size:9px;color:var(--muted);margin-top:3px">MIN ${x.px.low} · IDEALE ${x.px.ideal} · MAX ${x.px.high} · NON OLTRE ${x.px.maxRec}</small></div>
       </div>`).join('')}
     </div>`:''}
