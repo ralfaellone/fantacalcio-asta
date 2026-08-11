@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8463,25 +8463,66 @@ function renderAstaLiveSuggestions(){
 }
 function selectAstaLivePlayer(index){
   const chosen=PLAYER_ARCHIVE[index];
-  if(chosen && chosen.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(chosen,state.me)){
+  if(!chosen)return;
+
+  if(chosen.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(chosen,state.me)){
     alert(`Blocco portieri ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`);
     return;
   }
-  if(chosen && !marketRoleAllowed(chosen.role)){
+  if(!marketRoleAllowed(chosen.role)){
     alert(`Asta iniziale: blocco ${initialBlockLabel()}. Puoi chiamare ${allowedInitialRoleText()}.`);
     return;
   }
+
+  // V72.5 - selezione persistente: il tap deve "agganciare" subito il giocatore.
   ASTA_LIVE_PLAYER=index;
+
   const input=document.getElementById('astaLiveSearch');
-  if(input)input.value='';
+  if(input)input.value=chosen.name;
+
   const sug=document.getElementById('astaLiveSuggestions');
-  if(sug)sug.classList.remove('show');
-  renderAstaLiveSelected();
+  if(sug){
+    sug.classList.remove('show');
+    sug.innerHTML='';
+  }
+
+  // Mostra immediatamente una card leggera, prima dei calcoli AI.
+  const selected=document.getElementById('astaLiveSelected');
+  const decision=document.getElementById('astaLiveDecision');
+  if(selected){
+    selected.innerHTML=`
+      <div class="astaSelectedCard">
+        <div>
+          <div class="astaSelectedName">${esc(chosen.name)}</div>
+          <div class="astaSelectedMeta">${chosen.role} · ${esc(chosen.team)} · QI ${chosen.qi} · FVM ${chosen.fvm}</div>
+        </div>
+        <button class="astaClear" onclick="clearAstaLivePlayer()">✕</button>
+      </div>`;
+  }
+  if(decision){
+    decision.innerHTML='<div class="empty">🤖 Carico Asta Live…</div>';
+  }
+
+  // Il motore pesante parte al frame successivo: eventuali errori non cancellano la selezione.
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      if(ASTA_LIVE_PLAYER!==index)return;
+      try{
+        renderAstaLiveSelected();
+      }catch(err){
+        console.error('Asta Live selection',err);
+        if(decision){
+          decision.innerHTML=`<div class="empty">⚠️ Analisi non disponibile per ${esc(chosen.name)}. Il giocatore resta selezionato: riprova o apri AI Completa.</div>`;
+        }
+      }
+    },20);
+  });
 }
 function clearAstaLivePlayer(){
   ASTA_LIVE_PLAYER=-1;
-  renderAstaLiveSelected();
   const input=document.getElementById('astaLiveSearch');
+  if(input)input.value='';
+  renderAstaLiveSelected();
   if(input)input.focus();
 }
 
@@ -9439,10 +9480,23 @@ function renderAstaLiveSelected(){
     decision.innerHTML='<div class="empty">Cerca il giocatore chiamato per attivare l’assistente Asta Live.</div>';
     return;
   }
-  const a=cachedCalibratedLivePrices(ASTA_LIVE_PLAYER);
+  let a=null;
+  try{
+    a=cachedCalibratedLivePrices(ASTA_LIVE_PLAYER);
+  }catch(err){
+    console.error('Asta Live price engine',err);
+  }
   if(!a){
-    selected.innerHTML='';
-    decision.innerHTML='<div class="empty">Analisi non disponibile.</div>';
+    // V72.5: non cancellare mai il giocatore già selezionato se l'AI fallisce.
+    selected.innerHTML=`
+      <div class="astaSelectedCard">
+        <div>
+          <div class="astaSelectedName">${esc(p.name)}</div>
+          <div class="astaSelectedMeta">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm} · BASE ASTA ${auctionBasePrice(p)}</div>
+        </div>
+        <button class="astaClear" onclick="clearAstaLivePlayer()">✕</button>
+      </div>`;
+    decision.innerHTML=`<div class="empty">⚠️ Analisi temporaneamente non disponibile per ${esc(p.name)}. La selezione è stata mantenuta.</div>`;
     return;
   }
 
@@ -9464,7 +9518,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 9.3</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 9.5</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
