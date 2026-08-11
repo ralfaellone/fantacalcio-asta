@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6328,6 +6328,7 @@ function tab(id,btn){
   requestAnimationFrame(()=>render());
 }
 function openDSAI(){
+  dsResetMemo();
   const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('D.S. AI'));
   if(btn)tab('dsai',btn);
   setTimeout(()=>document.getElementById('dsDynamic')?.scrollIntoView({block:'start'}),30);
@@ -9032,7 +9033,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.7</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.8</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
@@ -9574,6 +9575,21 @@ function renderListone(){
 
 let AI_ROSTER_MODULE=localStorage.getItem('astaFantaFormationModule')||'';
 
+
+
+let __dsFrameMemo = new Map();
+function dsMemo(key, fn){
+  if(__dsFrameMemo.has(key)) return __dsFrameMemo.get(key);
+  const v=fn(); __dsFrameMemo.set(key,v); return v;
+}
+function dsResetMemo(){ __dsFrameMemo.clear(); }
+function dsSafeRender(fn, fallback=''){
+  try { return fn() || fallback; }
+  catch(err){
+    console.error('[DS render]', err);
+    return fallback;
+  }
+}
 function renderDSModuleSelector(){
   const box=document.getElementById('dsModuleButtons');
   const badge=document.getElementById('dsModifierBadge');
