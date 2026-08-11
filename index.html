@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8135,26 +8135,114 @@ function liveMarketLearning(role=null,tier=null){
 }
 
 
-// V70.0 - MERCATO AVVERSARI LIVE
+// V70.1 - MERCATO AVVERSARI LIVE SMART
+// Non usa più il budget lordo come sinonimo di forza.
+// Per ogni rivale stima quanto può DAVVERO spendere su questo singolo slot,
+// proteggendo il completamento della sua rosa e tenendo conto della necessità del ruolo.
+function rivalSingleSlotCapacity(managerIndex,role,playerBase){
+  const cash=Math.max(0,budget(managerIndex));
+  const totalMissing=Math.max(0,25-roster(managerIndex).length);
+  const roleMissing=Math.max(0,(LIMITS[role]||0)-roleCount(managerIndex,role));
+  if(totalMissing<=0 || roleMissing<=0)return 0;
+
+  // Dopo l'eventuale acquisto devono restare almeno 1 cr per ogni slot residuo.
+  const mathematicalCap=Math.max(0,cash-Math.max(0,totalMissing-1));
+
+  // Budget medio reale per slot ancora vuoto.
+  const avgPerSlot=totalMissing?cash/totalMissing:cash;
+
+  // Urgenza reparto: più pesa quel ruolo tra gli slot ancora mancanti,
+  // più il rivale può concentrare budget sul singolo giocatore.
+  const roleUrgency=totalMissing?roleMissing/totalMissing:0;
+  const urgencyMult=1 + Math.min(.45,roleUrgency*.9);
+
+  // Un profilo con QI alta rispetto alla media residua può giustificare
+  // un investimento sopra media, ma senza trasformare 600 cr in "budget infinito".
+  const qualitySignal=Math.max(0,Math.min(.45,(playerBase/Math.max(1,avgPerSlot)-.65)*.35));
+  const strategicCap=Math.max(
+    playerBase,
+    Math.round(avgPerSlot*(1.15+qualitySignal)*urgencyMult)
+  );
+
+  return Math.max(0,Math.min(mathematicalCap,strategicCap));
+}
+
 function rivalAuctionPressure(playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
-  if(!p)return {level:'BASSA',score:0,boostPct:0,contenders:0,strong:0,avgBudget:0,comparable:0};
+  if(!p)return {
+    level:'BASSA',score:0,boostPct:0,contenders:0,strong:0,
+    avgBudget:0,avgCap:0,slotDemand:0,comparable:0,scarcityLabel:'AMPIA'
+  };
+
   const base=Math.max(1,auctionBasePrice(p));
   const rivals=(state.managers||[]).map((m,i)=>i).filter(i=>i!==state.me);
-  const active=rivals.map(i=>({i,cash:Math.max(0,budget(i)),missing:Math.max(0,(LIMITS[p.role]||0)-roleCount(i,p.role)),safe:Math.max(0,safeMaxBid(i))}))
-    .filter(x=>x.missing>0&&x.safe>=base);
-  const strong=active.filter(x=>x.safe>=Math.max(base,Math.round(base*1.5))).length;
-  const avgBudget=active.length?Math.round(active.reduce((s,x)=>s+x.cash,0)/active.length):0;
-  const slotDemand=active.reduce((s,x)=>s+x.missing,0);
+
+  const rows=rivals.map(i=>{
+    const cash=Math.max(0,budget(i));
+    const missingRole=Math.max(0,(LIMITS[p.role]||0)-roleCount(i,p.role));
+    const totalMissing=Math.max(0,25-roster(i).length);
+    const cap=rivalSingleSlotCapacity(i,p.role,base);
+    return {i,cash,missingRole,totalMissing,cap};
+  }).filter(x=>x.missingRole>0 && x.cap>=base);
+
+  const contenders=rows.length;
+  const avgBudget=contenders?Math.round(rows.reduce((s,x)=>s+x.cash,0)/contenders):0;
+  const avgCap=contenders?Math.round(rows.reduce((s,x)=>s+x.cap,0)/contenders):0;
+  const slotDemand=rows.reduce((s,x)=>s+x.missingRole,0);
+
+  // "Forte capacità" = può spingersi davvero almeno ~35% sopra la QI.
+  const strongThreshold=Math.max(base+3,Math.round(base*1.35));
+  const strong=rows.filter(x=>x.cap>=strongThreshold).length;
+
+  // Alternative comparabili ancora libere.
   const qi=Number(p.qi)||base;
-  const comparable=PLAYER_ARCHIVE.filter(x=>x.role===p.role&&!purchaseForArchivePlayer(x.name)&&(Number(x.qi)||0)>=Math.max(1,Math.round(qi*.78))).length;
-  const scarcity=comparable<=4?3:comparable<=8?2:comparable<=14?1:0;
-  let score=Math.max(0,Math.min(99,active.length*5+strong*4+Math.min(12,slotDemand)+scarcity*7));
+  const comparable=PLAYER_ARCHIVE.filter(x=>
+    x.role===p.role &&
+    !purchaseForArchivePlayer(x.name) &&
+    (Number(x.qi)||0)>=Math.max(1,Math.round(qi*.78))
+  ).length;
+
+  let scarcityLabel='AMPIA';
+  let scarcityBonus=0;
+  let alternativeRelief=0;
+  if(comparable<=3){
+    scarcityLabel='CRITICA'; scarcityBonus=26;
+  }else if(comparable<=6){
+    scarcityLabel='STRETTA'; scarcityBonus=16;
+  }else if(comparable<=10){
+    scarcityLabel='MEDIA'; scarcityBonus=7;
+  }else{
+    scarcityLabel='AMPIA';
+    // Molte alternative devono abbassare davvero la pressione.
+    alternativeRelief=Math.min(24,(comparable-10)*3+9);
+  }
+
+  // Domanda reale: non basta avere uno slot aperto, conta quanto quel ruolo
+  // pesa ancora nella rosa degli avversari.
+  const demandRatio=contenders
+    ? rows.reduce((s,x)=>s+(x.missingRole/Math.max(1,x.totalMissing)),0)/contenders
+    : 0;
+
+  // Pressione 0-99: compratori + capacità + urgenza + scarsità - alternative.
+  let score=
+    contenders*2.3 +
+    strong*2.0 +
+    Math.min(13,slotDemand*.45) +
+    demandRatio*18 +
+    scarcityBonus -
+    alternativeRelief;
+
+  score=Math.max(0,Math.min(99,Math.round(score)));
+
   let level='BASSA',boostPct=0;
-  if(score>=55){level='ESTREMA';boostPct=.10}
-  else if(score>=38){level='ALTA';boostPct=.07}
-  else if(score>=22){level='MEDIA';boostPct=.04}
-  return {level,score,boostPct,contenders:active.length,strong,avgBudget,slotDemand,comparable};
+  if(score>=62){level='ESTREMA';boostPct=.10}
+  else if(score>=44){level='ALTA';boostPct=.07}
+  else if(score>=27){level='MEDIA';boostPct=.04}
+
+  return {
+    level,score,boostPct,contenders,strong,avgBudget,avgCap,
+    slotDemand,comparable,scarcityLabel,strongThreshold,demandRatio
+  };
 }
 
 // V69.12 - RISERVA MINIMA REALE
@@ -8443,7 +8531,7 @@ function liveAuctionDecision5(playerIndex,price){
   }
   if(a.rivalPressure){
     const rp=a.rivalPressure;
-    why+=` ⚔️ Pressione asta ${rp.level}: ${rp.contenders} avversari con slot ${p.role} aperti, ${rp.strong} con forte capacità di rilancio, budget medio ${rp.avgBudget} cr, ${rp.comparable} profili comparabili liberi.`;
+    why+=` ⚔️ Pressione asta ${rp.level}: ${rp.contenders} rivali attivi, ${rp.strong} forti, capacità media stimata ${rp.avgCap} cr sul singolo slot, alternative ${rp.scarcityLabel.toLowerCase()} (${rp.comparable} comparabili liberi).`;
   }
 
 
@@ -8560,7 +8648,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 7.0</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 7.1</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
