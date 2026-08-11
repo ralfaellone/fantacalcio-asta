@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.12</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.13</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8259,10 +8259,11 @@ function calibratedLivePrices(playerIndex){
   // senza violare la riserva minima. Non rialziamo artificialmente il tetto alla QI.
   const officialBase=auctionBasePrice(p);
   if(sustainableCap<officialBase){
-    out.low=sustainableCap;
-    out.ideal=sustainableCap;
-    out.high=sustainableCap;
+    out.low=null;
+    out.ideal=null;
+    out.high=null;
     out.maxRec=sustainableCap;
+    out.officialBase=officialBase;
     out.baseTooHigh=true;
     out.reserveBlocked=true;
     return out;
@@ -8531,10 +8532,12 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 6.7</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 6.8</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
-            ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
+            ? (a.reserveBlocked
+                ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}, ma oggi non è acquistabile alla sua QI senza intaccare la riserva minima.`
+                : `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`)
             : `${esc(hierarchy.firstChoice.p.name)} è ancora la prima scelta per ${esc(hierarchy.me._slotSpec.label)}. Questo giocatore è l'alternativa n.${hierarchy.rank}.`}</div>`:''}
         </div>
         <div style="display:flex;gap:4px;align-items:center">
@@ -8544,10 +8547,11 @@ function renderAstaLiveSelected(){
       </div>
 
       <div class="astaAiGrid">
-        <div class="astaAiMetric"><span>MIN</span><b>${a.low}</b></div>
-        <div class="astaAiMetric"><span>IDEALE</span><b>${a.ideal}</b></div>
-        <div class="astaAiMetric"><span>MAX RANGE</span><b>${a.high}</b></div>
-        <div class="astaAiMetric"><span>NON OLTRE</span><b>${absoluteCap}</b></div>
+        <div class="astaAiMetric"><span>MIN</span><b>${a.reserveBlocked?'—':a.low}</b></div>
+        <div class="astaAiMetric"><span>IDEALE</span><b>${a.reserveBlocked?'—':a.ideal}</b></div>
+        <div class="astaAiMetric"><span>MAX RANGE</span><b>${a.reserveBlocked?'—':a.high}</b></div>
+        <div class="astaAiMetric"><span>NON OLTRE</span><b>${a.reserveBlocked?'—':absoluteCap}</b></div>
+        ${a.reserveBlocked?`<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:#ffb3b3;padding-top:6px">🔒 NON ACQUISTABILE · QI ${auctionBasePrice(p)} superiore al tetto sostenibile senza intaccare la riserva minima.</div>`:''}
         ${p.role==='P' && a.keeperBlockPossible ? `<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:var(--muted);padding-top:6px">🧤 BLOCCO ${esc(a.keeperBlockTeam||p.team)} · riserva P2/P3: <b>${a.keeperBlockReserve} cr</b> (QI ${esc((a.keeperBlockBases||[]).join(' + '))}) · MAX P1 protetto: <b>${absoluteCap} cr</b></div>` : ''}
       </div>
 
@@ -8564,10 +8568,9 @@ function renderAstaLiveSelected(){
           <i id="astaLiveSmartMarker" class="astaLiveSmartMarker" style="left:0%"></i>
         </div>
         <div class="astaLiveSmartLabels">
-          <span>MIN ${a.low}</span>
-          <span>IDEALE ${a.ideal}</span>
-          <span>MAX ${a.high}</span>
-          <span>STOP ${absoluteCap}</span>
+          ${a.reserveBlocked
+            ? `<span>MIN —</span><span>IDEALE —</span><span>MAX —</span><span>STOP —</span>`
+            : `<span>MIN ${a.low}</span><span>IDEALE ${a.ideal}</span><span>MAX ${a.high}</span><span>STOP ${absoluteCap}</span>`}
         </div>
       </div>
 
@@ -8632,7 +8635,7 @@ function evaluateAstaLiveBid(){
   const stop=d?.stop||Math.max(1,Math.min(a.maxRec,safeMaxBid(state.me)));
 
   if(marker){
-    const scaleMax=Math.max(stop,a.high,a.ideal,1);
+    const scaleMax=Math.max(stop,Number(a.high)||0,Number(a.ideal)||0,auctionBasePrice(PLAYER_ARCHIVE[ASTA_LIVE_PLAYER])||1);
     marker.style.left=`${Math.max(0,Math.min(100,(price/scaleMax)*100))}%`;
   }
 
@@ -8668,10 +8671,14 @@ function evaluateAstaLiveBid(){
     ${d.alternativeText?`<div class="liveDecisionAlt5 ${d.level==='stop'?'stopAlt':''}">${esc(d.alternativeText)}</div>`:''}`;
 
   if(delta){
-    const idealGap=a.ideal-price;
-    delta.innerHTML=idealGap>=0
-      ? `${idealGap} cr all'IDEALE · <b>${Math.max(0,stop-price)} cr al limite</b>`
-      : `+${Math.abs(idealGap)} cr sopra IDEALE · <b>${Math.max(0,stop-price)} cr al limite</b>`;
+    if(a.reserveBlocked){
+      delta.innerHTML=`QI ${auctionBasePrice(PLAYER_ARCHIVE[ASTA_LIVE_PLAYER])} cr · <b>acquisto bloccato dalla riserva minima</b>`;
+    }else{
+      const idealGap=a.ideal-price;
+      delta.innerHTML=idealGap>=0
+        ? `${idealGap} cr all'IDEALE · <b>${Math.max(0,stop-price)} cr al limite</b>`
+        : `+${Math.abs(idealGap)} cr sopra IDEALE · <b>${Math.max(0,stop-price)} cr al limite</b>`;
+    }
   }
 
   refreshRivalLiveBox();
