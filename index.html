@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8134,6 +8134,41 @@ function liveMarketLearning(role=null,tier=null){
   return {count:samples.length,ratio,pct,label,confidence,observed};
 }
 
+
+// V69.9 - TETTO SOSTENIBILE UNICO
+// MIN / IDEALE / MAX RANGE / NON OLTRE devono mostrare già il limite
+// realmente utilizzato dalla decisione live, non un valore teorico superiore.
+function liveSustainableCap(playerIndex,rawMax){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p)return 0;
+
+  const safe=Math.max(0,safeMaxBid(state.me));
+  const baseStop=Math.max(0,Math.min(Number(rawMax)||0,safe));
+  if(baseStop<=0)return 0;
+
+  const normalStop=Math.max(0,Math.min(
+    baseStop,
+    adaptiveSlotCap(p.role,baseStop,null)
+  ));
+
+  const treasury=treasuryCanBoost(playerIndex);
+  let cap=treasury.allow>0
+    ? Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow))
+    : normalStop;
+
+  // Stessa prudenza speciale già usata dalla decisione per i difensori.
+  if(p.role==='D'){
+    const ctx=defenderAuctionContext(playerIndex);
+    if(ctx){
+      const adjusted=Math.round(cap*ctx.capFactor);
+      if(ctx.next<=2) cap=Math.min(safe,Math.max(cap,adjusted));
+      else cap=Math.max(1,Math.min(cap,adjusted));
+    }
+  }
+
+  return Math.max(0,Math.min(baseStop,cap));
+}
+
 function calibratedLivePrices(playerIndex){
   const a=liveAuctionAI(playerIndex),p=PLAYER_ARCHIVE[playerIndex];
   if(!a||!p)return null;
@@ -8171,6 +8206,28 @@ function calibratedLivePrices(playerIndex){
       out.low=Math.min(out.low,out.maxRec);
     }
   }
+  // V69.9: allinea ciò che VEDI con ciò che la decisione può davvero spendere.
+  // Esempio: se il budget consente solo 27 cr, non mostriamo più
+  // MIN 34 / IDEALE 44 / NON OLTRE 44 per poi dire LASCIA a 28.
+  const sustainableCap=liveSustainableCap(playerIndex,out.maxRec);
+  out.sustainableCap=sustainableCap;
+
+  if(sustainableCap>0){
+    out.maxRec=Math.min(out.maxRec,sustainableCap);
+    out.high=Math.min(out.high,out.maxRec);
+    out.ideal=Math.min(out.ideal,out.maxRec);
+    out.low=Math.min(out.low,out.ideal);
+  }else{
+    out.maxRec=0;
+    out.high=0;
+    out.ideal=0;
+    out.low=0;
+    out.baseTooHigh=true;
+  }
+
+  // La QI resta SEMPRE la base minima d'asta.
+  // Se il tetto sostenibile coincide con la QI, tutti i valori diventano QI
+  // e alla QI la decisione sarà ULTIMO CREDITO.
   return enforceAuctionBaseFloor(out,p);
 }
 
@@ -8456,8 +8513,8 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 6.1</div>
-          <div class="astaDecisionText">${marketModeText()} · decisione live su prezzo, rosa, piano ${activeFormationPlan().name}, budget, preferiti, alternative e Tesoretto.</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 6.4</div>
+          <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
             : `${esc(hierarchy.firstChoice.p.name)} è ancora la prima scelta per ${esc(hierarchy.me._slotSpec.label)}. Questo giocatore è l'alternativa n.${hierarchy.rank}.`}</div>`:''}
