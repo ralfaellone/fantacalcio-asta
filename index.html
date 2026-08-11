@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8629,11 +8629,25 @@ function favoriteLiveHierarchy(playerIndex){
 function liveAuctionAI(playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
   const base=aiPlayerAnalysis(playerIndex,state.me);
-  if(!base)return null;
-  const hierarchy=favoriteLiveHierarchy(playerIndex);
+  if(!base||!p)return null;
+
+  // V72.8 - FIX MIRATO PROFILI PREFERITI
+  // Adzic/Mastantuono entrano nella gerarchia "preferiti" (stella), Messias no.
+  // Se quella sola gerarchia fallisce, Asta Live deve continuare col motore base
+  // invece di rendere indisponibile tutta l'analisi.
+  let hierarchy=null;
+  try{
+    hierarchy=favoriteLiveHierarchy(playerIndex);
+  }catch(err){
+    console.warn('[V72.8] gerarchia preferiti ignorata per',p.name,err);
+    hierarchy=null;
+  }
+
   if(!hierarchy)return enforceAuctionBaseFloor({...base,_favoriteHierarchy:null},p);
 
-  const px=hierarchy.me._favoritePx;
+  const px=hierarchy.me && hierarchy.me._favoritePx;
+  if(!px)return enforceAuctionBaseFloor({...base,_favoriteHierarchy:null},p);
+
   return enforceAuctionBaseFloor({
     ...base,
     low:px.low,
@@ -9514,7 +9528,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 9.7</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 9.8</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
