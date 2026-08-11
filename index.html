@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -9032,7 +9032,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.6</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.7</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
@@ -12929,7 +12929,7 @@ function renderAIAnalysis(a){
       <div class="bidRow">
         <div class="bidField">
           <label>Offerta attuale</label>
-          <input id="liveBidPrice" type="number" min="1" value="${a.low}" inputmode="numeric">
+          <input id="liveBidPrice" type="number" min="${auctionBasePrice(p)}" value="${Math.max(auctionBasePrice(p),Number(a.low)||1)}" inputmode="numeric">
         </div>
         <button class="bidCheck" onclick="evaluateLiveBid(${PLAYER_ARCHIVE.indexOf(p)})">VALUTA</button>
       </div>
@@ -12945,8 +12945,8 @@ function renderAIAnalysis(a){
         <button onclick="stepLiveBid(9)">+9</button>
         <button onclick="stepLiveBid(10)">+10</button>
         <button onclick="focusManualBid()">MANUALE</button>
-        <button onclick="setLiveBid(${a.high})">MAX RANGE</button>
-        <button onclick="setLiveBid(${a.maxRec})">NON OLTRE</button>
+        <button onclick="setLiveBid(${Math.max(auctionBasePrice(p),Number(a.high)||auctionBasePrice(p))})" ${Number(a.high)<auctionBasePrice(p)?'disabled title="MAX RANGE sotto la base d\'asta"':''}>MAX RANGE</button>
+        <button onclick="setLiveBid(${Math.max(auctionBasePrice(p),Number(a.maxRec)||auctionBasePrice(p))})" ${Number(a.maxRec)<auctionBasePrice(p)?'disabled title="NON OLTRE sotto la base d\'asta"':''}>NON OLTRE</button>
       </div>
       <div id="liveBidVerdict"></div>
     </div>
@@ -12954,8 +12954,9 @@ function renderAIAnalysis(a){
     <button class="rivalRadarBtn" onclick="openRivalRadar(${PLAYER_ARCHIVE.indexOf(p)})">👥 RADAR RIVALI SU QUESTO GIOCATORE</button>
 
     <div class="aiReason">
-      <strong>Consiglio unificato:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti.
-      <strong>NON OLTRE ${a.maxRec}</strong>: è lo stesso tetto usato da Asta Live e dal D.S. AI.
+      ${auctionBasePrice(p)>a.maxRec
+        ? `<strong>Consiglio unificato:</strong> QI/base asta <strong>${auctionBasePrice(p)}</strong> cr superiore al <strong>NON OLTRE ${a.maxRec}</strong>. Questo giocatore non è acquistabile alla base attuale: <strong>LASCIA</strong>.`
+        : `<strong>Consiglio unificato:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti. <strong>NON OLTRE ${a.maxRec}</strong>: è lo stesso tetto usato da Asta Live e dal D.S. AI.`}
       ${gm.note?`<br><br><strong>Tua nota:</strong> ${esc(gm.note)}`:''}
       <br><br>${a.reasons.map(x=>'• '+esc(x)).join('<br>')}
     </div>
