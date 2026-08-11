@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8853,9 +8853,11 @@ function liveAuctionDecision5(playerIndex,price){
 
   if(overPlan>0&&level!=='stop') why+=` Sei già ${overPlan} cr sopra il piano: prudenza.`;
 
-  if(impact.budgetLabel==='CRITICO'&&bid>=a.low&&level!=='stop'&&level!=='treasury'){
-    action='ULTIMI CREDITI';level='danger';headline='BUDGET SOTTO PRESSIONE';
-    why+=` Dopo l'acquisto il budget per gli slot rimanenti diventerebbe critico.`;
+  // V71.5: il budget critico NON deve trasformare automaticamente MIN/IDEALE
+  // in "ULTIMI CREDITI". Il tetto sostenibile ha già protetto la riserva minima.
+  // "ULTIMO CREDITO" scatta solo sul NON OLTRE (decisionMax).
+  if(impact.budgetLabel==='CRITICO'&&bid>=a.low&&level!=='stop'&&level!=='treasury'&&bid<decisionMax){
+    why+=` ⚠️ Dopo l'acquisto il budget sarà sotto pressione, ma il prezzo resta sostenibile entro il NON OLTRE di ${decisionMax} cr.`;
   }
 
   let alternativeText='';
@@ -9030,7 +9032,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.4</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.5</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
