@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8991,7 +8991,12 @@ function liveSustainableCap(playerIndex,rawMax){
   let slotCap=adaptiveCap;
 
   if(dsEnv){
-    const a0=liveAuctionAI(playerIndex);
+    let a0=null;
+    try{ a0=liveAuctionAI(playerIndex); }
+    catch(err){
+      console.warn('[Asta Live V72.6] fit fallback per',p.name,err);
+      try{ a0=aiPlayerAnalysis(playerIndex,state.me); }catch(_e){ a0=null; }
+    }
     const fitScore=Math.max(
       Number(a0?._slotScore)||0,
       Number(a0?.score)||0,
@@ -9070,8 +9075,26 @@ function dsLiveSlotEnvelope(playerIndex){
   return {low:item.rangeMin,ideal:item.target,high:item.rangeMax,maxRec:item.rangeMax,label:item.label,position:item.position};
 }
 function calibratedLivePrices(playerIndex){
-  const a=liveAuctionAI(playerIndex),p=PLAYER_ARCHIVE[playerIndex];
-  if(!a||!p)return null;
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p)return null;
+
+  // V72.6 - FALLBACK ROBUSTO ASTA LIVE
+  // Alcuni profili (es. preferiti / gerarchie speciali) possono far fallire
+  // il livello "favoriteLiveHierarchy". In quel caso NON perdiamo l'analisi:
+  // usiamo il motore AI base, già validato e con floor QI ufficiale.
+  let a=null;
+  try{
+    a=liveAuctionAI(playerIndex);
+  }catch(err){
+    console.warn('[Asta Live V72.6] fallback base per',p.name,err);
+    try{
+      a=aiPlayerAnalysis(playerIndex,state.me);
+    }catch(err2){
+      console.error('[Asta Live V72.6] anche fallback base fallito',p.name,err2);
+      a=null;
+    }
+  }
+  if(!a)return null;
   const tier=playerMarketTier(p);
   const sameTier=liveMarketLearning(p.role,tier);
   const sameRole=liveMarketLearning(p.role,null);
@@ -9518,7 +9541,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 9.5</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 9.6</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
