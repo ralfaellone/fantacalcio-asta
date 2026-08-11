@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8075,25 +8075,63 @@ function sustainableAlternativeCandidate(index){
 function sustainableLiveAlternatives(playerIndex,limit=3){
   const source=PLAYER_ARCHIVE[playerIndex];
   if(!source)return [];
-  const wantedRole=source.role;
 
-  return PLAYER_ARCHIVE
+  const candidates=PLAYER_ARCHIVE
     .map((p,index)=>({p,index}))
-    .filter(x=>x.index!==playerIndex && x.p.role===wantedRole)
+    .filter(x=>x.index!==playerIndex && x.p.role===source.role)
     .map(x=>sustainableAlternativeCandidate(x.index))
     .filter(Boolean)
     .map(x=>{
       const sr=strongRosterProfile(x.index,state.me);
       const fit=Number(sr?.score)||Number(x.ai.score)||0;
-      const value=fit*1.15 + (Number(x.p.fvm)||0)*.18 - x.qi*.28;
-      return {...x,fit,value};
-    })
-    .sort((a,b)=>b.value-a.value || b.fit-a.fit || a.qi-b.qi)
-    .slice(0,limit);
+      const fvm=Number(x.p.fvm)||0;
+      const qi=x.qi;
+      const cap=x.cap;
+      const quality=fit*1.25 + fvm*.22 + Math.min(20,qi*.28);
+      const value=fit*1.05 + fvm*.16 - qi*.42;
+      return {...x,fit,fvm,quality,value};
+    });
+
+  if(!candidates.length)return [];
+
+  const chosen=[];
+  const take=(arr,label)=>{
+    const x=arr.find(y=>!chosen.some(z=>z.index===y.index));
+    if(x)chosen.push({...x,altClass:label});
+  };
+
+  // 1. MIGLIORE SOSTENIBILE: privilegia la qualità vera, non il prezzo minimo.
+  take([...candidates].sort((a,b)=>
+    b.quality-a.quality || b.fit-a.fit || b.fvm-a.fvm || b.qi-a.qi
+  ),'MIGLIORE SOSTENIBILE');
+
+  // 2. QUALITÀ/PREZZO: miglior compromesso tra forza e costo.
+  take([...candidates].sort((a,b)=>
+    b.value-a.value || b.fit-a.fit || a.qi-b.qi
+  ),'QUALITÀ/PREZZO');
+
+  // 3. SICUREZZA: profilo economico ma ancora il migliore possibile tra i low-cost.
+  // Evita di scegliere automaticamente un QI 1 se esiste un QI 2-5 molto più forte.
+  take([...candidates].sort((a,b)=>{
+    const bandA=a.qi<=5?0:a.qi<=9?1:2;
+    const bandB=b.qi<=5?0:b.qi<=9?1:2;
+    return bandA-bandB || b.fit-a.fit || b.fvm-a.fvm || a.qi-b.qi;
+  }),'SICUREZZA');
+
+  // Se servono più di 3 risultati, completa con i migliori sostenibili rimasti.
+  if(chosen.length<limit){
+    [...candidates]
+      .sort((a,b)=>b.quality-a.quality || b.value-a.value)
+      .forEach(x=>{
+        if(chosen.length<limit && !chosen.some(z=>z.index===x.index))
+          chosen.push({...x,altClass:'ALTERNATIVA'});
+      });
+  }
+  return chosen.slice(0,limit);
 }
 
 function liveAuctionAlternativeAdvice(playerIndex,price,limit=2){
-  return sustainableLiveAlternatives(playerIndex,Math.max(5,limit))
+  return sustainableLiveAlternatives(playerIndex,Math.max(3,limit))
     .map(x=>{
       const ideal=Math.max(x.qi,Number(x.ai.ideal)||x.qi);
       const saving=Math.max(0,Math.round(Number(price||0)-ideal));
@@ -8106,11 +8144,6 @@ function liveAuctionAlternativeAdvice(playerIndex,price,limit=2){
         _liveSaving:saving
       };
     })
-    .sort((a,b)=>
-      b._liveSaving-a._liveSaving ||
-      b.strategicScore-a.strategicScore ||
-      a._liveIdeal-b._liveIdeal
-    )
     .slice(0,limit);
 }
 
@@ -8638,7 +8671,7 @@ function renderAuctionSimulator(playerIndex,price){
     </div>
     <div class="auctionSimWhy">${esc(sim.why)}</div>
     ${alt
-      ? `<div class="auctionSimAlt">Alternativa sostenibile: <b>${esc(alt.p.name)}</b> · QI ${alt.qi} · NON OLTRE ${alt.cap}</div>`
+      ? `<div class="auctionSimAlt">${esc(alt.altClass||'Alternativa sostenibile')}: <b>${esc(alt.p.name)}</b> · QI ${alt.qi} · NON OLTRE ${alt.cap}</div>`
       : `<div class="auctionSimAlt">⚠️ Nessuna alternativa sostenibile nella stessa fascia: serve un profilo più economico.</div>`}
   </div>`;
 }
@@ -8687,7 +8720,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 7.3</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 7.4</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
@@ -8744,7 +8777,7 @@ function renderAstaLiveSelected(){
             ${alts.map(x=>`
               <button class="secondary" onclick="selectAstaLivePlayer(${x.index})">
                 ${esc(x.p.name)}
-                <span class="astaLiveAlternativeMeta">QI ${x.qi} · NON OLTRE ${x.cap} · AI ${x.fit}/99</span>
+                <span class="astaLiveAlternativeMeta">${esc(x.altClass||'ALTERNATIVA')} · QI ${x.qi} · NON OLTRE ${x.cap} · AI ${x.fit}/99</span>
               </button>`).join('')}
           </div>
         </div>`
