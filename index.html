@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -9480,121 +9480,168 @@ function hydrateAstaLiveSecondary(playerIndex){
   setTimeout(()=>hydrateAstaLiveAlternatives(playerIndex),350);
 }
 
+function astaLiveFastPrices(playerIndex){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p)return null;
+
+  const cash=Math.max(0,budget(state.me));
+  const slots=Math.max(1,remainingRosterSlots(state.me));
+  const hardCap=Math.max(0,cash-Math.max(0,slots-1));
+  const base=Math.max(1,auctionBasePrice(p));
+
+  // Use D.S. current slot plan, already proven fast/stable.
+  let target=Math.min(base,hardCap);
+  let low=target, high=target, maxRec=hardCap;
+
+  try{
+    const op=typeof dsFastOperationalPlan==='function'?dsFastOperationalPlan():null;
+    const current=op&&op.items&&op.items[0];
+    if(current && current.role===p.role){
+      const quality=typeof dsFastPlayerQuality==='function'?dsFastPlayerQuality(p):50;
+      const slotTarget=Math.max(1,Number(current.target)||1);
+      const slotLow=Math.max(1,Number(current.low)||slotTarget);
+      const slotHigh=Math.max(slotTarget,Number(current.high)||slotTarget);
+
+      // Weak/value profiles stay near low end; stronger profiles may reach high end.
+      if(quality>=70) target=slotHigh;
+      else if(quality>=58) target=slotTarget;
+      else target=slotLow;
+
+      target=Math.max(base,Math.min(target,hardCap));
+      low=Math.max(base,Math.min(slotLow,target));
+      high=Math.max(target,Math.min(slotHigh,hardCap));
+      maxRec=Math.max(target,Math.min(hardCap,high));
+    }else{
+      target=Math.max(base,Math.min(base,hardCap));
+      low=target; high=target; maxRec=Math.max(target,hardCap);
+    }
+  }catch(err){
+    console.warn('[V72.9] piano D.S. fallback',err);
+    target=Math.max(base,Math.min(base,hardCap));
+    low=target; high=target; maxRec=Math.max(target,Math.min(hardCap,base));
+  }
+
+  // If base price is above what is mathematically sustainable, keep the true sustainable cap.
+  if(base>hardCap){
+    return {low:hardCap,ideal:hardCap,high:hardCap,maxRec:hardCap,blocked:true,base,hardCap};
+  }
+
+  return {
+    low:Math.max(1,Math.min(low,maxRec)),
+    ideal:Math.max(1,Math.min(target,maxRec)),
+    high:Math.max(1,Math.min(high,maxRec)),
+    maxRec:Math.max(1,maxRec),
+    blocked:false,base,hardCap
+  };
+}
+
+function astaLiveFastAction(price,px){
+  price=Math.max(0,Number(price)||0);
+  if(!px)return {action:'LASCIA',cls:'stop'};
+  if(px.blocked || price>px.maxRec)return {action:'LASCIA',cls:'stop'};
+  if(price===px.maxRec)return {action:'ULTIMO CREDITO',cls:'wait'};
+  if(price<=px.ideal)return {action:'COMPRA',cls:'go'};
+  if(price<px.maxRec)return {action:`PUOI RILANCIARE · MAX ${px.maxRec}`,cls:'wait'};
+  return {action:'LASCIA',cls:'stop'};
+}
+
 function renderAstaLiveSelected(){
   const selected=document.getElementById('astaLiveSelected');
   const decision=document.getElementById('astaLiveDecision');
   if(!selected||!decision)return;
-  const p=PLAYER_ARCHIVE[ASTA_LIVE_PLAYER];
-  if(!p){
+
+  if(ASTA_LIVE_PLAYER==null || ASTA_LIVE_PLAYER<0 || !PLAYER_ARCHIVE[ASTA_LIVE_PLAYER]){
     selected.innerHTML='';
     decision.innerHTML='<div class="empty">Cerca il giocatore chiamato per attivare l’assistente Asta Live.</div>';
     return;
   }
-  let a=null;
-  try{
-    a=cachedCalibratedLivePrices(ASTA_LIVE_PLAYER);
-  }catch(err){
-    console.error('Asta Live price engine',err);
-  }
-  if(!a){
-    // V72.5: non cancellare mai il giocatore già selezionato se l'AI fallisce.
-    selected.innerHTML=`
-      <div class="astaSelectedCard">
-        <div>
-          <div class="astaSelectedName">${esc(p.name)}</div>
-          <div class="astaSelectedMeta">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm} · BASE ASTA ${auctionBasePrice(p)}</div>
-        </div>
-        <button class="astaClear" onclick="clearAstaLivePlayer()">✕</button>
-      </div>`;
-    decision.innerHTML=`<div class="empty">⚠️ Analisi temporaneamente non disponibile per ${esc(p.name)}. La selezione è stata mantenuta.</div>`;
-    return;
-  }
 
-  const safe=safeMaxBid(state.me);
-  const absoluteCap=Math.max(1,Math.min(a.maxRec,safe));
-  const hierarchy=a._favoriteHierarchy;
+  const p=PLAYER_ARCHIVE[ASTA_LIVE_PLAYER];
+  const px=astaLiveFastPrices(ASTA_LIVE_PLAYER);
 
   selected.innerHTML=`
     <div class="astaSelectedCard">
       <div>
         <div class="astaSelectedName">${esc(p.name)}</div>
         <div class="astaSelectedMeta">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm} · BASE ASTA ${auctionBasePrice(p)}</div>
-        ${hierarchy?`<div class="liveFavRank ${hierarchy.isFirst?'first':'alt'}">${esc(hierarchy.label)}</div>`:''}
       </div>
       <button class="astaClear" onclick="clearAstaLivePlayer()">✕</button>
     </div>`;
 
+  if(!px){
+    decision.innerHTML=`<div class="empty">⚠️ Analisi non disponibile per ${esc(p.name)}.</div>`;
+    return;
+  }
+
+  const initialPrice=Math.max(1,Number(px.base)||1);
+  const v=astaLiveFastAction(initialPrice,px);
+
   decision.innerHTML=`
-    <div class="astaDecision">
-      <div class="astaDecisionHead">
+    <div class="astaLiveDecisionCard">
+      <div class="astaLiveDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 9.8</div>
-          <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
-          ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
-            ? (a.reserveBlocked
-                ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}, ma oggi non è acquistabile alla sua QI senza intaccare la riserva minima.`
-                : `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`)
-            : (()=> {
-                const fc=sustainableAlternativeCandidate(hierarchy.firstChoice.index);
-                return fc
-                  ? `${esc(hierarchy.firstChoice.p.name)} è la prima scelta sostenibile per ${esc(hierarchy.me._slotSpec.label)}. Questo giocatore è l'alternativa n.${hierarchy.rank}.`
-                  : `La prima scelta originaria per ${esc(hierarchy.me._slotSpec.label)} non è più sostenibile con il budget attuale. L'AI sta cercando il miglior profilo realmente acquistabile.`;
-              })()}</div>`:''}
-        </div>
-        <div style="display:flex;gap:4px;align-items:center">
-          ${(()=>{const sr=strongRosterProfile(ASTA_LIVE_PLAYER,state.me);return sr?`<span class="strongScore ${strongScoreClass(sr.score)}">ROSA ${sr.score}/99</span>`:''})()}
-          <span class="tag good">${a.score}/99</span>
+          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 9.9</div>
+          <div class="astaLiveDecisionSub">Motore FAST sincronizzato con il Piano D.S. e la riserva minima della rosa.</div>
         </div>
       </div>
 
-      <div class="astaAiGrid">
-        <div class="astaAiMetric"><span>MIN</span><b>${(a.reserveBlocked&&!a.priceInformative)?'—':a.low}</b></div>
-        <div class="astaAiMetric"><span>IDEALE</span><b>${(a.reserveBlocked&&!a.priceInformative)?'—':a.ideal}</b></div>
-        <div class="astaAiMetric"><span>MAX RANGE</span><b>${(a.reserveBlocked&&!a.priceInformative)?'—':a.high}</b></div>
-        <div class="astaAiMetric"><span>NON OLTRE</span><b>${(a.reserveBlocked&&!a.priceInformative)?'—':absoluteCap}</b></div>
-        ${a.reserveBlocked?`<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:#ffb3b3;padding-top:6px">🔒 NON ACQUISTABILE ALLA QI · QI ${auctionBasePrice(p)} cr > NON OLTRE ${absoluteCap} cr. La fascia sopra indica quanto il D.S. considera sostenibile per questo profilo/slot.</div>`:''}
-        ${p.role==='P' && a.keeperBlockPossible ? `<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:var(--muted);padding-top:6px">🧤 BLOCCO ${esc(a.keeperBlockTeam||p.team)} · riserva P2/P3: <b>${a.keeperBlockReserve} cr</b> (QI ${esc((a.keeperBlockBases||[]).join(' + '))}) · MAX P1 protetto: <b>${absoluteCap} cr</b></div>` : ''}
+      <div class="astaThresholdGrid">
+        <div><span>MIN</span><b>${px.low}</b></div>
+        <div><span>IDEALE</span><b>${px.ideal}</b></div>
+        <div><span>MAX RANGE</span><b>${px.high}</b></div>
+        <div><span>NON OLTRE</span><b>${px.maxRec}</b></div>
       </div>
 
-      <input id="astaLivePrice" class="astaPriceInput" type="number" min="${auctionBasePrice(p)}" inputmode="numeric"
-        value="${auctionBasePrice(p)}" placeholder="Base ${auctionBasePrice(p)}" oninput="evaluateAstaLiveBid()">
+      ${px.blocked?`
+        <div class="astaLiveBlocked">🔒 NON ACQUISTABILE ALLA QI · QI ${px.base} cr &gt; NON OLTRE ${px.maxRec} cr.</div>
+      `:''}
 
-      <div class="astaBidQuick">
-        ${[1,2,3,5,10].map(v=>`<button onclick="addAstaLiveBid(${v})">+${v}</button>`).join('')}
-        <button onclick="setAstaLiveMax()" ${a.reserveBlocked?'disabled title="QI già superiore al NON OLTRE"':''}>MAX</button>
+      <input id="astaLivePrice" type="number" min="1" value="${initialPrice}" inputmode="numeric"
+        oninput="refreshAstaLiveFastDecision()" class="astaLivePriceInput">
+
+      <div class="bidQuick">
+        <button onclick="astaLiveFastStep(1)">+1</button>
+        <button onclick="astaLiveFastStep(2)">+2</button>
+        <button onclick="astaLiveFastStep(3)">+3</button>
+        <button onclick="astaLiveFastStep(5)">+5</button>
+        <button onclick="astaLiveFastStep(10)">+10</button>
+        <button onclick="astaLiveFastSetMax()">MAX</button>
       </div>
 
-      <div class="astaLiveSmartBar">
-        <div class="astaLiveSmartScale">
-          <i id="astaLiveSmartMarker" class="astaLiveSmartMarker" style="left:0%"></i>
-        </div>
-        <div class="astaLiveSmartLabels">
-          ${(a.reserveBlocked&&!a.priceInformative)
-            ? `<span>MIN —</span><span>IDEALE —</span><span>MAX —</span><span>STOP —</span>`
-            : `<span>MIN ${a.low}</span><span>IDEALE ${a.ideal}</span><span>MAX ${a.high}</span><span>STOP ${absoluteCap}</span>`}
-        </div>
-      </div>
-
-      <div id="astaLiveDecisionBadge" class="astaLiveDecisionBadge">INSERISCI PREZZO</div>
-      <div id="astaLiveDelta" class="astaLiveDelta">L'AI aggiorna la decisione mentre rilanci.</div>
-      <div id="astaLiveVerdict" class="astaVerdict">Inserisci il prezzo attuale per sapere se rilanciare.</div>
-
-      <div id="astaLiveSimLazy"><div class="playerMetaLine" style="padding:10px 0">🧠 Analisi acquisto in caricamento…</div></div>
-
-      <div id="astaLiveRivalLazy"><div class="playerMetaLine" style="padding:10px 0">👥 Pressione avversari in caricamento…</div></div>
-
-      <div id="astaLiveAltLazy"><div class="playerMetaLine" style="padding:10px 0">⚡ Alternative sostenibili in caricamento…</div></div>
-
-      <div class="astaLiveDecisionActions">
-        <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">🤖 ANALISI COMPLETA</button>
-        <button class="primary" style="position:static" onclick="registerAstaLiveOutcome(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
+      <div id="astaLiveFastVerdict" class="bidVerdict ${v.cls}">
+        <div class="bidVerdictTitle">${v.action}</div>
+        <div class="bidVerdictText">${px.blocked
+          ? `La base d’asta è superiore al tetto sostenibile con ${budget(state.me)} crediti e ${remainingRosterSlots(state.me)} slot aperti.`
+          : `Prezzo corrente ${initialPrice} cr · obiettivo ${px.ideal} · NON OLTRE ${px.maxRec}.`}</div>
       </div>
     </div>`;
-  // Prima mostra subito la scheda base, poi carica i moduli pesanti.
-  requestAnimationFrame(()=>{
-    setTimeout(()=>evaluateAstaLiveBid(),0);
-    hydrateAstaLiveSecondary(ASTA_LIVE_PLAYER);
-  });
+}
+
+function refreshAstaLiveFastDecision(){
+  if(ASTA_LIVE_PLAYER==null||ASTA_LIVE_PLAYER<0)return;
+  const input=document.getElementById('astaLivePrice');
+  const out=document.getElementById('astaLiveFastVerdict');
+  if(!input||!out)return;
+  const px=astaLiveFastPrices(ASTA_LIVE_PLAYER);
+  const price=Math.max(1,Number(input.value)||1);
+  const v=astaLiveFastAction(price,px);
+  out.className=`bidVerdict ${v.cls}`;
+  out.innerHTML=`<div class="bidVerdictTitle">${v.action}</div>
+    <div class="bidVerdictText">Prezzo corrente ${price} cr · obiettivo ${px.ideal} · NON OLTRE ${px.maxRec}.</div>`;
+}
+
+function astaLiveFastStep(n){
+  const input=document.getElementById('astaLivePrice');
+  if(!input)return;
+  input.value=Math.max(1,(Number(input.value)||0)+Number(n||0));
+  refreshAstaLiveFastDecision();
+}
+
+function astaLiveFastSetMax(){
+  if(ASTA_LIVE_PLAYER==null||ASTA_LIVE_PLAYER<0)return;
+  const px=astaLiveFastPrices(ASTA_LIVE_PLAYER);
+  const input=document.getElementById('astaLivePrice');
+  if(input&&px){input.value=px.maxRec;refreshAstaLiveFastDecision();}
 }
 function registerAstaLiveOutcome(index){
   const el=document.getElementById('astaLivePrice');
