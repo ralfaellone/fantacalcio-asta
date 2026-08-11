@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6649,10 +6649,30 @@ function acquiredStrongProfile(purchase){
 function strongRoleStatus(role){
   const buys=state.purchases.filter(x=>x.buyer===state.me&&x.role===role);
   const profiles=buys.map(acquiredStrongProfile);
-  const quality=profiles.length?profiles.reduce((s,x)=>s+x.score,0)/profiles.length:0;
   const fill=clamp(buys.length/Math.max(1,LIMITS[role]),0,1);
-  const score=profiles.length?Math.round(clamp(quality*(.35+.65*Math.sqrt(fill)),0,99)):0;
-  return {role,count:buys.length,profiles,quality:Math.round(quality),fill,score};
+
+  // V71.2 - Forza reparto monotona e strutturale.
+  // Un nuovo acquisto NON può far scendere la forza del reparto solo perché
+  // abbassa la media aritmetica. I migliori elementi definiscono il nucleo;
+  // profondità e completamento aggiungono valore, senza diluire i titolari.
+  const ordered=[...profiles].sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0));
+  const coreN=Math.min(3,ordered.length);
+  const core=coreN?ordered.slice(0,coreN).reduce((s,x)=>s+(Number(x.score)||0),0)/coreN:0;
+  const depth=ordered.slice(coreN);
+  const depthValue=depth.length
+    ? depth.reduce((s,x)=>s+(Number(x.score)||0),0)/Math.max(1,LIMITS[role])
+    : 0;
+
+  // Mantiene la scala precedente sui primi 3 acquisti; dal quarto in poi
+  // il nucleo non viene diluito e la profondità porta solo un bonus positivo.
+  const base=coreN?core*(.35+.65*Math.sqrt(fill)):0;
+  const depthBonus=depthValue*.10;
+  const score=profiles.length?Math.round(clamp(base+depthBonus,0,99)):0;
+
+  // "quality" resta informativa come media reale dei giocatori acquistati,
+  // ma non viene più usata da sola per abbassare la forza reparto.
+  const quality=profiles.length?profiles.reduce((s,x)=>s+(Number(x.score)||0),0)/profiles.length:0;
+  return {role,count:buys.length,profiles,quality:Math.round(quality),coreQuality:Math.round(core),fill,score};
 }
 
 function strongRosterBudgetScore(){
@@ -8958,7 +8978,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.1</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.2</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
