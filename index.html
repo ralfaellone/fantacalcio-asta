@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.10</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.11</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8318,7 +8318,9 @@ function liveAuctionDecision5(playerIndex,price){
 
   let action='COMPRA',level='buy',headline='PREZZO CONVENIENTE',why='';
   const basePrice=auctionBasePrice(p);
-  const baseOverStrategic=Boolean(a.baseTooHigh);
+  // V69.11: se NON OLTRE coincide con la QI, la QI è ancora valida.
+  // baseTooHigh può forzare LASCIA solo se il tetto finale è DAVVERO sotto la QI.
+  const baseOverStrategic=Boolean(a.baseTooHigh && decisionMax<basePrice);
   const keeperProtection=(p.role==='P')?keeperCandidateReserve(p,state.me):null;
 
   if(wrongKeeperBlock){
@@ -8488,7 +8490,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 6.5</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 6.6</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
