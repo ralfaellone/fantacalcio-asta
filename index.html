@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8558,8 +8558,10 @@ function liveAuctionDecision5(playerIndex,price){
     ? Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow))
     : normalStop;
 
-  const alts=liveAuctionAlternativeAdvice(playerIndex,bid,3);
-  const bestAlt=alts[0]||null;
+  // V70.6: apertura istantanea.
+  // Le alternative sono pesanti e vengono caricate in lazy-load dopo il primo paint.
+  const alts=[];
+  const bestAlt=null;
 
   const roleLimit=LIMITS[p.role]||0;
   const currentRoleCount=roleCount(state.me,p.role);
@@ -8717,6 +8719,54 @@ function refreshAuctionSimulator(){
   const box=document.getElementById('auctionSimulatorBox');
   if(box)box.outerHTML=renderAuctionSimulator(ASTA_LIVE_PLAYER,bid);
 }
+// V70.6 - LAZY LOAD ASTA LIVE
+function hydrateAstaLiveAlternatives(playerIndex){
+  if(playerIndex!==ASTA_LIVE_PLAYER)return;
+  const box=document.getElementById('astaLiveAltLazy');
+  if(!box)return;
+
+  // Lascia prima disegnare la scheda; poi calcola le alternative.
+  setTimeout(()=>{
+    if(playerIndex!==ASTA_LIVE_PLAYER)return;
+    const alts=sustainableLiveAlternatives(playerIndex,3);
+    if(!box)return;
+    box.innerHTML=alts.length
+      ? `<div class="astaLiveAlternatives">
+          <div class="hint" style="font-weight:900;margin:12px 0 7px">ALTERNATIVE SOSTENIBILI SE MOLLI</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            ${alts.map(x=>`
+              <button class="secondary" onclick="selectAstaLivePlayer(${x.index})">
+                ${esc(x.p.name)}
+                <span class="astaLiveAlternativeMeta">${esc(x.altClass||'ALTERNATIVA')} · QI ${x.qi} · NON OLTRE ${x.cap} · AI ${x.fit}/99</span>
+              </button>`).join('')}
+          </div>
+        </div>`
+      : `<div class="astaLiveAlternatives">
+          <div class="hint" style="font-weight:900;margin:12px 0 7px">ALTERNATIVE SOSTENIBILI</div>
+          <div class="astaAiKeeperProtect" style="font-size:11px;color:#ffcf70">
+            ⚠️ NESSUNA ALTERNATIVA DI FASCIA SOSTENIBILE · Il budget attuale richiede un profilo più economico.
+          </div>
+        </div>`;
+  },60);
+}
+
+function hydrateAstaLiveSecondary(playerIndex){
+  // Simulator e pressione rivali vengono caricati separatamente, dopo il primo paint.
+  setTimeout(()=>{
+    if(playerIndex!==ASTA_LIVE_PLAYER)return;
+    const sim=document.getElementById('astaLiveSimLazy');
+    if(sim)sim.innerHTML=renderAuctionSimulator(playerIndex,0);
+  },20);
+
+  setTimeout(()=>{
+    if(playerIndex!==ASTA_LIVE_PLAYER)return;
+    const rv=document.getElementById('astaLiveRivalLazy');
+    if(rv)rv.innerHTML=renderRivalLiveBox(playerIndex,0);
+  },40);
+
+  hydrateAstaLiveAlternatives(playerIndex);
+}
+
 function renderAstaLiveSelected(){
   const selected=document.getElementById('astaLiveSelected');
   const decision=document.getElementById('astaLiveDecision');
@@ -8737,9 +8787,6 @@ function renderAstaLiveSelected(){
   const safe=safeMaxBid(state.me);
   const absoluteCap=Math.max(1,Math.min(a.maxRec,safe));
   const hierarchy=a._favoriteHierarchy;
-  // V70.3: anche se esiste una gerarchia preferiti, mostriamo SOLO alternative
-  // che superano il tetto sostenibile reale alla loro QI.
-  const alts=sustainableLiveAlternatives(ASTA_LIVE_PLAYER,3);
 
   selected.innerHTML=`
     <div class="astaSelectedCard">
@@ -8755,7 +8802,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 7.5</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 7.6</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
@@ -8801,34 +8848,22 @@ function renderAstaLiveSelected(){
       <div id="astaLiveDelta" class="astaLiveDelta">L'AI aggiorna la decisione mentre rilanci.</div>
       <div id="astaLiveVerdict" class="astaVerdict">Inserisci il prezzo attuale per sapere se rilanciare.</div>
 
-      ${renderAuctionSimulator(ASTA_LIVE_PLAYER,0)}
+      <div id="astaLiveSimLazy"><div class="playerMetaLine" style="padding:10px 0">🧠 Analisi acquisto in caricamento…</div></div>
 
-      ${renderRivalLiveBox(ASTA_LIVE_PLAYER,0)}
+      <div id="astaLiveRivalLazy"><div class="playerMetaLine" style="padding:10px 0">👥 Pressione avversari in caricamento…</div></div>
 
-      ${alts.length?`
-        <div class="astaLiveAlternatives">
-          <div class="hint" style="font-weight:900;margin:12px 0 7px">ALTERNATIVE SOSTENIBILI SE MOLLI</div>
-          <div style="display:flex;gap:7px;flex-wrap:wrap">
-            ${alts.map(x=>`
-              <button class="secondary" onclick="selectAstaLivePlayer(${x.index})">
-                ${esc(x.p.name)}
-                <span class="astaLiveAlternativeMeta">${esc(x.altClass||'ALTERNATIVA')} · QI ${x.qi} · NON OLTRE ${x.cap} · AI ${x.fit}/99</span>
-              </button>`).join('')}
-          </div>
-        </div>`
-        : `<div class="astaLiveAlternatives">
-            <div class="hint" style="font-weight:900;margin:12px 0 7px">ALTERNATIVE SOSTENIBILI</div>
-            <div class="astaAiKeeperProtect" style="font-size:11px;color:#ffcf70">
-              ⚠️ NESSUNA ALTERNATIVA DI FASCIA SOSTENIBILE · Il budget attuale richiede un profilo ${esc(p.role)} più economico con QI compatibile con la riserva minima.
-            </div>
-          </div>`}
+      <div id="astaLiveAltLazy"><div class="playerMetaLine" style="padding:10px 0">⚡ Alternative sostenibili in caricamento…</div></div>
 
       <div class="astaLiveDecisionActions">
         <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">🤖 ANALISI COMPLETA</button>
         <button class="primary" style="position:static" onclick="registerAstaLiveOutcome(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
       </div>
     </div>`;
-  setTimeout(()=>evaluateAstaLiveBid(),0);
+  // Prima mostra subito la scheda base, poi carica i moduli pesanti.
+  requestAnimationFrame(()=>{
+    setTimeout(()=>evaluateAstaLiveBid(),0);
+    hydrateAstaLiveSecondary(ASTA_LIVE_PLAYER);
+  });
 }
 function registerAstaLiveOutcome(index){
   const el=document.getElementById('astaLivePrice');
