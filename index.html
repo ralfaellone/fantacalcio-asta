@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8539,6 +8539,16 @@ function cachedCalibratedLivePrices(playerIndex){
   return value;
 }
 
+// V71.0 - PONTE DIRETTORE SPORTIVO <-> ASTA LIVE
+function dsLiveSlotEnvelope(playerIndex){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p)return null;
+  const op=dsOperationalRecoveryPlan();
+  const next=roleCount(state.me,p.role)+1;
+  const item=(op.items||[]).find(x=>x.role===p.role && x.position===next);
+  if(!item)return null;
+  return {low:item.rangeMin,ideal:item.target,high:item.rangeMax,maxRec:item.rangeMax,label:item.label,position:item.position};
+}
 function calibratedLivePrices(playerIndex){
   const a=liveAuctionAI(playerIndex),p=PLAYER_ARCHIVE[playerIndex];
   if(!a||!p)return null;
@@ -8560,6 +8570,17 @@ function calibratedLivePrices(playerIndex){
   const high=Math.max(ideal,Math.round(a.high*mult));
   let maxRec=Math.max(high,Math.min(safe,Math.round(a.maxRec*mult)));
   let out={...a,low,ideal,high,maxRec,market:signal,marketTier:tier,comparableCount:sameTier.count,adjustment:Math.round(adj*100),rivalPressure:pressure};
+  // V71.0: il Piano Operativo diventa una guida reale del Live.
+  // Il valore del giocatore può stringere la fascia; il DS impedisce che il live la ignori.
+  const dsEnv=dsLiveSlotEnvelope(playerIndex);
+  if(dsEnv){
+    out.dsEnvelope=dsEnv;
+    out.low=Math.max(1,Math.min(out.low,dsEnv.low));
+    out.ideal=Math.max(out.low,Math.min(out.ideal,dsEnv.ideal));
+    out.high=Math.max(out.ideal,Math.min(out.high,dsEnv.high));
+    out.maxRec=Math.max(out.high,Math.min(out.maxRec,dsEnv.maxRec));
+  }
+
   // V69.4: per ogni portiere, incluso il P1 non ancora acquistato, riserva SEMPRE
   // le QI minime dei portieri necessari a completare il blocco della stessa squadra.
   if(p.role==='P'){
@@ -8600,13 +8621,26 @@ function calibratedLivePrices(playerIndex){
   // senza violare la riserva minima. Non rialziamo artificialmente il tetto alla QI.
   const officialBase=auctionBasePrice(p);
   if(sustainableCap<officialBase){
-    out.low=null;
-    out.ideal=null;
-    out.high=null;
-    out.maxRec=sustainableCap;
+    // V71.0: NON ACQUISTABILE non significa "nessuna valutazione".
+    // Mostriamo sempre la fascia economica teorica/sostenibile e separiamo
+    // la decisione sulla QI corrente (che resta LASCIA).
+    const env=out.dsEnvelope;
+    const cap=Math.max(0,sustainableCap);
+    if(env){
+      out.low=Math.max(1,Math.min(env.low,cap||env.low));
+      out.ideal=Math.max(out.low,Math.min(env.ideal,cap||env.ideal));
+      out.high=Math.max(out.ideal,Math.min(env.high,cap||env.high));
+      out.maxRec=cap;
+    }else{
+      out.low=Math.max(1,Math.min(Number(out.low)||1,cap||1));
+      out.ideal=Math.max(out.low,Math.min(Number(out.ideal)||out.low,cap||out.low));
+      out.high=Math.max(out.ideal,Math.min(Number(out.high)||out.ideal,cap||out.ideal));
+      out.maxRec=cap;
+    }
     out.officialBase=officialBase;
     out.baseTooHigh=true;
     out.reserveBlocked=true;
+    out.priceInformative=true;
     return out;
   }
 
@@ -8924,7 +8958,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 7.9</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.0</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
