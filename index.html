@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7950,7 +7950,7 @@ function renderRivalLiveBox(playerIndex,currentBid=0){
       <div class="rivalLiveRisk">${r.label}</div>
       <div class="rivalLiveMax">≈ ${r.estimatedMax}</div>
     </div>`).join(''):`<div class="playerMetaLine" style="margin-top:6px">Nessun rivale con pressione significativa.</div>`}
-    <div class="strongBreakdown">La pressione cala mentre il prezzo sale: il valore ≈ indica il tetto stimato di ciascun rivale.</div>
+    <div class="strongBreakdown">La pressione cala mentre il prezzo sale: il valore ≈ usa lo stesso MAX sostenibile per-slot del riepilogo Pressione Asta.</div>
   </div>`;
 }
 
@@ -8648,7 +8648,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 7.1</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 7.2</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
@@ -10006,19 +10006,13 @@ function rivalInterestForPlayer(managerIndex,playerIndex,currentBid=0){
     scarcity*.07 +
     fvm*.05;
 
-  let estimatedMax=Math.round(
-    Math.min(
-      safe,
-      cash,
-      Math.max(1,(Number(ai.ideal)||1)*(.72+base/250))
-    )
+  // V70.2 - UNICO TETTO AVVERSARIO
+  // Stesso identico calcolo usato da rivalAuctionPressure():
+  // niente più 28 nel dettaglio e 37 nel riepilogo.
+  let estimatedMax=Math.max(
+    0,
+    rivalSingleSlotCapacity(managerIndex,p.role,auctionBasePrice(p))
   );
-
-  if(missing>=2){
-    const perSlot=Math.max(1,Math.floor(Math.max(roleBudgetLeft,missing)/missing));
-    const stretch=quality>=82?1.65:quality>=72?1.38:1.18;
-    estimatedMax=Math.min(estimatedMax,Math.max(1,Math.round(perSlot*stretch)));
-  }
 
   const bid=Math.max(0,Number(currentBid)||0);
   let pricePressure=100;
