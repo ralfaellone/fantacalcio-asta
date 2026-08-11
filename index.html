@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.10</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8135,9 +8135,8 @@ function liveMarketLearning(role=null,tier=null){
 }
 
 
-// V69.9 - TETTO SOSTENIBILE UNICO
-// MIN / IDEALE / MAX RANGE / NON OLTRE devono mostrare già il limite
-// realmente utilizzato dalla decisione live, non un valore teorico superiore.
+// V69.10 - TETTO LIVE UNICO E DEFINITIVO
+// Un solo limite per valori mostrati e decisione live.
 function liveSustainableCap(playerIndex,rawMax){
   const p=PLAYER_ARCHIVE[playerIndex];
   if(!p)return 0;
@@ -8150,13 +8149,11 @@ function liveSustainableCap(playerIndex,rawMax){
     baseStop,
     adaptiveSlotCap(p.role,baseStop,null)
   ));
-
   const treasury=treasuryCanBoost(playerIndex);
   let cap=treasury.allow>0
     ? Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow))
     : normalStop;
 
-  // Stessa prudenza speciale già usata dalla decisione per i difensori.
   if(p.role==='D'){
     const ctx=defenderAuctionContext(playerIndex);
     if(ctx){
@@ -8165,6 +8162,12 @@ function liveSustainableCap(playerIndex,rawMax){
       else cap=Math.max(1,Math.min(cap,adjusted));
     }
   }
+
+  // In fase RISCHIO il cuscinetto prudenziale viene applicato QUI,
+  // prima di mostrare MIN/IDEALE/MAX/NON OLTRE.
+  const status=dynamicPlanStatus();
+  const base=auctionBasePrice(p);
+  if(status.level==='bad' && cap>base) cap-=1;
 
   return Math.max(0,Math.min(baseStop,cap));
 }
@@ -8306,37 +8309,9 @@ function liveAuctionDecision5(playerIndex,price){
   const defenderCtx=p.role==='D'?defenderAuctionContext(playerIndex):null;
   const wrongKeeperBlock=(p.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(p,state.me));
 
-  // V68.7: un solo tetto decisionale usato da barra, testo, badge e logica ultimo slot.
-  let decisionMax=Math.max(1,treasuryStop);
-
-  // V68.9: la difesa usa un tetto diverso in base allo slot che stai coprendo.
-  // D1-D2 possono ricevere un piccolo margine, D5-D8 diventano progressivamente più prudenti.
-  if(defenderCtx){
-    const adjusted=Math.round(decisionMax*defenderCtx.capFactor);
-    if(defenderCtx.next<=2){
-      decisionMax=Math.min(safe,Math.max(decisionMax,adjusted));
-    }else{
-      decisionMax=Math.max(a.high,Math.min(decisionMax,adjusted));
-    }
-  }
-
-  // V69.0: NON OLTRE è il tetto assoluto. Nessuna logica di slot/tesoretto può superarlo.
-  decisionMax=Math.max(1,Math.min(decisionMax,a.maxRec));
-
-  // Sull'ultimo slot possiamo diventare più selettivi, ma MAI sotto il MAX AI visualizzato.
-  // La convenienza dell'alternativa influisce solo se il divario di costo è molto alto.
-  if(isLastRoleSlot && bestAlt){
-    const altMax=Math.max(1,Number(bestAlt._liveMax)||1);
-    const altIdeal=Math.max(1,Number(bestAlt._liveIdeal)||1);
-    const qualityGap=Math.max(0,(Number(a.score)||0)-(Number(bestAlt.ai?.score)||0));
-    const savingAtBase=Math.max(0,decisionMax-altIdeal);
-
-    // Solo se l'alternativa è nettamente più economica e non molto peggiore
-    // restringiamo di massimo 2 crediti, mai sotto a.high.
-    if(savingAtBase>=15 && qualityGap<=10){
-      decisionMax=Math.max(a.high,decisionMax-2);
-    }
-  }
+  // V69.10: il tetto definitivo è già stato calcolato e mostrato.
+  // Nessuna logica successiva può cambiarlo.
+  let decisionMax=Math.max(1,a.maxRec);
 
   const stop=decisionMax;
   const overPlan=Math.max(0,Number(ap.delta?.delta)<0?Math.abs(Number(ap.delta.delta)):0);
@@ -8513,7 +8488,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 6.4</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 6.5</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
