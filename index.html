@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8075,10 +8075,14 @@ function renderRivalLiveBox(playerIndex,currentBid=0){
 
 function refreshRivalLiveBox(){
   if(ASTA_LIVE_PLAYER==null)return;
-  const input=document.getElementById('astaLivePrice');
-  const bid=Math.max(0,Number(input?.value)||0);
+  const bid=currentAstaLiveBid();
   const box=document.getElementById('rivalLiveDynamicBox');
-  if(box)box.outerHTML=renderRivalLiveBox(ASTA_LIVE_PLAYER,bid);
+  if(box){
+    box.outerHTML=renderRivalLiveBox(ASTA_LIVE_PLAYER,bid);
+    return;
+  }
+  const lazy=document.getElementById('astaLiveRivalLazy');
+  if(lazy)lazy.innerHTML=renderRivalLiveBox(ASTA_LIVE_PLAYER,bid);
 }
 
 function simulatedRosterImpact(playerIndex,price){
@@ -8855,12 +8859,27 @@ function liveAuctionDecision5(playerIndex,price){
 }
 
 function auctionSimulatorDecision(playerIndex,price){
-  const d=liveAuctionDecision5(playerIndex,price);
+  const bid=Math.max(0,Number(price)||0);
+  if(bid<=0){
+    const p=PLAYER_ARCHIVE[playerIndex];
+    return {
+      action:'IN ATTESA',cls:'wait',
+      why:'Inserisci il prezzo corrente: la simulazione userà la stessa decisione di Asta Live.',
+      stop:0,
+      impact:simulatedRosterImpact(playerIndex,0),
+      rivals:rivalLiveSummary(playerIndex,0),
+      bestAlt:null,budgetPlan:adaptiveBudgetPlan(),decision5:null
+    };
+  }
+
+  // V71.3: UNICA FONTE DI VERITÀ.
+  // COMPRA/LASCIA/ULTIMO CREDITO provengono sempre da liveAuctionDecision5().
+  const d=liveAuctionDecision5(playerIndex,bid);
   if(!d)return null;
   const cls=d.level==='stop'?'stop':(['wait','danger','treasury'].includes(d.level)?'wait':'buy');
   return {
     action:d.action,cls,why:d.why,stop:d.stop,
-    impact:d.impact,rivals:rivalLiveSummary(playerIndex,price),
+    impact:d.impact,rivals:rivalLiveSummary(playerIndex,bid),
     bestAlt:d.bestAlt,budgetPlan:d.ap,
     decision5:d
   };
@@ -8873,7 +8892,7 @@ function renderAuctionSimulator(playerIndex,price){
   const alt=sim.bestAlt;
   return `<div class="auctionSimBox" id="auctionSimulatorBox">
     <div class="auctionSimHead">
-      <div class="auctionSimTitle">🧠 DOPO QUESTO ACQUISTO</div>
+      <div class="auctionSimTitle">${sim.action==='LASCIA'?'🧠 SE LO COMPRASSI A QUESTO PREZZO':'🧠 DOPO QUESTO ACQUISTO'}</div>
       <div class="auctionSimAction ${sim.cls}">${esc(sim.action)}</div>
     </div>
     <div class="auctionSimGrid">
@@ -8891,9 +8910,15 @@ function renderAuctionSimulator(playerIndex,price){
 
 function refreshAuctionSimulator(){
   if(ASTA_LIVE_PLAYER==null)return;
-  const bid=Math.max(0,Number(document.getElementById('astaLivePrice')?.value)||0);
+  const bid=currentAstaLiveBid();
   const box=document.getElementById('auctionSimulatorBox');
-  if(box)box.outerHTML=renderAuctionSimulator(ASTA_LIVE_PLAYER,bid);
+  if(box){
+    box.outerHTML=renderAuctionSimulator(ASTA_LIVE_PLAYER,bid);
+    return;
+  }
+  // Se il lazy-load non è ancora terminato, aggiorna direttamente il contenitore.
+  const lazy=document.getElementById('astaLiveSimLazy');
+  if(lazy)lazy.innerHTML=renderAuctionSimulator(ASTA_LIVE_PLAYER,bid);
 }
 // V70.6 - LAZY LOAD ASTA LIVE
 function hydrateAstaLiveAlternatives(playerIndex){
@@ -8926,18 +8951,22 @@ function hydrateAstaLiveAlternatives(playerIndex){
   },0);
 }
 
+function currentAstaLiveBid(){
+  return Math.max(0,Number(document.getElementById('astaLivePrice')?.value)||0);
+}
+
 function hydrateAstaLiveSecondary(playerIndex){
-  // V70.7: diamo priorità assoluta alla scheda/decisione.
+  // V71.3: tutti i moduli leggono SEMPRE lo stesso prezzo corrente.
   setTimeout(()=>{
     if(playerIndex!==ASTA_LIVE_PLAYER)return;
     const sim=document.getElementById('astaLiveSimLazy');
-    if(sim)sim.innerHTML=renderAuctionSimulator(playerIndex,0);
+    if(sim)sim.innerHTML=renderAuctionSimulator(playerIndex,currentAstaLiveBid());
   },120);
 
   setTimeout(()=>{
     if(playerIndex!==ASTA_LIVE_PLAYER)return;
     const rv=document.getElementById('astaLiveRivalLazy');
-    if(rv)rv.innerHTML=renderRivalLiveBox(playerIndex,0);
+    if(rv)rv.innerHTML=renderRivalLiveBox(playerIndex,currentAstaLiveBid());
   },220);
 
   setTimeout(()=>hydrateAstaLiveAlternatives(playerIndex),350);
@@ -8978,7 +9007,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.2</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.3</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
