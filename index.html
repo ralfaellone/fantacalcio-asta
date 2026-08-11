@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.11</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V69.12</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8135,6 +8135,30 @@ function liveMarketLearning(role=null,tier=null){
 }
 
 
+// V69.12 - RISERVA MINIMA REALE
+// Il prezzo massimo di un acquisto non può lasciare meno della riserva
+// necessaria per gli slot che resteranno DOPO quell'acquisto.
+function liveReserveProtectedCap(playerIndex){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p)return 0;
+
+  const cash=Math.max(0,budget(state.me));
+  const slotsBefore=Math.max(0,remainingRosterSlots(state.me));
+  const slotsAfter=Math.max(0,slotsBefore-1);
+
+  // Minimo matematico: almeno 1 credito per ogni slot successivo.
+  const mathematicalReserve=slotsAfter;
+
+  // Riserva del Piano: safety è la quota minima che il Piano sta proteggendo.
+  // Dopo questo acquisto non serve proteggere anche il credito dello slot corrente.
+  const ap=adaptiveBudgetPlan();
+  const planSafety=Math.max(0,Number(ap?.safety)||0);
+  const planReserveAfter=Math.max(mathematicalReserve,planSafety>0?Math.max(0,planSafety-1):0);
+
+  // Non può mai spendere denaro che renderebbe impossibile completare la rosa.
+  return Math.max(0,cash-planReserveAfter);
+}
+
 // V69.10 - TETTO LIVE UNICO E DEFINITIVO
 // Un solo limite per valori mostrati e decisione live.
 function liveSustainableCap(playerIndex,rawMax){
@@ -8168,6 +8192,9 @@ function liveSustainableCap(playerIndex,rawMax){
   const status=dynamicPlanStatus();
   const base=auctionBasePrice(p);
   if(status.level==='bad' && cap>base) cap-=1;
+
+  const reserveCap=liveReserveProtectedCap(playerIndex);
+  cap=Math.min(cap,reserveCap);
 
   return Math.max(0,Math.min(baseStop,cap));
 }
@@ -8228,9 +8255,20 @@ function calibratedLivePrices(playerIndex){
     out.baseTooHigh=true;
   }
 
-  // La QI resta SEMPRE la base minima d'asta.
-  // Se il tetto sostenibile coincide con la QI, tutti i valori diventano QI
-  // e alla QI la decisione sarà ULTIMO CREDITO.
+  // V69.12: se il tetto protetto è sotto la QI, il giocatore NON è acquistabile
+  // senza violare la riserva minima. Non rialziamo artificialmente il tetto alla QI.
+  const officialBase=auctionBasePrice(p);
+  if(sustainableCap<officialBase){
+    out.low=sustainableCap;
+    out.ideal=sustainableCap;
+    out.high=sustainableCap;
+    out.maxRec=sustainableCap;
+    out.baseTooHigh=true;
+    out.reserveBlocked=true;
+    return out;
+  }
+
+  // Se invece il tetto coincide con la QI, la QI resta ULTIMO CREDITO.
   return enforceAuctionBaseFloor(out,p);
 }
 
@@ -8323,7 +8361,10 @@ function liveAuctionDecision5(playerIndex,price){
   const baseOverStrategic=Boolean(a.baseTooHigh && decisionMax<basePrice);
   const keeperProtection=(p.role==='P')?keeperCandidateReserve(p,state.me):null;
 
-  if(wrongKeeperBlock){
+  if(a.reserveBlocked && bid>=basePrice){
+    action='LASCIA';level='stop';headline='RISERVA MINIMA PROTETTA';
+    why=`A ${bid} cr intaccheresti i crediti necessari per completare gli slot rimanenti. Questo giocatore non è acquistabile alla QI attuale.`;
+  }else if(wrongKeeperBlock){
     action='LASCIA';level='stop';headline='FUORI BLOCCO PORTIERI';
     why=`Hai scelto il blocco ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`;
   }else if(baseOverStrategic && bid>=basePrice){
@@ -8490,7 +8531,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 6.6</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 6.7</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`
