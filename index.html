@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -9032,7 +9032,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.5</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.6</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
@@ -10034,7 +10034,7 @@ function liveTop5Candidate(index,role){
   if(purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))return null;
   if(roleCount(state.me,role)>=LIMITS[role])return null;
 
-  const ai=aiPlayerAnalysis(index,state.me);
+  const ai=unifiedAuctionAnalysis(index,state.me);
   if(!ai)return null;
 
   const fit=rosterFitScore(p,ai,state.me);
@@ -12763,6 +12763,31 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   return value;
 }
 
+// V71.6 - UNIFIED AUCTION ENGINE
+// La scheda AI completa conserva score/statistiche/verdetto qualitativo,
+// ma PREZZI e DECISIONI provengono dalla stessa fonte di Asta Live.
+function unifiedAuctionAnalysis(index,buyerIndex=state.me){
+  const base=aiPlayerAnalysis(index,buyerIndex);
+  if(!base)return null;
+
+  // Il motore Live è calibrato sulla rosa dell'utente corrente.
+  if(buyerIndex!==state.me)return base;
+  const px=cachedCalibratedLivePrices(index);
+  if(!px)return base;
+
+  return {
+    ...base,
+    low:px.low,
+    ideal:px.ideal,
+    high:px.high,
+    maxRec:px.maxRec,
+    safe:safeMaxBid(state.me),
+    reserveBlocked:Boolean(px.reserveBlocked),
+    priceInformative:Boolean(px.priceInformative),
+    unifiedLive:px
+  };
+}
+
 function comparableAlternativeScore(sourceIndex,candidateIndex){
   const src=PLAYER_ARCHIVE[sourceIndex];
   const p=PLAYER_ARCHIVE[candidateIndex];
@@ -12832,39 +12857,29 @@ function evaluateLiveBid(index){
   const input=document.getElementById('liveBidPrice');
   const out=document.getElementById('liveBidVerdict');
   if(!input||!out)return;
+
   const price=Math.max(1,parseInt(input.value,10)||1);
-  const a=aiPlayerAnalysis(index,state.me);
-  if(!a)return;
+  const a=unifiedAuctionAnalysis(index,state.me);
+  const d=liveAuctionDecision5(index,price);
+  if(!a||!d)return;
 
-  let cls='go', title='✅ RILANCIA', text='';
-  if(price<=a.ideal){
-    title='✅ RILANCIA';
-    text=`Sei ancora sotto o in linea col prezzo ideale (${a.ideal}). Hai margine di ${Math.max(0,a.maxRec-price)} crediti prima del tetto AI.`;
-  }else if(price<=a.high){
-    cls='wait';
-    title='🟡 RILANCIA CON CAUTELA';
-    text=`Sei nella parte alta del range consigliato (${a.low}-${a.high}). Puoi continuare, ma ogni rilancio pesa di più sulla strategia.`;
-  }else if(price<a.maxRec){
-    cls='wait';
-    title='🟠 ULTIMI RILANCI';
-    text=`Sei sopra il range consigliato. Restano solo ${a.maxRec-price} crediti di margine prima del NON OLTRE (${a.maxRec}).`;
-  }else{
-    cls='stop';
-    title='🛑 STOP';
-    text=`Hai raggiunto o superato il NON OLTRE AI (${a.maxRec}). A questo prezzo il rapporto valore/budget non è più favorevole.`;
-  }
+  const cls=d.level==='stop'?'stop':(['wait','danger','treasury'].includes(d.level)?'wait':'go');
+  let title='';
+  if(d.action==='LASCIA')title='🛑 LASCIA';
+  else if(d.action==='ULTIMO CREDITO')title='🟠 ULTIMO CREDITO';
+  else if(String(d.action).startsWith('PUOI RILANCIARE'))title=`🟡 ${d.action}`;
+  else if(String(d.action).startsWith('ATTENZIONE'))title=`🟠 ${d.action}`;
+  else if(d.action==='SFORA COL TESORETTO')title='🟣 SFORA COL TESORETTO';
+  else title='✅ COMPRA';
 
-  const alts=liveBidAlternatives(index);
-  let altText='';
-  if(alts.length){
-    const viable=alts.filter(x=>x.a.maxRec<price || x.a.ideal<price).slice(0,3);
-    const use=viable.length?viable:alts.slice(0,2);
-    altText=`<div class="bidAlternatives"><strong>Alternative ancora libere:</strong><br>${use.map(x=>`${esc(x.p.name)} · ideale ${x.a.ideal} · non oltre ${x.a.maxRec}`).join('<br>')}</div>`;
-  }
+  const alts=sustainableLiveAlternatives(index,2);
+  const altText=alts.length
+    ? `<div class="bidAlternatives"><strong>Alternative sostenibili:</strong><br>${alts.map(x=>`${esc(x.p.name)} · QI ${x.qi} · non oltre ${x.cap}`).join('<br>')}</div>`
+    : '';
 
   out.innerHTML=`<div class="bidVerdict ${cls}">
     <div class="bidVerdictTitle">${title}</div>
-    <div class="bidVerdictText">${text}</div>
+    <div class="bidVerdictText">${esc(d.why)}</div>
     ${altText}
   </div>`;
 }
@@ -12875,7 +12890,7 @@ function renderAIAnalysis(a){
   return `<div class="aiCard">
     <div class="aiScore">
       <div>
-        <div class="k">AI Asta · ${esc(p.name)}</div>
+        <div class="k">AI Asta Unificata · ${esc(p.name)}</div>
         <div class="aiScoreNum">${a.score}<small style="font-size:14px;color:var(--muted)">/99</small></div>
       </div>
       <div style="text-align:right"><div class="tag good">${a.verdict}</div><div class="playerMetaLine">${p.role} · ${p.team} · FVM ${p.fvm}</div></div>
@@ -12939,8 +12954,8 @@ function renderAIAnalysis(a){
     <button class="rivalRadarBtn" onclick="openRivalRadar(${PLAYER_ARCHIVE.indexOf(p)})">👥 RADAR RIVALI SU QUESTO GIOCATORE</button>
 
     <div class="aiReason">
-      <strong>Consiglio:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti. 
-      Non supererei <strong>${a.maxRec}</strong>${a.maxRec<a.safe?' per questo giocatore':' per non compromettere il resto della rosa'}.
+      <strong>Consiglio unificato:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti.
+      <strong>NON OLTRE ${a.maxRec}</strong>: è lo stesso tetto usato da Asta Live e dal D.S. AI.
       ${gm.note?`<br><br><strong>Tua nota:</strong> ${esc(gm.note)}`:''}
       <br><br>${a.reasons.map(x=>'• '+esc(x)).join('<br>')}
     </div>
@@ -12949,7 +12964,7 @@ function renderAIAnalysis(a){
 let aiReturnScroll=0;
 function openAIForPlayer(index,event){
   if(event)event.stopPropagation();
-  const a=aiPlayerAnalysis(index,state.me);
+  const a=unifiedAuctionAnalysis(index,state.me);
   if(!a)return;
 
   aiReturnScroll=window.scrollY||0;
