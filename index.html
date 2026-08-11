@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6604,7 +6604,7 @@ function strategy40LastPurchaseFeedback(){
   };
 }
 
-function renderStrategy40(){
+function renderStrategy40Full(){
   const el=document.getElementById('dashboardStrategy40');
   if(!el)return;
   const priorities=['P','D','C','A'].map(strategy40RolePriority).sort((a,b)=>b.score-a.score);
@@ -6680,6 +6680,39 @@ function renderStrategy40(){
         <button class="primary" style="position:static" onclick="openBuyNowPage()">🤖 CHI COMPRO?</button>
       </div>
     </div>`;
+}
+
+
+function renderStrategy40(){
+  const el=document.getElementById('dashboardStrategy40');
+  if(!el)return;
+  try{
+    return renderStrategy40Full();
+  }catch(err){
+    console.error('Strategia 4.0 full engine fallback',err);
+    const cash=budget(state.me), slots=remainingRosterSlots(state.me);
+    const rows=['P','D','C','A'].map(r=>{
+      const owned=roleCount(state.me,r), missing=Math.max(0,LIMITS[r]-owned);
+      return {r,owned,missing,urg:missing/Math.max(1,LIMITS[r])};
+    }).sort((a,b)=>b.urg-a.urg);
+    const allowed=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
+    const active=rows.filter(x=>x.missing>0 && allowed.includes(x.r));
+    const first=active[0];
+    const reserve=Math.max(0,slots-1);
+    const maxNow=Math.max(1,cash-reserve);
+    el.innerHTML=`<div class="strategy40">
+      <div class="strategy40Head"><div>
+        <div class="strategy40Title">${first?`Priorità attuale: ${roleName(first.r)}`:'Rosa completata'}</div>
+        <div class="strategy40Text">${first?`Mancano ${first.missing} slot nel reparto. Con ${cash} crediti e ${slots} posti aperti, il tetto matematico sicuro per il prossimo acquisto è ${maxNow} cr mantenendo almeno 1 credito per ogni altro slot.`:'Nessun acquisto necessario.'}</div>
+      </div><div class="strategy40Badge">${esc(activeFormationPlan(state.me).name)}</div></div>
+      <div class="strategy40Roles">
+        ${rows.map((x,n)=>`<div class="strategy40Role ${first&&x.r===first.r?'hot':''}">
+          <span>${x.r}</span><b>${x.missing?x.missing:'✓'}</b><em>${x.missing?'slot mancanti':'completo'}</em>
+        </div>`).join('')}
+      </div>
+      <div class="rosaForteWarning">🛡️ Strategia stabile attiva: priorità e protezione budget sono calcolate direttamente dalla rosa corrente. Il ranking avanzato dei candidati viene mostrato solo quando disponibile.</div>
+    </div>`;
+  }
 }
 
 
@@ -7691,10 +7724,10 @@ function renderDynamicRosterPlan(){
     el.innerHTML=`<div class="dynamicPlanCard"><div class="dynamicPlanTitle">Piano Rosa · recupero sicuro</div>
       <div class="dynamicPlanSub">${roster(state.me).length}/25 giocatori · ${budget(state.me)} cr rimasti</div>
       <div class="treasuryBox"><div><span>💰 TESORETTO AI</span><b>${t.value} cr</b></div>
-      <p>Il budget è salvo. Ricalcolo strategico temporaneamente semplificato.</p></div></div>`;
+      <p>Budget protetto. Piano stabile calcolato sui crediti e sugli slot ancora disponibili.</p></div></div>`;
   }
 }
-function renderStrongRosterAI(){
+function renderStrongRosterAIFull(){
   const el=document.getElementById('dashboardStrongRoster');
   if(!el)return;
   const g=strongRosterGlobal();
@@ -7782,6 +7815,45 @@ ${x._favoriteAlts.length?`<div class="favAiAlts fav675Alts"><b>Alternative</b><d
         <button class="primary" style="position:static" onclick="openBuyNowPage()">🤖 CHI COMPRO?</button>
       </div>
     </div>`;
+}
+
+
+function renderStrongRosterAI(){
+  const el=document.getElementById('dashboardStrongRoster');
+  if(!el)return;
+  try{
+    return renderStrongRosterAIFull();
+  }catch(err){
+    console.error('Rosa Forte full engine fallback',err);
+    // Fallback completo ma leggero: usa solo gli acquisti già registrati.
+    const roles={};
+    ['P','D','C','A'].forEach(r=>{
+      const n=roleCount(state.me,r), lim=LIMITS[r];
+      const pct=Math.round((n/Math.max(1,lim))*99);
+      roles[r]={n,lim,score:Math.max(0,Math.min(99,pct))};
+    });
+    const count=roster(state.me).length, cash=budget(state.me), slots=Math.max(0,25-count);
+    const completion=Math.round(count/25*100);
+    const overall=Math.round((roles.P.score+roles.D.score+roles.C.score+roles.A.score)/4);
+    const plan=activeFormationPlan(state.me);
+    el.innerHTML=`<div class="rosaForteCard">
+      <div class="rosaForteHead"><div>
+        <div class="rosaForteTitle">Progetto Rosa · ${esc(plan.name)}</div>
+        <div class="rosaForteSub">${count}/25 giocatori · ${cash} crediti rimasti</div>
+      </div><div class="rosaForteScore"><b>${overall}</b><span>STRUTTURA ROSA /99</span></div></div>
+      <div class="rosaForteProgress"><i style="width:${overall}%"></i></div>
+      <div class="rosaForteRoles">
+        ${['P','D','C','A'].map(r=>`<div class="rosaForteMetric"><span>${r}</span><b>${roles[r].n}/${roles[r].lim}</b></div>`).join('')}
+      </div>
+      <div class="rosaForteExtra">
+        <div class="rosaForteMetric"><span>COMPLETAMENTO</span><b>${completion}%</b></div>
+        <div class="rosaForteMetric"><span>CREDITI</span><b>${cash}</b></div>
+        <div class="rosaForteMetric"><span>SLOT APERTI</span><b>${slots}</b></div>
+        <div class="rosaForteMetric"><span>MEDIA / SLOT</span><b>${slots?Math.floor(cash/slots):cash}</b></div>
+      </div>
+      <div class="rosaForteWarning">🛡️ Modalità stabile: la struttura della rosa resta sempre visibile. Le valutazioni avanzate dei candidati vengono aggiunte solo quando il motore live le calcola senza errori.</div>
+    </div>`;
+  }
 }
 
 function directorRoleSnapshot(role){
@@ -9092,7 +9164,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.9</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 9.0</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
