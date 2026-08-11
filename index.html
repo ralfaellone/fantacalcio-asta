@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8072,26 +8072,64 @@ function sustainableAlternativeCandidate(index){
   return {p,index,ai:px,qi,cap};
 }
 
+// V70.5 - ALTERNATIVE FAST + SMART
+// Due fasi: pre-filtro economico leggero sull'archivio, poi AI completa solo sui finalisti.
+// Evita di chiamare calibratedLivePrices/strongRosterProfile su tutti i giocatori.
 function sustainableLiveAlternatives(playerIndex,limit=3){
   const source=PLAYER_ARCHIVE[playerIndex];
   if(!source)return [];
 
-  const candidates=PLAYER_ARCHIVE
-    .map((p,index)=>({p,index}))
-    .filter(x=>x.index!==playerIndex && x.p.role===source.role)
-    .map(x=>sustainableAlternativeCandidate(x.index))
-    .filter(Boolean)
-    .map(x=>{
-      const sr=strongRosterProfile(x.index,state.me);
-      const fit=Number(sr?.score)||Number(x.ai.score)||0;
-      const fvm=Number(x.p.fvm)||0;
-      const qi=x.qi;
-      const cap=x.cap;
-      const quality=fit*1.25 + fvm*.22 + Math.min(20,qi*.28);
-      const value=fit*1.05 + fvm*.16 - qi*.42;
-      return {...x,fit,fvm,quality,value};
-    });
+  const safe=Math.max(0,safeMaxBid(state.me));
+  const role=source.role;
+  const sourceQi=Math.max(1,auctionBasePrice(source));
+  if(safe<=0)return [];
 
+  // FASE 1 - PRESELEZIONE RAPIDA.
+  // Non usa calibratedLivePrices() né strongRosterProfile().
+  const quick=[];
+  for(let index=0;index<PLAYER_ARCHIVE.length;index++){
+    if(index===playerIndex)continue;
+    const p=PLAYER_ARCHIVE[index];
+    if(!p || p.role!==role)continue;
+    if(purchaseForArchivePlayer(p.name)||isUnavailablePlayer(p.name))continue;
+    if(!marketRoleAllowed(p.role))continue;
+    if(roleCount(state.me,p.role)>=(LIMITS[p.role]||0))continue;
+
+    const qi=Math.max(1,auctionBasePrice(p));
+    if(qi>safe)continue; // impossibile già matematicamente
+
+    const fvm=Number(p.fvm)||0;
+    const archiveQi=Number(p.qi)||qi;
+    // Vicinanza alla fascia chiamata + qualità archivio + FVM.
+    const proximity=Math.max(0,30-Math.abs(sourceQi-qi)*3);
+    const quickScore=archiveQi*1.45+fvm*.22+proximity;
+    quick.push({p,index,qi,fvm,archiveQi,quickScore});
+  }
+
+  if(!quick.length)return [];
+
+  // Manteniamo pochi finalisti: migliori per qualità + alcuni economici forti.
+  quick.sort((a,b)=>b.quickScore-a.quickScore || b.archiveQi-a.archiveQi || b.fvm-a.fvm);
+  const finalists=quick.slice(0,12);
+  const cheap=[...quick].sort((a,b)=>a.qi-b.qi || b.quickScore-a.quickScore).slice(0,5);
+  for(const x of cheap){
+    if(!finalists.some(y=>y.index===x.index))finalists.push(x);
+  }
+
+  // FASE 2 - AI COMPLETA SOLO SUI FINALISTI.
+  const candidates=[];
+  for(const q of finalists){
+    const x=sustainableAlternativeCandidate(q.index);
+    if(!x)continue;
+    const sr=strongRosterProfile(x.index,state.me);
+    const fit=Number(sr?.score)||Number(x.ai.score)||0;
+    const fvm=Number(x.p.fvm)||0;
+    const qi=x.qi;
+    const cap=x.cap;
+    const quality=fit*1.35+fvm*.22+qi*.32;
+    const value=fit*1.08+fvm*.17-qi*.28;
+    candidates.push({...x,fit,fvm,quality,value});
+  }
   if(!candidates.length)return [];
 
   const chosen=[];
@@ -8100,32 +8138,29 @@ function sustainableLiveAlternatives(playerIndex,limit=3){
     if(x)chosen.push({...x,altClass:label});
   };
 
-  // 1. MIGLIORE SOSTENIBILE: privilegia la qualità vera, non il prezzo minimo.
+  // 1) Migliore sostenibile: punta al livello PIÙ ALTO realmente comprabile.
   take([...candidates].sort((a,b)=>
-    b.quality-a.quality || b.fit-a.fit || b.fvm-a.fvm || b.qi-a.qi
+    b.quality-a.quality || b.qi-a.qi || b.fit-a.fit || b.fvm-a.fvm
   ),'MIGLIORE SOSTENIBILE');
 
-  // 2. QUALITÀ/PREZZO: miglior compromesso tra forza e costo.
+  // 2) Qualità/prezzo: equilibrio, senza premiare eccessivamente QI 1.
   take([...candidates].sort((a,b)=>
-    b.value-a.value || b.fit-a.fit || a.qi-b.qi
+    b.value-a.value || b.fit-a.fit || b.qi-a.qi
   ),'QUALITÀ/PREZZO');
 
-  // 3. SICUREZZA: profilo economico ma ancora il migliore possibile tra i low-cost.
-  // Evita di scegliere automaticamente un QI 1 se esiste un QI 2-5 molto più forte.
-  take([...candidates].sort((a,b)=>{
-    const bandA=a.qi<=5?0:a.qi<=9?1:2;
-    const bandB=b.qi<=5?0:b.qi<=9?1:2;
-    return bandA-bandB || b.fit-a.fit || b.fvm-a.fvm || a.qi-b.qi;
-  }),'SICUREZZA');
+  // 3) Sicurezza: economico, ma scegli il più forte nella fascia bassa disponibile.
+  const lowCeil=Math.max(1,Math.min(safe,Math.ceil(safe*.35)));
+  let safety=candidates.filter(x=>x.qi<=lowCeil);
+  if(!safety.length)safety=candidates;
+  take([...safety].sort((a,b)=>
+    b.fit-a.fit || b.fvm-a.fvm || b.qi-a.qi
+  ),'SICUREZZA');
 
-  // Se servono più di 3 risultati, completa con i migliori sostenibili rimasti.
   if(chosen.length<limit){
-    [...candidates]
-      .sort((a,b)=>b.quality-a.quality || b.value-a.value)
-      .forEach(x=>{
-        if(chosen.length<limit && !chosen.some(z=>z.index===x.index))
-          chosen.push({...x,altClass:'ALTERNATIVA'});
-      });
+    [...candidates].sort((a,b)=>b.quality-a.quality || b.value-a.value).forEach(x=>{
+      if(chosen.length<limit&&!chosen.some(z=>z.index===x.index))
+        chosen.push({...x,altClass:'ALTERNATIVA'});
+    });
   }
   return chosen.slice(0,limit);
 }
@@ -8720,7 +8755,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 7.4</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 7.5</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
