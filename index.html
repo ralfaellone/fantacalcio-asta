@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6991,6 +6991,41 @@ function strongRosterTargets(limit=5){
   return out.slice(0,limit).sort((a,b)=>b._pickScore-a._pickScore);
 }
 
+// V70.9 - PIANO OPERATIVO DINAMICO
+function dsOperationalRecoveryPlan(){
+  const bal=dsGlobalBalance(), cash=bal.cash, slots=bal.totalSlots, critical=bal.critical;
+  if(!critical||slots<=0)return {title:'ROSA COMPLETA',items:[],cash};
+  const role=critical.role, owned=roleCount(state.me,role);
+  const missing=Math.max(0,LIMITS[role]-owned), otherMissing=Math.max(0,slots-missing);
+  const roleCash=Math.max(missing,cash-otherMissing);
+  const specs=Array.from({length:missing},(_,i)=>({position:owned+i+1,spec:slotSpec(role,owned+i+1)}));
+  const weights=specs.map((x,i)=>{
+    const l=String(x.spec?.label||'');
+    let w=/TOP|QUALITÀ|PREMIUM/.test(l)?4.2:/BONUS|TITOLARE/.test(l)?3:/ROTAZIONE|SECONDA/.test(l)?1.8:1;
+    return w*Math.max(.65,1-i*.08);
+  });
+  let surplus=Math.max(0,roleCash-missing), sum=weights.reduce((a,b)=>a+b,0)||1;
+  let alloc=weights.map(w=>1+Math.floor(surplus*w/sum));
+  let rem=Math.max(0,roleCash-alloc.reduce((a,b)=>a+b,0));
+  for(let i=0;rem>0;i=(i+1)%alloc.length){alloc[i]++;rem--;}
+  const items=specs.map((x,i)=>({role,position:x.position,label:x.spec?.label||'SLOT',intent:x.spec?.intent||'',target:alloc[i],
+    rangeMin:Math.max(1,Math.floor(alloc[i]*.75)),rangeMax:Math.max(alloc[i],Math.min(roleCash-(missing-1),Math.ceil(alloc[i]*1.25)))}));
+  return {title:`RECUPERO ${roleName(role).toUpperCase()}`,role,items,cash,roleCash,
+    note:`Ricalcolo automatico dopo ogni acquisto. Protetto almeno 1 cr per ciascuno degli altri ${Math.max(0,slots-1)} slot.`};
+}
+function dsOperationalVerdict(g=strongRosterGlobal()){
+  const bal=dsGlobalBalance(),op=dsOperationalRecoveryPlan();
+  if(!bal.critical)return strongRosterVerdict(g);
+  if(bal.mode==='RECUPERO REPARTO'||bal.mode==='GESTIONE FINALE'){
+    const c=bal.critical,f=op.items[0];
+    return `<b>${op.title}</b>: ${roleName(c.role)} ${c.strength}/99, ${c.owned}/${LIMITS[c.role]} coperti. Con ${bal.cash} cr e ${bal.totalSlots} slot rimasti, priorità al prossimo ${f?`${f.role}${f.position} ${f.label}`:'slot'}${f?` (obiettivo ${f.target} cr, fascia ${f.rangeMin}-${f.rangeMax})`:''}. Qualità prima, completamento protetto.`;
+  }
+  return strongRosterVerdict(g);
+}
+function renderDsOperationalPlan(){
+  const op=dsOperationalRecoveryPlan(); if(!op.items.length)return '';
+  return `<div class="slotPlanBox" style="margin-top:12px;border-color:#8b6b13"><div class="slotPlanHead"><div class="slotPlanTitle">🎯 PIANO OPERATIVO · ${esc(op.title)}</div><div class="slotPlanBudget">${op.cash} cr totali</div></div><div class="slotPlanGrid">${op.items.map((x,i)=>`<div class="slotPlanItem ${i===0?'active':''}"><span>${x.role}${x.position} · ${i===0?'PRIORITÀ ADESSO':'PROSSIMO SLOT'}</span><b>${esc(x.label)} · ${x.target} cr</b><span>FASCIA ${x.rangeMin}-${x.rangeMax} · ${esc(x.intent)}</span></div>`).join('')}</div><div class="playerMetaLine" style="margin-top:8px">🛡️ ${esc(op.note)}</div></div>`;
+}
 function strongRosterVerdict(g){
   const plan=activeFormationPlan(state.me);
   const modifierOn=modifierActiveForPlan(plan);
@@ -7612,7 +7647,8 @@ function renderStrongRosterAI(){
         <div class="rosaForteMetric"><span>COMPLETAMENTO</span><b>${Math.round(g.completion*100)}%</b></div>
       </div>
 
-      <div class="rosaForteBlock"><b>🧠 Lettura AI:</b> ${strongRosterVerdict(g)}</div>
+      <div class="rosaForteBlock"><b>🧠 Lettura AI:</b> ${dsOperationalVerdict(g)}</div>
+      ${renderDsOperationalPlan()}
 
       <div class="slotPlanBox">
         <div class="slotPlanHead">
@@ -8888,7 +8924,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 7.8</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 7.9</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
