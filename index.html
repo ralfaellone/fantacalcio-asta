@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V72.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7654,7 +7654,7 @@ function dynamicPlanSavingTip(targets){
 }
 function renderDynamicRosterPlan(){ return renderDynamicRosterPlanFast(); }
 
-// V72.1 - D.S. ADVANCED FAST ENGINE
+// V72.2 - D.S. UNIFIED LIVE PRICE ENGINE
 const DS_FAST_CACHE=new Map();
 
 function dsFastStateKey(){
@@ -7664,6 +7664,8 @@ function dsFastStateKey(){
     roster(state.me).length,
     (state.purchases||[]).length,
     (state.unavailablePlayers||[]).length,
+    // V72.2: include the latest purchase outcome so DS and Asta Live invalidate together
+    (state.purchases||[]).slice(-1).map(x=>`${x.name||''}:${Number(x.price)||0}:${Number(x.ts)||0}`).join(','),
     currentInitialPhase(),
     AI_ROSTER_MODULE||''
   ].join('|');
@@ -7719,13 +7721,15 @@ function dsFastPrice(index){
     const maxRec=Math.max(1,Math.min(qi,safe));
     px={low:Math.min(qi,maxRec),ideal:Math.min(qi,maxRec),high:maxRec,maxRec};
   }
-  const out={
-    low:Math.max(1,Number(px.low)||1),
-    ideal:Math.max(1,Number(px.ideal)||1),
-    high:Math.max(1,Number(px.high)||1),
-    maxRec:Math.max(1,Number(px.maxRec)||1),
-    reserveBlocked:Boolean(px.reserveBlocked)
-  };
+  // V72.2: SINGLE SOURCE OF TRUTH. Never recalculate DS prices here:
+  // copy the exact cached Asta Live values used by the player AI page.
+  const blocked=Boolean(px.reserveBlocked)||Number(px.maxRec)===0;
+  let low=blocked?Math.max(0,Number(px.low)||0):Math.max(1,Number(px.low)||1);
+  let ideal=blocked?Math.max(0,Number(px.ideal)||0):Math.max(low,Number(px.ideal)||low);
+  let high=blocked?Math.max(0,Number(px.high)||0):Math.max(ideal,Number(px.high)||ideal);
+  let maxRec=blocked?Math.max(0,Number(px.maxRec)||0):Math.max(high,Number(px.maxRec)||high);
+  if(maxRec>0){ high=Math.min(high,maxRec); ideal=Math.min(ideal,high); low=Math.min(low,ideal); }
+  const out={...px,low,ideal,high,maxRec,reserveBlocked:blocked};
   DS_FAST_CACHE.set(key,out);
   return out;
 }
@@ -7959,7 +7963,7 @@ function renderStrongRosterAIFast(){
           <div class="rosaForteTargetMeta">${x.p.role} · ${esc(x.p.team)} · FVM ${x.p.fvm} · QI ${x.p.qi}</div>
           <span class="rosaForteSlot">${op.items[0]?esc(op.items[0].label):'PROSSIMO SLOT'}</span>
         </div>
-        <div class="rosaForteTargetPrice">${x.px.low}-${x.px.maxRec}<small>IDEALE ${x.px.ideal} · MAX ${x.px.maxRec}</small></div>
+        <div class="rosaForteTargetPrice">${x.px.reserveBlocked?'LASCIA':`${x.px.low}-${x.px.maxRec}`}<small>MIN ${x.px.low} · IDEALE ${x.px.ideal} · MAX RANGE ${x.px.high} · NON OLTRE ${x.px.maxRec}</small></div>
       </div>`).join('')}
     `:''}
   </div>`;
@@ -8017,7 +8021,7 @@ function renderStrategy40Fast(){
       ${candidates.map((x,n)=>`<div class="strategy40Target" onclick="openAIForPlayer(${x.index})">
         <div><div class="strategy40TargetName">${n+1}. ${esc(x.p.name)}</div>
         <div class="strategy40TargetMeta">${x.q>=70?'QUALITÀ':x.q>=55?'EQUILIBRIO':'VALORE'} · score ${x.q}/99 · FVM ${x.p.fvm} · QI ${x.p.qi}</div></div>
-        <div class="strategy40TargetPrice">${x.px.low}-${x.px.maxRec} cr</div>
+        <div class="strategy40TargetPrice">${x.px.reserveBlocked?'LASCIA':`${x.px.low}-${x.px.maxRec} cr`}<small style="display:block;font-size:9px;color:var(--muted);margin-top:3px">MIN ${x.px.low} · IDEALE ${x.px.ideal} · MAX ${x.px.high} · NON OLTRE ${x.px.maxRec}</small></div>
       </div>`).join('')}
     </div>`:''}
 
