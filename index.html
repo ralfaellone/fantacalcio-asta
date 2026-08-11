@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8740,8 +8740,8 @@ function liveAuctionDecision5(playerIndex,price){
   const keeperProtection=(p.role==='P')?keeperCandidateReserve(p,state.me):null;
 
   if(a.reserveBlocked && bid>=basePrice){
-    action='LASCIA';level='stop';headline='RISERVA MINIMA PROTETTA';
-    why=`A ${bid} cr intaccheresti i crediti necessari per completare gli slot rimanenti. Questo giocatore non è acquistabile alla QI attuale.`;
+    action='LASCIA';level='stop';headline='QI OLTRE IL TETTO SOSTENIBILE';
+    why=`La QI è ${basePrice} cr, mentre il NON OLTRE sostenibile è ${decisionMax} cr. A ${bid} cr devi lasciare: la valutazione economica resta visibile, ma non è un prezzo d'asta raggiungibile senza compromettere il piano rosa.`;
   }else if(wrongKeeperBlock){
     action='LASCIA';level='stop';headline='FUORI BLOCCO PORTIERI';
     why=`Hai scelto il blocco ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`;
@@ -8958,7 +8958,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.0</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.1</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
@@ -8978,11 +8978,11 @@ function renderAstaLiveSelected(){
       </div>
 
       <div class="astaAiGrid">
-        <div class="astaAiMetric"><span>MIN</span><b>${a.reserveBlocked?'—':a.low}</b></div>
-        <div class="astaAiMetric"><span>IDEALE</span><b>${a.reserveBlocked?'—':a.ideal}</b></div>
-        <div class="astaAiMetric"><span>MAX RANGE</span><b>${a.reserveBlocked?'—':a.high}</b></div>
-        <div class="astaAiMetric"><span>NON OLTRE</span><b>${a.reserveBlocked?'—':absoluteCap}</b></div>
-        ${a.reserveBlocked?`<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:#ffb3b3;padding-top:6px">🔒 NON ACQUISTABILE · QI ${auctionBasePrice(p)} superiore al tetto sostenibile senza intaccare la riserva minima.</div>`:''}
+        <div class="astaAiMetric"><span>MIN</span><b>${(a.reserveBlocked&&!a.priceInformative)?'—':a.low}</b></div>
+        <div class="astaAiMetric"><span>IDEALE</span><b>${(a.reserveBlocked&&!a.priceInformative)?'—':a.ideal}</b></div>
+        <div class="astaAiMetric"><span>MAX RANGE</span><b>${(a.reserveBlocked&&!a.priceInformative)?'—':a.high}</b></div>
+        <div class="astaAiMetric"><span>NON OLTRE</span><b>${(a.reserveBlocked&&!a.priceInformative)?'—':absoluteCap}</b></div>
+        ${a.reserveBlocked?`<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:#ffb3b3;padding-top:6px">🔒 NON ACQUISTABILE ALLA QI · QI ${auctionBasePrice(p)} cr > NON OLTRE ${absoluteCap} cr. La fascia sopra indica quanto il D.S. considera sostenibile per questo profilo/slot.</div>`:''}
         ${p.role==='P' && a.keeperBlockPossible ? `<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:var(--muted);padding-top:6px">🧤 BLOCCO ${esc(a.keeperBlockTeam||p.team)} · riserva P2/P3: <b>${a.keeperBlockReserve} cr</b> (QI ${esc((a.keeperBlockBases||[]).join(' + '))}) · MAX P1 protetto: <b>${absoluteCap} cr</b></div>` : ''}
       </div>
 
@@ -8991,7 +8991,7 @@ function renderAstaLiveSelected(){
 
       <div class="astaBidQuick">
         ${[1,2,3,5,10].map(v=>`<button onclick="addAstaLiveBid(${v})">+${v}</button>`).join('')}
-        <button onclick="setAstaLiveMax()">MAX</button>
+        <button onclick="setAstaLiveMax()" ${a.reserveBlocked?'disabled title="QI già superiore al NON OLTRE"':''}>MAX</button>
       </div>
 
       <div class="astaLiveSmartBar">
@@ -8999,7 +8999,7 @@ function renderAstaLiveSelected(){
           <i id="astaLiveSmartMarker" class="astaLiveSmartMarker" style="left:0%"></i>
         </div>
         <div class="astaLiveSmartLabels">
-          ${a.reserveBlocked
+          ${(a.reserveBlocked&&!a.priceInformative)
             ? `<span>MIN —</span><span>IDEALE —</span><span>MAX —</span><span>STOP —</span>`
             : `<span>MIN ${a.low}</span><span>IDEALE ${a.ideal}</span><span>MAX ${a.high}</span><span>STOP ${absoluteCap}</span>`}
         </div>
@@ -9097,7 +9097,8 @@ function evaluateAstaLiveBid(){
 
   if(delta){
     if(a.reserveBlocked){
-      delta.innerHTML=`QI ${auctionBasePrice(PLAYER_ARCHIVE[ASTA_LIVE_PLAYER])} cr · <b>acquisto bloccato dalla riserva minima</b>`;
+      const qi=auctionBasePrice(PLAYER_ARCHIVE[ASTA_LIVE_PLAYER]);
+      delta.innerHTML=`QI ${qi} cr · NON OLTRE ${stop} cr · <b>${Math.max(0,qi-stop)} cr sopra il tetto sostenibile</b>`;
     }else{
       const idealGap=a.ideal-price;
       delta.innerHTML=idealGap>=0
