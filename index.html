@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -8510,10 +8510,33 @@ function liveSustainableCap(playerIndex,rawMax){
   const baseStop=Math.max(0,Math.min(Number(rawMax)||0,safe));
   if(baseStop<=0)return 0;
 
-  const normalStop=Math.max(0,Math.min(
-    baseStop,
-    adaptiveSlotCap(p.role,baseStop,null)
-  ));
+  // V71.4 - Il Piano D.S. è la base economica dello slot corrente.
+  // Asta Live può stringere il tetto per un profilo debole, ma non deve
+  // annullare il target del Piano per un profilo realmente adatto allo slot.
+  const dsEnv=dsLiveSlotEnvelope(playerIndex);
+  const adaptiveCap=adaptiveSlotCap(p.role,baseStop,null);
+  let slotCap=adaptiveCap;
+
+  if(dsEnv){
+    const a0=liveAuctionAI(playerIndex);
+    const fitScore=Math.max(
+      Number(a0?._slotScore)||0,
+      Number(a0?.score)||0,
+      Number(a0?.fit)||0
+    );
+
+    // Profilo adeguato: almeno il target D.S.; profilo forte: può usare la fascia MAX.
+    // La riserva matematica degli slot successivi resta comunque inviolabile sotto.
+    const qualifiesTarget=fitScore>=55 || baseStop>=Number(dsEnv.ideal||0);
+    const qualifiesHigh=fitScore>=72;
+
+    if(qualifiesTarget)
+      slotCap=Math.max(slotCap,Math.min(baseStop,Number(dsEnv.ideal)||slotCap));
+    if(qualifiesHigh)
+      slotCap=Math.max(slotCap,Math.min(baseStop,Number(dsEnv.maxRec)||slotCap));
+  }
+
+  const normalStop=Math.max(0,Math.min(baseStop,slotCap));
   const treasury=treasuryCanBoost(playerIndex);
   let cap=treasury.allow>0
     ? Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow))
@@ -8534,7 +8557,7 @@ function liveSustainableCap(playerIndex,rawMax){
   const base=auctionBasePrice(p);
   // V70.8: la riserva di completamento è già incorporata nei cap.
   // Evitiamo una seconda penalizzazione automatica che rendeva l'AI troppo conservativa.
-  if(status.level==='bad' && cap>base && dsGlobalBalance().avg<3) cap-=1;
+  if(status.level==='bad' && cap>base && dsGlobalBalance().avg<3 && !dsEnv) cap-=1;
 
   const reserveCap=liveReserveProtectedCap(playerIndex);
   cap=Math.min(cap,reserveCap);
@@ -9007,7 +9030,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.3</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.4</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
