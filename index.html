@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V71.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6328,23 +6328,82 @@ function tab(id,btn){
   requestAnimationFrame(()=>render());
 }
 function openDSAI(){
-  dsResetMemo();
   const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('D.S. AI'));
   if(btn)tab('dsai',btn);
   setTimeout(()=>document.getElementById('dsDynamic')?.scrollIntoView({block:'start'}),30);
 }
+// V71.9 - D.S. AI: TAB LAZY REALI
+let DS_RENDER_TOKEN=0;
+const DS_VIEW_CACHE={dsDynamic:'',dsStrong:'',dsStrategy:''};
+
+function dsTabTargetBox(id){
+  return document.getElementById(
+    id==='dsDynamic'?'dashboardDynamicPlan':
+    id==='dsStrong'?'dashboardStrongRoster':
+    'dashboardStrategy40'
+  );
+}
+
+function dsCheapPlaceholder(id){
+  const cash=budget(state.me);
+  const count=roster(state.me).length;
+  const slots=Math.max(0,25-count);
+  const title=id==='dsDynamic'?'🧭 Calcolo Piano Rosa…':
+              id==='dsStrong'?'🏆 Calcolo forza rosa…':
+              '🧠 Calcolo strategia d’asta…';
+  return `<div class="card" style="padding:12px;margin-top:8px">
+    <b>${title}</b>
+    <div class="playerMetaLine" style="margin-top:4px">${count}/25 giocatori · ${cash} cr rimasti · ${slots} slot aperti</div>
+  </div>`;
+}
+
+function dsRenderSelected(id,token){
+  if(token!==DS_RENDER_TOKEN || activePageId()!=='dsai')return;
+  const box=dsTabTargetBox(id);
+  if(!box)return;
+
+  try{
+    if(id==='dsDynamic') renderDynamicRosterPlan();
+    else if(id==='dsStrong') renderStrongRosterAI();
+    else if(id==='dsStrategy') renderStrategy40();
+
+    if(token!==DS_RENDER_TOKEN)return;
+    if(box.innerHTML.trim())DS_VIEW_CACHE[id]=box.innerHTML;
+  }catch(err){
+    console.error('[D.S. AI '+id+']',err);
+    // Mai più pagina vuota: usa l'ultima vista valida oppure un fallback leggibile.
+    if(DS_VIEW_CACHE[id]){
+      box.innerHTML=DS_VIEW_CACHE[id];
+    }else{
+      box.innerHTML=`<div class="card" style="padding:12px;margin-top:8px">
+        <b>⚠️ Analisi temporaneamente non disponibile</b>
+        <div class="playerMetaLine" style="margin-top:4px">La tab resta utilizzabile. Riprova aprendola di nuovo.</div>
+      </div>`;
+    }
+  }
+}
+
 function dsJump(id,btn){
+  const token=++DS_RENDER_TOKEN;
+
+  // 1. Cambio grafico immediato: nessun calcolo prima del cambio tab.
   document.querySelectorAll('.dsAiTabs button').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
-
   document.querySelectorAll('#dsai .dsSection').forEach(sec=>sec.classList.remove('active'));
   const target=document.getElementById(id);
   if(target)target.classList.add('active');
 
-  // Mantiene fissi modulo + tab; mostra solo il contenuto scelto.
-  if(id==='dsDynamic')try{renderDynamicRosterPlan();}catch(e){}
-  if(id==='dsStrong')try{renderStrongRosterAI();}catch(e){}
-  if(id==='dsStrategy')try{renderStrategy40();}catch(e){}
+  // 2. Mostra subito cache o placeholder.
+  const box=dsTabTargetBox(id);
+  if(box){
+    if(DS_VIEW_CACHE[id]) box.innerHTML=DS_VIEW_CACHE[id];
+    else box.innerHTML=dsCheapPlaceholder(id);
+  }
+
+  // 3. Lascia respirare l'interfaccia, POI calcola solo la tab richiesta.
+  requestAnimationFrame(()=>{
+    setTimeout(()=>dsRenderSelected(id,token),35);
+  });
 }
 
 function homePlayerMatches(){
@@ -9033,7 +9092,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 8.8</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 8.9</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
@@ -9365,19 +9424,22 @@ function render(){
   }else if(id==='players'){
     renderRosesPage();
   }else if(id==='dsai'){
-    // Carica tutti i motori del Direttore Sportivo anche entrando direttamente dalla tab.
-    // La Dashboard Compact resta separata e non viene ricostruita qui.
-    try{
-      const activeTab=document.querySelector('#dsai .dsAiTabs button.active');
-      if(!document.querySelector('#dsai .dsSection.active')){
-        document.getElementById('dsDynamic')?.classList.add('active');
-      }
-    }catch(e){}
+    // V71.9: entrando nel D.S. NON calcolare tutte le tre analisi.
     try{ renderDSModuleSelector(); }catch(err){ console.error('Modulo D.S. AI',err); }
-    try{ renderDirectorSportivoAI(); }catch(err){ console.error('Direttore Sportivo AI',err); }
-    try{ renderDynamicRosterPlan(); }catch(err){ console.error('Piano Rosa Dinamico AI',err); }
-    try{ renderStrongRosterAI(); }catch(err){ console.error('Rosa Forte AI',err); }
-    try{ renderStrategy40(); }catch(err){ console.error('Strategia AI 4.0',err); }
+
+    let active=document.querySelector('#dsai .dsSection.active');
+    if(!active){
+      active=document.getElementById('dsDynamic');
+      if(active)active.classList.add('active');
+    }
+    const tabId=active?.id||'dsDynamic';
+    const token=++DS_RENDER_TOKEN;
+    const box=dsTabTargetBox(tabId);
+    if(box){
+      if(DS_VIEW_CACHE[tabId])box.innerHTML=DS_VIEW_CACHE[tabId];
+      else box.innerHTML=dsCheapPlaceholder(tabId);
+    }
+    requestAnimationFrame(()=>setTimeout(()=>dsRenderSelected(tabId,token),35));
   }else if(id==='more'){
     renderMarketSeasonPanel();
     renderHistory();
@@ -9575,21 +9637,6 @@ function renderListone(){
 
 let AI_ROSTER_MODULE=localStorage.getItem('astaFantaFormationModule')||'';
 
-
-
-let __dsFrameMemo = new Map();
-function dsMemo(key, fn){
-  if(__dsFrameMemo.has(key)) return __dsFrameMemo.get(key);
-  const v=fn(); __dsFrameMemo.set(key,v); return v;
-}
-function dsResetMemo(){ __dsFrameMemo.clear(); }
-function dsSafeRender(fn, fallback=''){
-  try { return fn() || fallback; }
-  catch(err){
-    console.error('[DS render]', err);
-    return fallback;
-  }
-}
 function renderDSModuleSelector(){
   const box=document.getElementById('dsModuleButtons');
   const badge=document.getElementById('dsModifierBadge');
@@ -9617,14 +9664,23 @@ function setAIRosterModule(id){
   AI_ROSTER_MODULE=id;
   localStorage.setItem('astaFantaFormationModule',id);
   clearPerformanceCaches();
+  DS_VIEW_CACHE.dsDynamic='';
+  DS_VIEW_CACHE.dsStrong='';
+  DS_VIEW_CACHE.dsStrategy='';
   try{renderFormationPage();}catch(e){}
   try{refreshTop5LiveIfOpen();}catch(e){}
   try{renderPremiumDashboardHero();}catch(e){}
   try{renderDSModuleSelector();}catch(e){}
-  try{renderDirectorSportivoAI();}catch(e){}
-  try{renderDynamicRosterPlan();}catch(e){}
-  try{renderStrongRosterAI();}catch(e){}
-  try{renderStrategy40();}catch(e){}
+
+  // Aggiorna solo la tab D.S. visibile.
+  if(activePageId()==='dsai'){
+    const active=document.querySelector('#dsai .dsSection.active');
+    const tabId=active?.id||'dsDynamic';
+    const token=++DS_RENDER_TOKEN;
+    const box=dsTabTargetBox(tabId);
+    if(box)box.innerHTML=dsCheapPlaceholder(tabId);
+    requestAnimationFrame(()=>setTimeout(()=>dsRenderSelected(tabId,token),35));
+  }
 }
 
 function aiRosterTier(role,slot,plan){
