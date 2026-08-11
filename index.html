@@ -5271,7 +5271,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7080,22 +7080,70 @@ function roleMarketTemperature(role){
   const ratio=actual/expected,pct=Math.round((ratio-1)*100);
   return {ratio,label:ratio>1.12?'CARO':ratio<.90?'FAVOREVOLE':'NORMALE',pct};
 }
+// V70.8 - DIRETTORE SPORTIVO: CONTROLLO GLOBALE ROSA
+function dsGlobalBalance(){
+  const cash=Math.max(0,budget(state.me));
+  const totalSlots=Math.max(1,remainingRosterSlots(state.me));
+  const g=strongRosterGlobal();
+  const rows=['P','D','C','A'].map(r=>{
+    const owned=roleCount(state.me,r);
+    const missing=Math.max(0,LIMITS[r]-owned);
+    const completion=owned/Math.max(1,LIMITS[r]);
+    const strength=Number(g.roleMap?.[r]?.score)||0;
+    // Urgenza vera: incompletezza + debolezza. Un reparto completo non drena più budget.
+    const urgency=missing<=0?0:
+      clamp((1-completion)*62 + Math.max(0,68-strength)*.75 + (missing/Math.max(1,totalSlots))*28,0,100);
+    return {role:r,owned,missing,completion,strength,urgency};
+  });
+  const open=rows.filter(x=>x.missing>0).sort((a,b)=>b.urgency-a.urgency);
+  const critical=open[0]||null;
+  const avg=totalSlots?cash/totalSlots:cash;
+
+  // Riserva di completamento: SEMPRE 1 credito per ogni altro slot.
+  // Non blocca più 24 crediti fissi quando il saldo è basso.
+  const completionReserve=Math.max(0,totalSlots-1);
+
+  let mode='EQUILIBRATO';
+  if(critical && (critical.completion<.55 || critical.strength<55))mode='RECUPERO REPARTO';
+  if(avg<=6)mode='GESTIONE FINALE';
+
+  return {cash,totalSlots,avg,rows,open,critical,completionReserve,mode};
+}
+
+function dsCompletionSafety(){
+  const b=dsGlobalBalance();
+  // Il cuscinetto strategico extra cala progressivamente nel finale.
+  // Con 5 slot e 23 cr: safety totale = 5, non 23/24.
+  const baseSlots=b.totalSlots;
+  const extra=b.avg>=14 ? Math.min(Math.round((Number(state.initialBudget)||600)*.02),Math.max(0,Math.floor(b.cash*.08))) : 0;
+  return Math.min(b.cash,baseSlots+extra);
+}
+
 function adaptiveRoleShares(){
   const plan=activeFormationPlan(state.me);
   const base={...plan.budget};
   const g=strongRosterGlobal();
-  // Weak departments get a modest increase, strong departments give budget back.
+  const bal=dsGlobalBalance();
+
   ['P','D','C','A'].forEach(r=>{
-    const score=g.roleMap?.[r]?.score||0;
-    if(roleCount(state.me,r)>0){
-      if(score<52)base[r]*=1.10;
-      else if(score>76)base[r]*=.92;
-    }
+    const row=bal.rows.find(x=>x.role===r);
+    if(!row || row.missing<=0){ base[r]=0; return; }
+
+    const score=row.strength;
+    // V70.8: incompletezza pesa DAVVERO. Evita di arrivare con un reparto a metà
+    // dopo aver consumato quasi tutto il budget altrove.
+    const incompleteBoost=1 + (1-row.completion)*.85;
+    const weaknessBoost=score<45?1.32:score<55?1.22:score<65?1.10:1;
+    base[r]*=incompleteBoost*weaknessBoost;
+
     const temp=roleMarketTemperature(r);
-    // Do not chase inflated markets; allow a little more room in favorable markets.
-    if(temp.ratio>1.15)base[r]*=.95;
-    else if(temp.ratio<.88)base[r]*=1.04;
+    if(temp.ratio>1.15)base[r]*=.96;      // frena, ma non abbandona un reparto urgente
+    else if(temp.ratio<.88)base[r]*=1.05;
   });
+
+  // Il reparto più urgente riceve una priorità aggiuntiva.
+  if(bal.critical?.role)base[bal.critical.role]*=1.18;
+
   const open=['P','D','C','A'].filter(r=>roleCount(state.me,r)<LIMITS[r]);
   const den=open.reduce((s,r)=>s+(base[r]||0),0)||1;
   const out={P:0,D:0,C:0,A:0};
@@ -7112,10 +7160,7 @@ function aiTreasury(){
 
   // V69.8 - TESORETTO EQUILIBRATO
   // Il tesoretto NON può più assorbire il budget operativo dei reparti ancora aperti.
-  const safety=Math.min(
-    cash,
-    Math.max(slots,Math.round((Number(state.initialBudget)||INITIAL||600)*.04))
-  );
+  const safety=dsCompletionSafety();
 
   // Budget minimo realmente spendibile sui giocatori ancora mancanti:
   // almeno 4 cr per slot, ma mai meno del 45% del saldo dopo la riserva.
@@ -7197,7 +7242,7 @@ function treasuryCanBoost(playerIndex){
 
 function adaptiveBudgetPlan(){
   const cash=budget(state.me),slots=remainingRosterSlots(state.me);
-  const safety=Math.min(cash,Math.max(slots,Math.round((Number(state.initialBudget)||INITIAL||600)*.04)));
+  const safety=dsCompletionSafety();
   const treasury=aiTreasury();
   const usable=Math.max(0,cash-safety-treasury.value);
   const shares=adaptiveRoleShares();
@@ -7305,6 +7350,21 @@ function adaptiveSlotCap(role,baseCap,playerIndex=null){
   const roleHard=Math.max(1,rp.allocation-reserveForRest);
   let cap=Math.min(baseCap,roleHard);
 
+  // V70.8: recupero intelligente del reparto rimasto indietro.
+  // Non distribuisce il saldo in parti uguali: consente più peso al prossimo slot
+  // di qualità, preservando comunque 1 cr per ogni slot successivo.
+  const bal=dsGlobalBalance();
+  if(bal.critical?.role===role && rp.missing>0){
+    const hardCompletion=Math.max(1,bal.cash-reserveForRest);
+    const nextPos=roleCount(state.me,role)+1;
+    const spec=slotSpec(role,Math.min(LIMITS[role],nextPos));
+    const qualitySlot=/TOP|BONUS|TITOLARE|QUALITÀ|PREMIUM|MODIFICATORE/.test(String(spec?.label||''));
+    if(qualitySlot){
+      const recoveryTarget=Math.max(roleHard,Math.round(rp.allocation*(bal.avg<=6?.62:.72)));
+      cap=Math.min(baseCap,hardCompletion,Math.max(cap,recoveryTarget));
+    }
+  }
+
   if(ap.delta.delta<0){
     cap-=Math.min(Math.round(Math.abs(ap.delta.delta)*.22),Math.max(1,Math.round(baseCap*.10)));
   }
@@ -7331,11 +7391,14 @@ function dynamicPlanReserve(){
 function dynamicPlanStatus(){
   const r=dynamicPlanReserve(),slots=remainingRosterSlots(state.me);
   const avg=slots?Math.floor(r.cash/slots):r.cash,g=strongRosterGlobal();
+  const bal=dsGlobalBalance();
   let level='good',label='🟢 IN LINEA',reason='Budget e costruzione della rosa sono coerenti con il piano.';
-  if(avg<8||(r.futureMissing>0&&r.cash<r.reserve+Math.max(20,r.currentMissing*4))){
-    level='bad';label='🔴 RISCHIO';reason='Il budget residuo rischia di non coprire bene gli slot ancora aperti.';
-  }else if(avg<14||g.budgetScore<58){
-    level='warn';label='🟡 DA CORREGGERE';reason='Serve recuperare crediti sui prossimi slot e privilegiare alternative di valore.';
+  if(avg<5){
+    level='bad';label='🔴 RECUPERO ROSA';reason=`Budget finale: priorità assoluta a ${bal.critical?.role||'slot aperti'}, qualità sul prossimo slot e risparmio controllato sui successivi.`;
+  }else if(bal.critical && (bal.critical.completion<.55 || bal.critical.strength<55)){
+    level='warn';label='🟠 SQUILIBRIO ROSA';reason=`${bal.critical.role} è il reparto più urgente (${bal.critical.owned}/${LIMITS[bal.critical.role]}, forza ${bal.critical.strength}/99): proteggi budget e alza la qualità dei prossimi acquisti.`;
+  }else if(avg<10||g.budgetScore<58){
+    level='warn';label='🟡 DA CORREGGERE';reason='Serve recuperare qualità sui prossimi slot senza compromettere il completamento.';
   }
   return {...r,level,label,reason,avg,g};
 }
@@ -8409,7 +8472,9 @@ function liveSustainableCap(playerIndex,rawMax){
   // prima di mostrare MIN/IDEALE/MAX/NON OLTRE.
   const status=dynamicPlanStatus();
   const base=auctionBasePrice(p);
-  if(status.level==='bad' && cap>base) cap-=1;
+  // V70.8: la riserva di completamento è già incorporata nei cap.
+  // Evitiamo una seconda penalizzazione automatica che rendeva l'AI troppo conservativa.
+  if(status.level==='bad' && cap>base && dsGlobalBalance().avg<3) cap-=1;
 
   const reserveCap=liveReserveProtectedCap(playerIndex);
   cap=Math.min(cap,reserveCap);
@@ -8823,7 +8888,7 @@ function renderAstaLiveSelected(){
     <div class="astaDecision">
       <div class="astaDecisionHead">
         <div>
-          <div class="astaDecisionTitle">🤖 Asta Live AI 7.7</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 7.8</div>
           <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
           ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
             ? (a.reserveBlocked
