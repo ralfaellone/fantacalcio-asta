@@ -5317,7 +5317,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.6</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -9702,7 +9702,7 @@ function renderAstaLiveSelected(){
     <div class="astaLiveDecisionCard">
       <div class="astaLiveDecisionHead">
         <div>
-          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.5</div>
+          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.6</div>
           <div class="astaLiveDecisionSub">Decisione immediata · prezzo, budget futuro, qualità e alternative.</div>
         </div>
         <div class="liveMiniScore">${impact.quality}/99</div>
@@ -14291,9 +14291,28 @@ function leaveSubPage(id){
   }
 }
 
-function openBuy(){
+function openBuy(playerIndex=null, forcedPrice=null){
+  // V73.6 - REGISTRA ESITO mantiene il contesto di Asta Live.
+  // Se arriviamo da Asta Live con un giocatore selezionato, memorizziamo SUBITO
+  // giocatore + ruolo + prezzo corrente prima di cambiare pagina.
+  let liveIndex=(Number.isInteger(Number(playerIndex)) && Number(playerIndex)>=0)
+    ? Number(playerIndex)
+    : null;
+
+  let carriedPrice=null;
+  if(forcedPrice!=null && Number(forcedPrice)>0){
+    carriedPrice=Math.max(1,Number(forcedPrice));
+  }else if(liveIndex!=null && ASTA_LIVE_PLAYER===liveIndex){
+    const livePriceEl=document.getElementById('astaLivePrice');
+    if(livePriceEl && Number(livePriceEl.value)>0){
+      carriedPrice=Math.max(1,Number(livePriceEl.value));
+    }
+  }
+
   let sel=document.getElementById('pbuyer');
   sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)} · ${budget(i)} cr</option>`).join('');
+
+  // Reset standard: serve ancora quando si apre Registra acquisto manualmente.
   document.getElementById('pname').value='';
   document.getElementById('pprice').value='';
   document.getElementById('pprice').min='1';
@@ -14305,8 +14324,26 @@ function openBuy(){
   if(rangeBox){rangeBox.innerHTML='';rangeBox.classList.remove('show');}
   document.getElementById('playerSuggestions').classList.remove('show');
   document.getElementById('buyHint').textContent='';
-  selectBuyRole('P');
+
   enterSubPage('buyModal');
+
+  // Se REGISTRA ESITO arriva da Asta Live, precompila tutto.
+  if(liveIndex!=null && PLAYER_ARCHIVE[liveIndex]){
+    selectArchivePlayer(liveIndex); // imposta nome + ruolo corretto + QI/base
+    const priceEl=document.getElementById('pprice');
+    if(priceEl && carriedPrice!=null){
+      priceEl.value=String(carriedPrice);
+    }
+    updateBuyPreview();
+
+    // Nessuna tastiera/listone automatico: il giocatore è già scelto.
+    const sug=document.getElementById('playerSuggestions');
+    if(sug){sug.classList.remove('show');sug.innerHTML='';}
+    return;
+  }
+
+  // Apertura manuale invariata.
+  selectBuyRole('P');
   updateBuyPreview();
   setTimeout(()=>document.getElementById('pname').focus(),150);
 }
