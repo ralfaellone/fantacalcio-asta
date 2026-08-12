@@ -1123,6 +1123,32 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 }
 
 
+/* V70.8.9 - Scheda giocatore decisionale completa (solo UI, nessuna formula DS modificata) */
+.playerDecisionStatus{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.playerDecisionBadge{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#0b1727;border-radius:999px;padding:6px 9px;font-size:10px;font-weight:950}
+.playerDecisionBadge.free{color:var(--ok);border-color:rgba(57,217,138,.35)}
+.playerDecisionBadge.mine{color:#8fd0ff;border-color:rgba(79,172,254,.35)}
+.playerDecisionBadge.rival{color:#ffcf70;border-color:rgba(255,190,80,.35)}
+.playerDecisionBadge.blocked{color:var(--danger);border-color:rgba(255,107,107,.35)}
+.playerDecisionGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.playerDecisionBox{background:linear-gradient(145deg,#101f34,#0a1626);border:1px solid var(--line);border-radius:14px;padding:10px}
+.playerDecisionBox span{display:block;color:var(--muted);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.35px}
+.playerDecisionBox b{display:block;font-size:17px;margin-top:4px}
+.playerDecisionBox small{display:block;color:var(--muted);font-size:10px;margin-top:3px;line-height:1.25}
+.playerDecisionVerdict{margin-top:9px;border-radius:14px;padding:11px 12px;border:1px solid var(--line);background:#0b1727;font-size:12px;line-height:1.4}
+.playerDecisionVerdict strong{color:var(--accent)}
+.playerAltMiniList{display:grid;gap:8px}
+.playerAltMini{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center;background:#0b1727;border:1px solid var(--line);border-radius:14px;padding:10px}
+.playerAltMiniName{font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.playerAltMiniMeta{color:var(--muted);font-size:10px;margin-top:3px}
+.playerAltMiniPrice{text-align:right;font-size:11px;color:var(--muted)}
+.playerAltMiniPrice b{display:block;color:var(--text);font-size:16px}
+.playerDetailQuickActions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+.playerDetailQuickActions button{border:1px solid var(--line);background:#0b1727;color:var(--text);border-radius:12px;padding:9px 5px;font-weight:900;font-size:10px}
+.playerDetailQuickActions button.on{color:var(--accent);border-color:rgba(244,196,48,.45);background:#171405}
+@media(max-width:390px){.playerDecisionGrid{grid-template-columns:1fr 1fr}.playerDetailQuickActions{grid-template-columns:1fr 1fr 1fr}}
+
+
 /* V17 - Strategia Budget AI */
 .strategyLaunch{
   width:100%;margin-top:9px;border:1px solid var(--line);
@@ -13222,6 +13248,27 @@ function playerStatusFor(name){
   return {owned:false,buy:null,unavailable:isUnavailablePlayer(name)};
 }
 
+function toggleFavoriteFromDetail(name,index,event){
+  if(event)event.stopPropagation();
+  toggleFavorite(name,event);
+  renderPlayerDetail(index);
+}
+
+function addDetailToCompare(index,event){
+  if(event)event.stopPropagation();
+  toggleComparePlayer(index,event);
+  renderPlayerDetail(index);
+}
+
+function playerRosterNeedText(role){
+  const have=roleCount(state.me,role);
+  const max=LIMITS[role]||0;
+  const missing=Math.max(0,max-have);
+  if(missing<=0)return `Reparto completo · ${have}/${max}`;
+  if(missing===1)return `Manca 1 ${role} · ${have}/${max}`;
+  return `Mancano ${missing} slot ${role} · ${have}/${max}`;
+}
+
 function renderPlayerDetail(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return;
@@ -13230,8 +13277,26 @@ function renderPlayerDetail(index){
   const status=playerStatusFor(p.name);
   const ai=aiPlayerAnalysis(index,state.me);
   const gm=goalMeta(p.name);
+  const base=auctionBasePrice(p);
+  const cash=budget(state.me);
+  const slots=remainingRosterSlots(state.me);
+  const roleHave=roleCount(state.me,p.role);
+  const roleMax=LIMITS[p.role]||0;
+  const roleMissing=Math.max(0,roleMax-roleHave);
+  const safeNow=Math.max(0,Math.min(ai.maxRec,safeMaxBid(state.me)));
+  const pctIdeal=cash>0?Math.round((ai.ideal/cash)*100):0;
+  const alts=bestComparableAlternatives(index,3);
+  const favorite=isFavorite(p.name);
+  const compared=COMPARE_PLAYERS.includes(index);
 
   document.getElementById('playerDetailHeaderTitle').textContent=p.name;
+
+  let statusLabel='🟢 LIBERO';
+  let statusClass='free';
+  if(status.owned){
+    if(status.buy.buyer===state.me){statusLabel=`🔵 NELLA TUA ROSA · ${status.buy.price} cr`;statusClass='mine';}
+    else {statusLabel=`🟠 PRESO DA ${esc(state.managers[status.buy.buyer])} · ${status.buy.price} cr`;statusClass='rival';}
+  }else if(status.unavailable){statusLabel='🔴 NON DISPONIBILE';statusClass='blocked';}
 
   const statBlock=st ? `
     <div class="playerDetailSection">
@@ -13254,7 +13319,7 @@ function renderPlayerDetail(index){
     </div>
   `;
 
-  const goalBlock=isFavorite(p.name) ? `
+  const goalBlock=favorite ? `
     <div class="playerDetailSection">
       <h3>🎯 Il tuo obiettivo</h3>
       <div class="playerDetailNote">
@@ -13269,41 +13334,62 @@ function renderPlayerDetail(index){
   const ownedBlock=status.owned ? `
     <div class="playerDetailSection">
       <h3>✅ Stato asta</h3>
-      <div class="playerDetailNote">
-        Acquistato da <strong>${esc(state.managers[status.buy.buyer])}</strong> per <strong>${status.buy.price} crediti</strong>.
-      </div>
+      <div class="playerDetailNote">Acquistato da <strong>${esc(state.managers[status.buy.buyer])}</strong> per <strong>${status.buy.price} crediti</strong>.</div>
     </div>
   ` : '';
+
+  const altBlock=`
+    <div class="playerDetailSection">
+      <h3>🔄 3 alternative simili</h3>
+      ${alts.length?`<div class="playerAltMiniList">${alts.map(x=>`
+        <div class="playerAltMini" onclick="renderPlayerDetail(${x.index})">
+          <div><div class="playerAltMiniName">${esc(x.p.name)}</div><div class="playerAltMiniMeta">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · somiglianza ${x.score}/99</div></div>
+          <div class="playerAltMiniPrice"><span>IDEALE</span><b>${x.ai.ideal}</b><span>max ${x.ai.maxRec}</span></div>
+        </div>`).join('')}</div>`:'<div class="playerDetailNote">Nessuna alternativa libera sufficientemente simile al momento.</div>'}
+    </div>`;
 
   document.getElementById('playerDetailBody').innerHTML=`
     <div class="playerDetailHero">
       <div class="playerDetailName">${esc(p.name)}</div>
-      <div class="playerDetailSub">${p.role} · ${p.team}</div>
-
+      <div class="playerDetailSub">${p.role} · ${esc(p.team)}</div>
+      <div class="playerDecisionStatus"><span class="playerDecisionBadge ${statusClass}">${statusLabel}</span></div>
       <div class="playerDetailGrid">
         <div class="playerDetailMetric"><span>QI</span><b>${p.qi}</b></div>
-        <div class="playerDetailMetric"><span>QA</span><b>${p.qa!==undefined?p.qa:'—'}</b></div>
         <div class="playerDetailMetric"><span>FVM</span><b>${p.fvm}</b></div>
+        <div class="playerDetailMetric"><span>BASE</span><b>${base}</b></div>
       </div>
+      <div class="playerDetailQuickActions">
+        <button class="${favorite?'on':''}" onclick="toggleFavoriteFromDetail(decodeURIComponent('${encodeURIComponent(p.name)}'),${index},event)">${favorite?'★ OBIETTIVO':'☆ OBIETTIVO'}</button>
+        <button class="${compared?'on':''}" onclick="addDetailToCompare(${index},event)">${compared?'✓ CONFRONTO':'＋ CONFRONTO'}</button>
+        <button onclick="closePlayerDetail();openAIForPlayer(${index})">🤖 AI</button>
+      </div>
+    </div>
+
+    <div class="playerDetailSection">
+      <h3>💰 Decisione d'asta</h3>
+      <div class="playerDecisionGrid">
+        <div class="playerDecisionBox"><span>MIN</span><b>${ai.low}</b><small>Entrata interessante</small></div>
+        <div class="playerDecisionBox"><span>IDEALE</span><b>${ai.ideal}</b><small>Prezzo obiettivo</small></div>
+        <div class="playerDecisionBox"><span>MAX RANGE</span><b>${ai.high}</b><small>Zona alta sostenibile</small></div>
+        <div class="playerDecisionBox"><span>NON OLTRE</span><b>${ai.maxRec}</b><small>Tetto strategico</small></div>
+      </div>
+      <div class="playerDecisionVerdict"><strong>${ai.verdict}</strong> · Score AI <strong>${ai.score}/99</strong><br>Max sicura oggi <strong>${safeNow}</strong> crediti.</div>
+    </div>
+
+    <div class="playerDetailSection">
+      <h3>🧩 Impatto sulla tua rosa</h3>
+      <div class="playerDecisionGrid">
+        <div class="playerDecisionBox"><span>REPARTO ${p.role}</span><b>${roleHave}/${roleMax}</b><small>${playerRosterNeedText(p.role)}</small></div>
+        <div class="playerDecisionBox"><span>ROSA TOTALE</span><b>${25-slots}/25</b><small>${slots} posti ancora da completare</small></div>
+        <div class="playerDecisionBox"><span>CREDITI</span><b>${cash}</b><small>Budget residuo attuale</small></div>
+        <div class="playerDecisionBox"><span>PESO IDEALE</span><b>${pctIdeal}%</b><small>${ai.ideal} crediti sul budget residuo</small></div>
+      </div>
+      <div class="playerDetailNote" style="margin-top:8px">${roleMissing>0?`Questo giocatore copre uno dei <strong>${roleMissing}</strong> slot ancora liberi nel reparto ${p.role}.`:`Il reparto ${p.role} è già completo: valuta l'acquisto solo se coerente con la gestione della tua rosa.`}</div>
     </div>
 
     ${statBlock}
-
-    <div class="playerDetailSection">
-      <h3>🤖 AI Asta</h3>
-      <div class="playerDetailGrid">
-        <div class="playerDetailMetric"><span>MIN</span><b>${ai.low}</b></div>
-        <div class="playerDetailMetric"><span>MAX</span><b>${ai.high}</b></div>
-        <div class="playerDetailMetric"><span>NON OLTRE</span><b>${ai.maxRec}</b></div>
-      </div>
-      <div class="playerDetailNote" style="margin-top:8px">
-        Prezzo ideale <strong>${ai.ideal}</strong> · Score AI <strong>${ai.score}/99</strong> · ${ai.verdict}.
-        <br><br>
-        La tua max sicura attuale è <strong>${ai.safe}</strong> crediti.
-      </div>
-    </div>
-
     ${goalBlock}
+    ${altBlock}
     ${ownedBlock}
   `;
 
@@ -13312,6 +13398,11 @@ function renderPlayerDetail(index){
     footer.innerHTML=`<div class="playerDetailActions">
       <button class="playerDetailAI" onclick="openAIForPlayer(${index},event)">🤖 ANALISI AI</button>
       <button class="playerDetailOwned" onclick="closePlayerDetail();openParticipant(${status.buy.buyer})">VEDI SQUADRA</button>
+    </div>`;
+  }else if(status.unavailable){
+    footer.innerHTML=`<div class="playerDetailActions">
+      <button class="playerDetailAI" onclick="openAIForPlayer(${index},event)">🤖 ANALISI AI</button>
+      <button class="playerDetailOwned" disabled>NON DISPONIBILE</button>
     </div>`;
   }else{
     footer.innerHTML=`<div class="playerDetailActions">
