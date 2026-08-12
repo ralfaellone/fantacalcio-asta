@@ -2724,6 +2724,38 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
   padding:7px 9px;
   font-size:10px;
 }
+/* V70.8.7 — Menu giocatori ordinato + filtro squadra compatto (derivato da V73.17) */
+#listone .playersRoleFilters{
+  display:grid;
+  grid-template-columns:1.15fr repeat(4,.78fr) 1.12fr 1.08fr .78fr;
+  gap:5px;
+  overflow:visible;
+  padding:7px 0 5px;
+}
+#listone .playersRoleFilters .filterBtn{
+  width:100%;
+  min-width:0;
+  padding:7px 3px;
+  font-size:9px;
+  white-space:nowrap;
+}
+#listone .teamFilterRow{
+  width:100%;
+  margin-top:2px;
+}
+#listone .teamFilterSelect{
+  width:100%;
+  min-width:0;
+  max-width:none;
+  border:1px solid var(--line);
+  background:#091725;
+  color:var(--text);
+  border-radius:11px;
+  padding:9px 34px 9px 11px;
+  font-size:11px;
+  font-weight:850;
+  outline:none;
+}
 .playersAiBar{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -5261,54 +5293,51 @@ nav button .ico{font-size:19px!important}
 .defenseLive689 span{font-size:6px;font-weight:950;color:#76e2b1}.defenseLive689 b{display:block;margin-top:2px;font-size:7px;color:#d9fff0}
 .defenseLive689 small{display:block;margin-top:2px;font-size:5.5px;color:#86a89a}
 
+
+/* V70.8.4 — Dashboard Situazione lega (isolata dalla V73.13) */
+.leagueSituationBtn{
+  width:100%;margin:10px 0 4px;padding:13px 14px;border:1px solid var(--line);
+  border-radius:16px;background:var(--card);color:var(--text);font-weight:900;font-size:14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer
+}
+#leagueSituationModal{
+  display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);overflow:auto;
+  -webkit-overflow-scrolling:touch;padding:0 0 calc(26px + env(safe-area-inset-bottom))
+}
+#leagueSituationModal.show{display:block}
+.leagueSituationShell{max-width:760px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 14px 24px}
+.leagueSituationHeader{position:sticky;top:0;z-index:2;background:var(--bg);padding:4px 0 10px;display:flex;align-items:center;gap:10px}
+.leagueSituationBack{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:12px;padding:9px 11px;font-weight:900}
+.leagueSituationTitle{font-size:22px;font-weight:950;line-height:1.05}
+.leagueSituationSub{font-size:12px;color:var(--muted);margin-top:2px}
+.leagueSituationSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 12px}
+.leagueSituationKpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.leagueSituationKpi span{display:block;font-size:10px;color:var(--muted);font-weight:850;letter-spacing:.05em}
+.leagueSituationKpi b{display:block;font-size:19px;margin-top:2px}
+.leagueSituationList{display:grid;gap:8px}
+.leagueSituationRow{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:10px 11px}
+.leagueSituationRow.mine{outline:2px solid rgba(85,170,255,.35)}
+/* V70.8.5 — Pericolosità avversari: solo evidenza visiva, nessuna modifica alla logica asta */
+.leagueDangerBadge{display:inline-flex;align-items:center;justify-content:center;margin-top:5px;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:950;letter-spacing:.05em;border:1px solid transparent;white-space:nowrap}
+.leagueDangerBadge.high{background:rgba(239,68,68,.14);border-color:rgba(248,113,113,.45);color:#fca5a5}
+.leagueDangerBadge.medium{background:rgba(245,158,11,.12);border-color:rgba(251,191,36,.38);color:#fcd34d}
+.leagueDangerBadge.low{background:rgba(34,197,94,.10);border-color:rgba(74,222,128,.30);color:#86efac}
+.leagueDangerBadge.complete{background:rgba(148,163,184,.10);border-color:rgba(148,163,184,.25);color:#cbd5e1}
+.leagueDangerLegend{margin:0 0 10px;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.018);font-size:10px;line-height:1.4;color:var(--muted)}
+.leagueDangerLegend b{color:var(--text)}
+.leagueSituationTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.leagueSituationName{font-weight:950;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.leagueSituationMeta{font-size:11px;color:var(--muted);margin-top:2px}
+.leagueSituationBudget{text-align:right;font-weight:950;font-size:18px;white-space:nowrap}
+.leagueSituationBudget small{display:block;font-size:9px;color:var(--muted);font-weight:800}
+.leagueSituationRoles{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+.leagueSituationRole{background:var(--soft);border-radius:9px;padding:6px 4px;text-align:center;font-size:10px;color:var(--muted);font-weight:850}
+.leagueSituationRole b{display:block;color:var(--text);font-size:12px;margin-top:1px}
+body.league-situation-open{overflow:hidden!important;height:100dvh!important}
+body.league-situation-open nav{display:none!important}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<style id="v730-asta-live-ui">
-#astaLiveDecision{margin-top:14px}
-#astaLiveDecision .astaLiveDecisionCard{background:linear-gradient(180deg,#0d2b32,#0a2028);border:1px solid rgba(52,211,153,.34);border-radius:22px;padding:16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
-#astaLiveDecision .astaLiveDecisionHead{display:flex;justify-content:space-between;gap:10px;margin-bottom:13px}
-#astaLiveDecision .astaLiveDecisionTitle{font-size:23px;font-weight:900;line-height:1.1;color:#f8fafc}
-#astaLiveDecision .astaLiveDecisionSub{margin-top:6px;color:#aebdcb;font-size:12.5px;line-height:1.35}
-#astaLiveDecision .astaThresholdGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0}
-#astaLiveDecision .astaThresholdGrid>div{min-width:0;background:#071827;border:1px solid #1d3949;border-radius:13px;min-height:61px;padding:9px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-#astaLiveDecision .astaThresholdGrid span{display:block;font-size:8px;line-height:1.05;letter-spacing:.65px;color:#93a4b6;text-align:center}
-#astaLiveDecision .astaThresholdGrid b{display:block;margin-top:5px;font-size:21px;line-height:1;color:#fff}
-#astaLiveDecision .astaLiveBlocked{margin:10px 0 12px;padding:10px 12px;border-radius:12px;background:rgba(127,29,29,.24);border:1px solid rgba(248,113,113,.35);color:#fecaca;font-size:12.5px;line-height:1.35;font-weight:700}
-#astaLiveDecision .astaLivePriceInput{box-sizing:border-box;width:100%;height:62px;border-radius:14px;border:1px solid #465566;background:#071827!important;color:#fff!important;-webkit-text-fill-color:#fff!important;padding:0 14px;text-align:center;font-size:29px;font-weight:900;outline:none;appearance:textfield}
-#astaLiveDecision .bidQuick{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0 12px}
-#astaLiveDecision .bidQuick button{min-width:0;height:38px;padding:0 2px;border-radius:10px;border:1px solid #294356;background:#0a1b2b;color:#f8fafc;font-size:12px;font-weight:900}
-#astaLiveDecision .bidVerdict{border-radius:15px;padding:13px 14px;text-align:center;border:1px solid #2d4a5e;background:#071827}
-#astaLiveDecision .bidVerdict.go{background:rgba(3,78,54,.34);border-color:rgba(52,211,153,.55)}
-#astaLiveDecision .bidVerdict.wait{background:rgba(92,68,5,.36);border-color:rgba(250,204,21,.55)}
-#astaLiveDecision .bidVerdict.stop{background:rgba(92,18,25,.37);border-color:rgba(248,113,113,.55)}
-#astaLiveDecision .bidVerdictTitle{font-size:22px;font-weight:950;line-height:1.05}
-#astaLiveDecision .bidVerdict.go .bidVerdictTitle{color:#6ee7b7}
-#astaLiveDecision .bidVerdict.wait .bidVerdictTitle{color:#fde68a}
-#astaLiveDecision .bidVerdict.stop .bidVerdictTitle{color:#fda4af}
-#astaLiveDecision .bidVerdictText{margin-top:6px;color:#aebdcb;font-size:11.5px;line-height:1.3}
-@media(max-width:430px){#astaLiveDecision .astaLiveDecisionCard{padding:13px;border-radius:18px}#astaLiveDecision .astaLiveDecisionTitle{font-size:20px}#astaLiveDecision .astaThresholdGrid{gap:5px}#astaLiveDecision .astaThresholdGrid>div{min-height:57px;padding:8px 2px}#astaLiveDecision .astaThresholdGrid span{font-size:7px;letter-spacing:.4px}#astaLiveDecision .astaThresholdGrid b{font-size:19px}#astaLiveDecision .bidQuick{gap:5px}#astaLiveDecision .bidQuick button{font-size:11px;height:36px}}
-</style>
-
-<style id="v732-live-details">
-.liveMiniScore{min-width:52px;height:38px;padding:0 8px;border-radius:12px;background:#072a29;border:1px solid rgba(52,211,153,.35);color:#6ee7b7;font-size:17px;font-weight:950;display:flex;align-items:center;justify-content:center}
-.liveInfoPanel,.liveImpactPanel,.liveAltPanel{margin-top:12px;padding:12px;border-radius:14px;background:#071827;border:1px solid #1e3a4b}
-.liveImpactPanel{background:rgba(3,78,54,.18);border-color:rgba(52,211,153,.28)}
-.liveImpactPanel.critical{background:rgba(92,18,25,.22);border-color:rgba(248,113,113,.35)}
-.liveInfoTitle{font-size:11px;font-weight:950;letter-spacing:.3px;color:#f8fafc;margin-bottom:7px}
-.liveInfoText{font-size:11px;line-height:1.45;color:#b6c2cf}
-.liveImpactGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px}
-.liveImpactGrid>div{background:#061522;border:1px solid #183448;border-radius:11px;padding:8px}
-.liveImpactGrid span{display:block;font-size:7px;letter-spacing:.6px;color:#8799ab}
-.liveImpactGrid b{display:block;margin-top:4px;font-size:13px;color:#f8fafc}
-.liveAltGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.liveAltGrid button{min-width:0;padding:9px 5px;border-radius:12px;border:1px solid #294356;background:#0a1b2b;color:#fff}
-.liveAltGrid button b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.liveAltGrid button span{display:block;margin-top:4px;font-size:7px;line-height:1.25;color:#9fb0c1}
-.liveActions{display:grid;grid-template-columns:1fr 1.15fr;gap:8px;margin-top:12px}
-.liveActions button{position:static!important;height:43px;border-radius:12px;font-size:11px;font-weight:950}
-@media(max-width:430px){.liveAltGrid{grid-template-columns:1fr 1fr 1fr}.liveImpactGrid{gap:5px}.liveActions button{font-size:10px}}
-</style>
-
 </head>
 <body class="splash-active">
 <div id="splashScreen">
@@ -5317,7 +5346,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.11</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5435,6 +5464,11 @@ nav button .ico{font-size:19px!important}
       <button class="filterBtn" data-filter="TAKEN" onclick="setListoneFilter('TAKEN',this)">Presi</button>
       <button class="filterBtn" data-filter="FAV" onclick="setListoneFilter('FAV',this)">⭐</button>
     </div>
+    <div class="teamFilterRow">
+      <select id="listoneTeamFilter" class="teamFilterSelect" onchange="setListoneTeamFilter(this.value)" aria-label="Filtra per squadra">
+        <option value="ALL">Tutte le squadre</option>
+      </select>
+    </div>
 
     <div class="playersAiBar">
       <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
@@ -5469,6 +5503,7 @@ nav button .ico{font-size:19px!important}
     </div>
 
     <div id="roseLeagueSummary" class="roseLeagueSummary"></div>
+    <button class="leagueSituationBtn" onclick="openLeagueSituationPage()"><span>📊 Situazione lega</span><span>12 squadre ›</span></button>
   </div>
 
   <div id="managers" class="roseProList"></div>
@@ -5533,6 +5568,22 @@ nav button .ico{font-size:19px!important}
 
 
 
+
+
+<div id="leagueSituationModal" aria-hidden="true">
+  <div class="leagueSituationShell">
+    <div class="leagueSituationHeader">
+      <button class="leagueSituationBack" onclick="closeLeagueSituationPage()">← Indietro</button>
+      <div>
+        <div class="leagueSituationTitle">Situazione lega</div>
+        <div class="leagueSituationSub">Crediti, posti mancanti e reparti di tutti i 12 partecipanti</div>
+      </div>
+    </div>
+    <div id="leagueSituationSummary" class="leagueSituationSummary"></div>
+    <div id="leagueDangerLegend" class="leagueDangerLegend"><b>⚠️ Pericolosità avversari</b> · stima relativa basata su crediti disponibili rispetto ai posti ancora da completare.</div>
+    <div id="leagueSituationList" class="leagueSituationList"></div>
+  </div>
+</div>
 
 <div id="top5LiveModal">
   <div class="top5LiveShell">
@@ -5868,6 +5919,7 @@ INITIAL=Math.max(1,parseInt(state.initialBudget,10)||600);
 let PLAYER_ARCHIVE=loadPlayerArchive();
 let selectedArchivePlayer=null;
 let listoneFilter='ALL';
+let listoneTeamFilter='ALL';
 let PLAYER_STATS=loadPlayerStats();
 let advisorRole='';
 let nextMoveSelectedRole='';
@@ -5889,7 +5941,6 @@ const PERF_CACHE={
   formation:new Map()
 };
 function clearPerformanceCaches(){
-  try{if(typeof DS_FAST_CACHE!=='undefined')DS_FAST_CACHE.clear();}catch(e){}
   PERF_REV++;
   PERF_CACHE.ai.clear();
   PERF_CACHE.base.clear();
@@ -6327,6 +6378,7 @@ function importOfficialListone(event){
 
       savePlayerArchive(best);
       listoneFilter='ALL';
+      listoneTeamFilter='ALL';
       document.querySelectorAll('.filterBtn').forEach(btn=>btn.classList.toggle('active',btn.dataset.filter==='ALL'));
       const search=document.getElementById('listoneSearch');
       if(search)search.value='';
@@ -6379,76 +6431,18 @@ function openDSAI(){
   if(btn)tab('dsai',btn);
   setTimeout(()=>document.getElementById('dsDynamic')?.scrollIntoView({block:'start'}),30);
 }
-// V71.9 - D.S. AI: TAB LAZY REALI
-let DS_RENDER_TOKEN=0;
-const DS_VIEW_CACHE={dsDynamic:'',dsStrong:'',dsStrategy:''};
-
-function dsTabTargetBox(id){
-  return document.getElementById(
-    id==='dsDynamic'?'dashboardDynamicPlan':
-    id==='dsStrong'?'dashboardStrongRoster':
-    'dashboardStrategy40'
-  );
-}
-
-function dsCheapPlaceholder(id){
-  const cash=budget(state.me);
-  const count=roster(state.me).length;
-  const slots=Math.max(0,25-count);
-  const title=id==='dsDynamic'?'🧭 Calcolo Piano Rosa…':
-              id==='dsStrong'?'🏆 Calcolo forza rosa…':
-              '🧠 Calcolo strategia d’asta…';
-  return `<div class="card" style="padding:12px;margin-top:8px">
-    <b>${title}</b>
-    <div class="playerMetaLine" style="margin-top:4px">${count}/25 giocatori · ${cash} cr rimasti · ${slots} slot aperti</div>
-  </div>`;
-}
-
-function dsRenderSelected(id,token){
-  if(token!==DS_RENDER_TOKEN || activePageId()!=='dsai')return;
-  const box=dsTabTargetBox(id);
-  if(!box)return;
-
-  try{
-    if(id==='dsDynamic') renderDynamicRosterPlan();
-    else if(id==='dsStrong') renderStrongRosterAI();
-    else if(id==='dsStrategy') renderStrategy40();
-
-    if(token!==DS_RENDER_TOKEN)return;
-    if(box.innerHTML.trim())DS_VIEW_CACHE[id]=box.innerHTML;
-  }catch(err){
-    console.error('[D.S. AI '+id+']',err);
-    // Mai più pagina vuota: usa l'ultima vista valida oppure un fallback leggibile.
-    if(DS_VIEW_CACHE[id]){
-      box.innerHTML=DS_VIEW_CACHE[id];
-    }else{
-      box.innerHTML=`<div class="card" style="padding:12px;margin-top:8px">
-        <b>⚠️ Analisi temporaneamente non disponibile</b>
-        <div class="playerMetaLine" style="margin-top:4px">La tab resta utilizzabile. Riprova aprendola di nuovo.</div>
-      </div>`;
-    }
-  }
-}
-
 function dsJump(id,btn){
-  const token=++DS_RENDER_TOKEN;
-
-  // 1. Cambio grafico immediato: nessun calcolo prima del cambio tab.
   document.querySelectorAll('.dsAiTabs button').forEach(b=>b.classList.remove('active'));
   if(btn)btn.classList.add('active');
+
   document.querySelectorAll('#dsai .dsSection').forEach(sec=>sec.classList.remove('active'));
   const target=document.getElementById(id);
   if(target)target.classList.add('active');
 
-  // 2. Mostra subito cache o placeholder.
-  const box=dsTabTargetBox(id);
-  if(box){
-    if(DS_VIEW_CACHE[id]) box.innerHTML=DS_VIEW_CACHE[id];
-    else box.innerHTML=dsCheapPlaceholder(id);
-  }
-
-  // 3. Lascia respirare l'interfaccia, POI calcola solo la tab richiesta.
-  requestAnimationFrame(()=>dsRenderSelected(id,token));
+  // Mantiene fissi modulo + tab; mostra solo il contenuto scelto.
+  if(id==='dsDynamic')try{renderDynamicRosterPlan();}catch(e){}
+  if(id==='dsStrong')try{renderStrongRosterAI();}catch(e){}
+  if(id==='dsStrategy')try{renderStrategy40();}catch(e){}
 }
 
 function homePlayerMatches(){
@@ -6649,7 +6643,7 @@ function strategy40LastPurchaseFeedback(){
   };
 }
 
-function renderStrategy40Full(){
+function renderStrategy40(){
   const el=document.getElementById('dashboardStrategy40');
   if(!el)return;
   const priorities=['P','D','C','A'].map(strategy40RolePriority).sort((a,b)=>b.score-a.score);
@@ -6728,9 +6722,6 @@ function renderStrategy40Full(){
 }
 
 
-function renderStrategy40(){ return renderStrategy40Fast(); }
-
-
 
 function acquiredStrongProfile(purchase){
   const p=PLAYER_ARCHIVE.find(q=>normalizePlayerText(q.name)===normalizePlayerText(purchase.name));
@@ -6757,30 +6748,10 @@ function acquiredStrongProfile(purchase){
 function strongRoleStatus(role){
   const buys=state.purchases.filter(x=>x.buyer===state.me&&x.role===role);
   const profiles=buys.map(acquiredStrongProfile);
+  const quality=profiles.length?profiles.reduce((s,x)=>s+x.score,0)/profiles.length:0;
   const fill=clamp(buys.length/Math.max(1,LIMITS[role]),0,1);
-
-  // V71.2 - Forza reparto monotona e strutturale.
-  // Un nuovo acquisto NON può far scendere la forza del reparto solo perché
-  // abbassa la media aritmetica. I migliori elementi definiscono il nucleo;
-  // profondità e completamento aggiungono valore, senza diluire i titolari.
-  const ordered=[...profiles].sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0));
-  const coreN=Math.min(3,ordered.length);
-  const core=coreN?ordered.slice(0,coreN).reduce((s,x)=>s+(Number(x.score)||0),0)/coreN:0;
-  const depth=ordered.slice(coreN);
-  const depthValue=depth.length
-    ? depth.reduce((s,x)=>s+(Number(x.score)||0),0)/Math.max(1,LIMITS[role])
-    : 0;
-
-  // Mantiene la scala precedente sui primi 3 acquisti; dal quarto in poi
-  // il nucleo non viene diluito e la profondità porta solo un bonus positivo.
-  const base=coreN?core*(.35+.65*Math.sqrt(fill)):0;
-  const depthBonus=depthValue*.10;
-  const score=profiles.length?Math.round(clamp(base+depthBonus,0,99)):0;
-
-  // "quality" resta informativa come media reale dei giocatori acquistati,
-  // ma non viene più usata da sola per abbassare la forza reparto.
-  const quality=profiles.length?profiles.reduce((s,x)=>s+(Number(x.score)||0),0)/profiles.length:0;
-  return {role,count:buys.length,profiles,quality:Math.round(quality),coreQuality:Math.round(core),fill,score};
+  const score=profiles.length?Math.round(clamp(quality*(.35+.65*Math.sqrt(fill)),0,99)):0;
+  return {role,count:buys.length,profiles,quality:Math.round(quality),fill,score};
 }
 
 function strongRosterBudgetScore(){
@@ -7119,41 +7090,6 @@ function strongRosterTargets(limit=5){
   return out.slice(0,limit).sort((a,b)=>b._pickScore-a._pickScore);
 }
 
-// V70.9 - PIANO OPERATIVO DINAMICO
-function dsOperationalRecoveryPlan(){
-  const bal=dsGlobalBalance(), cash=bal.cash, slots=bal.totalSlots, critical=bal.critical;
-  if(!critical||slots<=0)return {title:'ROSA COMPLETA',items:[],cash};
-  const role=critical.role, owned=roleCount(state.me,role);
-  const missing=Math.max(0,LIMITS[role]-owned), otherMissing=Math.max(0,slots-missing);
-  const roleCash=Math.max(missing,cash-otherMissing);
-  const specs=Array.from({length:missing},(_,i)=>({position:owned+i+1,spec:slotSpec(role,owned+i+1)}));
-  const weights=specs.map((x,i)=>{
-    const l=String(x.spec?.label||'');
-    let w=/TOP|QUALITÀ|PREMIUM/.test(l)?4.2:/BONUS|TITOLARE/.test(l)?3:/ROTAZIONE|SECONDA/.test(l)?1.8:1;
-    return w*Math.max(.65,1-i*.08);
-  });
-  let surplus=Math.max(0,roleCash-missing), sum=weights.reduce((a,b)=>a+b,0)||1;
-  let alloc=weights.map(w=>1+Math.floor(surplus*w/sum));
-  let rem=Math.max(0,roleCash-alloc.reduce((a,b)=>a+b,0));
-  for(let i=0;rem>0;i=(i+1)%alloc.length){alloc[i]++;rem--;}
-  const items=specs.map((x,i)=>({role,position:x.position,label:x.spec?.label||'SLOT',intent:x.spec?.intent||'',target:alloc[i],
-    rangeMin:Math.max(1,Math.floor(alloc[i]*.75)),rangeMax:Math.max(alloc[i],Math.min(roleCash-(missing-1),Math.ceil(alloc[i]*1.25)))}));
-  return {title:`RECUPERO ${roleName(role).toUpperCase()}`,role,items,cash,roleCash,
-    note:`Ricalcolo automatico dopo ogni acquisto. Protetto almeno 1 cr per ciascuno degli altri ${Math.max(0,slots-1)} slot.`};
-}
-function dsOperationalVerdict(g=strongRosterGlobal()){
-  const bal=dsGlobalBalance(),op=dsOperationalRecoveryPlan();
-  if(!bal.critical)return strongRosterVerdict(g);
-  if(bal.mode==='RECUPERO REPARTO'||bal.mode==='GESTIONE FINALE'){
-    const c=bal.critical,f=op.items[0];
-    return `<b>${op.title}</b>: ${roleName(c.role)} ${c.strength}/99, ${c.owned}/${LIMITS[c.role]} coperti. Con ${bal.cash} cr e ${bal.totalSlots} slot rimasti, priorità al prossimo ${f?`${f.role}${f.position} ${f.label}`:'slot'}${f?` (obiettivo ${f.target} cr, fascia ${f.rangeMin}-${f.rangeMax})`:''}. Qualità prima, completamento protetto.`;
-  }
-  return strongRosterVerdict(g);
-}
-function renderDsOperationalPlan(){
-  const op=dsOperationalRecoveryPlan(); if(!op.items.length)return '';
-  return `<div class="slotPlanBox" style="margin-top:12px;border-color:#8b6b13"><div class="slotPlanHead"><div class="slotPlanTitle">🎯 PIANO OPERATIVO · ${esc(op.title)}</div><div class="slotPlanBudget">${op.cash} cr totali</div></div><div class="slotPlanGrid">${op.items.map((x,i)=>`<div class="slotPlanItem ${i===0?'active':''}"><span>${x.role}${x.position} · ${i===0?'PRIORITÀ ADESSO':'PROSSIMO SLOT'}</span><b>${esc(x.label)} · ${x.target} cr</b><span>FASCIA ${x.rangeMin}-${x.rangeMax} · ${esc(x.intent)}</span></div>`).join('')}</div><div class="playerMetaLine" style="margin-top:8px">🛡️ ${esc(op.note)}</div></div>`;
-}
 function strongRosterVerdict(g){
   const plan=activeFormationPlan(state.me);
   const modifierOn=modifierActiveForPlan(plan);
@@ -7696,437 +7632,53 @@ function dynamicPlanSavingTip(targets){
   }
   return `Dove risparmiare: non superare ${expensive._dynCap} cr su ${expensive.p.name}; proteggi il budget degli slot successivi.`;
 }
-function renderDynamicRosterPlan(){ return renderDynamicRosterPlanFast(); }
-
-// V72.2 - D.S. UNIFIED LIVE PRICE ENGINE
-const DS_FAST_CACHE=new Map();
-
-function dsFastStateKey(){
-  return [
-    state.me,
-    budget(state.me),
-    roster(state.me).length,
-    (state.purchases||[]).length,
-    (state.unavailablePlayers||[]).length,
-    // V72.2: include the latest purchase outcome so DS and Asta Live invalidate together
-    (state.purchases||[]).slice(-1).map(x=>`${x.name||''}:${Number(x.price)||0}:${Number(x.ts)||0}`).join(','),
-    currentInitialPhase(),
-    AI_ROSTER_MODULE||''
-  ].join('|');
-}
-
-function dsFastClear(){
-  DS_FAST_CACHE.clear();
-  if(typeof DS_VIEW_CACHE!=='undefined'){
-    DS_VIEW_CACHE.dsDynamic='';
-    DS_VIEW_CACHE.dsStrong='';
-    DS_VIEW_CACHE.dsStrategy='';
-  }
-}
-
-function dsFastSafe(fn,fallback=null){
-  try{return fn()}catch(err){console.warn('[DS FAST]',err);return fallback}
-}
-
-function dsFastPlayerQuality(p){
-  if(!p)return 1;
-  const st=dsFastSafe(()=>statsFor(p.name),null);
-  const fvm=Math.max(0,Number(p.fvm)||0);
-  const qi=Math.max(1,Number(p.qi)||1);
-  let score=35 + Math.min(30,fvm*.55) + Math.min(14,qi*.8);
-
-  if(st && Number(st.pv)>0){
-    const pv=Math.max(1,Number(st.pv)||1);
-    const fm=Number(st.fm)||0;
-    const mv=Number(st.mv)||0;
-    const gol=Number(st.gol)||0;
-    const ass=Number(st.ass)||0;
-    const amm=Number(st.amm)||0;
-    const esp=Number(st.esp)||0;
-    score += Math.max(-4,Math.min(12,(fm-6)*15));
-    score += Math.max(-3,Math.min(6,(mv-6)*9));
-    score += Math.min(8,(gol*3+ass)/Math.max(4,pv/3));
-    score -= Math.min(5,amm*.16+esp*1.5);
-  }
-  if(isFavorite(p.name))score+=4;
-  return Math.round(clamp(score,1,99));
-}
-
-function dsFastPrice(index){
-  const p=PLAYER_ARCHIVE[index];
-  if(!p)return {low:1,ideal:1,high:1,maxRec:1};
-  const key='px731|'+dsFastStateKey()+'|'+index;
-  if(DS_FAST_CACHE.has(key))return DS_FAST_CACHE.get(key);
-
-  // V73.1 - IMPORTANTISSIMO:
-  // Il D.S. NON deve più richiamare cachedCalibratedLivePrices(), cioè il vecchio
-  // motore pesante che causava il blocco su "Calcolo forza rosa...".
-  // Usa lo stesso motore FAST di Asta Live V73.0.
-  let px=null;
+function renderDynamicRosterPlan(){
+  syncInitialAuctionPhase();
+  const el=document.getElementById('dashboardDynamicPlan');if(!el)return;
   try{
-    px=astaLiveFastPrices(index);
-  }catch(err){
-    console.warn('[V73.1] dsFastPrice fallback',p.name,err);
-  }
-
-  if(!px){
-    const cash=Math.max(0,budget(state.me));
-    const slots=Math.max(1,remainingRosterSlots(state.me));
-    const hardCap=Math.max(0,cash-Math.max(0,slots-1));
-    const base=Math.max(1,auctionBasePrice(p));
-    if(base>hardCap){
-      px={low:hardCap,ideal:hardCap,high:hardCap,maxRec:hardCap,blocked:true};
-    }else{
-      px={low:base,ideal:base,high:base,maxRec:Math.max(base,hardCap),blocked:false};
-    }
-  }
-
-  const blocked=Boolean(px.blocked)||Boolean(px.reserveBlocked)||Number(px.maxRec)===0;
-  let low=blocked?Math.max(0,Number(px.low)||0):Math.max(1,Number(px.low)||1);
-  let ideal=blocked?Math.max(0,Number(px.ideal)||0):Math.max(low,Number(px.ideal)||low);
-  let high=blocked?Math.max(0,Number(px.high)||0):Math.max(ideal,Number(px.high)||ideal);
-  let maxRec=blocked?Math.max(0,Number(px.maxRec)||0):Math.max(high,Number(px.maxRec)||high);
-  if(maxRec>0){
-    high=Math.min(high,maxRec);
-    ideal=Math.min(ideal,high);
-    low=Math.min(low,ideal);
-  }
-
-  const out={...px,low,ideal,high,maxRec,reserveBlocked:blocked};
-  DS_FAST_CACHE.set(key,out);
-  return out;
-}
-
-function dsFastCandidates(role,limit=5){
-  const key='candSmart724|'+dsFastStateKey()+'|'+role+'|'+limit;
-  if(DS_FAST_CACHE.has(key))return DS_FAST_CACHE.get(key);
-
-  const cash=Math.max(0,budget(state.me));
-  const openSlots=Math.max(1,remainingRosterSlots(state.me));
-  const reserveAfter=Math.max(0,openSlots-1);
-  const hardCap=Math.max(0,cash-reserveAfter);
-  const quick=[];
-
-  for(let index=0;index<PLAYER_ARCHIVE.length;index++){
-    const p=PLAYER_ARCHIVE[index];
-    if(!p || p.role!==role)continue;
-    if(purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))continue;
-    if(!marketRoleAllowed(role))continue;
-
-    const q=dsFastPlayerQuality(p);
-    const qi=Math.max(1,auctionBasePrice(p));
-    if(qi>hardCap)continue;
-
-    // Pre-ranking economico: non premiare soltanto il prezzo basso.
-    const fvm=Math.max(0,Number(p.fvm)||0);
-    const preScore=q*.78 + Math.min(10,fvm*.10) - Math.max(0,qi-3)*1.2;
-    quick.push({p,index,q,qi,preScore});
-  }
-
-  quick.sort((a,b)=>b.preScore-a.preScore || b.q-a.q || a.qi-b.qi);
-
-  // Prezzi Asta Live solo sui candidati migliori per mantenere i tab veloci.
-  const finalists=quick.slice(0,28).map(x=>{
-    const px=dsFastPrice(x.index);
-    const nonOltre=Math.max(0,Number(px.maxRec)||0);
-    if(!nonOltre || x.qi>nonOltre)return null;
-
-    const planCost=Math.max(x.qi,Math.max(1,Number(px.ideal)||x.qi));
-    if(planCost>hardCap)return null;
-
-    const leftAfter=Math.max(0,cash-planCost);
-    const surplusAfter=leftAfter-reserveAfter;
-    const efficiency=x.q/Math.max(1,planCost);
-    const spendShare=planCost/Math.max(1,cash);
-
-    // Qualità prima, ma con protezione reale del completamento rosa.
-    // Un costo 5 può superare un costo 3-4 se il salto di qualità lo giustifica.
-    let smartScore=x.q*.72 + Math.min(100,efficiency*7)*.18 + Math.max(0,100-spendShare*100)*.10;
-    if(planCost===hardCap && openSlots>1)smartScore-=14;       // ALL-IN: lascia 1 cr per ogni altro slot
-    else if(spendShare>.50 && openSlots>2)smartScore-=7;
-    else if(spendShare>.40 && openSlots>2)smartScore-=3;
-    if(surplusAfter>=2)smartScore+=2;                          // margine utile per i prossimi slot
-
-    return {...x,px,planCost,leftAfter,surplusAfter,efficiency,smartScore};
-  }).filter(Boolean);
-
-  finalists.sort((a,b)=>b.smartScore-a.smartScore || b.q-a.q || a.planCost-b.planCost);
-  const cheapest=finalists.length?Math.min(...finalists.map(x=>x.planCost)):0;
-  const bestQ=finalists.length?Math.max(...finalists.map(x=>x.q)):0;
-
-  finalists.forEach((x,n)=>{
-    if(openSlots>1 && x.planCost===hardCap)x.smartLabel='ALL-IN';
-    else if(n===0)x.smartLabel='MIGLIOR EQUILIBRIO';
-    else if(x.q>=bestQ-2 && x.planCost>cheapest)x.smartLabel='UPGRADE QUALITÀ';
-    else if(x.planCost===cheapest)x.smartLabel='RISPARMIO';
-    else x.smartLabel='ALTERNATIVA';
-  });
-
-  const out=finalists.slice(0,limit);
-  DS_FAST_CACHE.set(key,out);
-  return out;
-}
-
-function dsFastOperationalPlan(){
-  const key='plan|'+dsFastStateKey();
-  if(DS_FAST_CACHE.has(key))return DS_FAST_CACHE.get(key);
-
-  const cash=Math.max(0,budget(state.me));
-  const slots=Math.max(0,remainingRosterSlots(state.me));
-  const allowed=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
-
-  const open=allowed.map(role=>{
-    const owned=roleCount(state.me,role);
-    const missing=Math.max(0,LIMITS[role]-owned);
-    let strength=0;
-    try{strength=strongRoleStatus(role).score||0}catch(e){
-      strength=Math.round((owned/Math.max(1,LIMITS[role]))*99);
-    }
-    return {role,owned,missing,strength};
-  }).filter(x=>x.missing>0);
-
-  open.sort((a,b)=>{
-    const au=(a.missing/Math.max(1,LIMITS[a.role]))*70 + (99-a.strength)*.30;
-    const bu=(b.missing/Math.max(1,LIMITS[b.role]))*70 + (99-b.strength)*.30;
-    return bu-au;
-  });
-
-  const critical=open[0]||null;
-  if(!critical){
-    const out={cash,slots,critical:null,items:[],reserve:0,spendable:cash};
-    DS_FAST_CACHE.set(key,out); return out;
-  }
-
-  const role=critical.role;
-  const owned=critical.owned;
-  const missing=critical.missing;
-  const otherSlots=Math.max(0,slots-missing);
-
-  // Protegge 1 cr per ogni slot fuori dal reparto e per i successivi slot del reparto.
-  const roleCash=Math.max(missing, cash-otherSlots);
-
-  const specs=[];
-  for(let i=1;i<=missing;i++){
-    const position=owned+i;
-    const spec=dsFastSafe(()=>slotSpec(role,position),null) || {label:'SLOT',intent:'VALORE'};
-    specs.push({position,spec});
-  }
-
-  const weights=specs.map((x,i)=>{
-    const l=String(x.spec.label||'').toUpperCase();
-    let w=/TOP|QUALIT|BONUS|TITOLARE|PREMIUM/.test(l)?4.2:
-          /ROTAZIONE|SECONDA/.test(l)?2.1:
-          /PROFONDIT/.test(l)?1.35:1.0;
-    return w*Math.max(.7,1-i*.08);
-  });
-
-  let surplus=Math.max(0,roleCash-missing);
-  const sum=weights.reduce((a,b)=>a+b,0)||1;
-  let alloc=weights.map(w=>1+Math.floor(surplus*w/sum));
-  let rem=Math.max(0,roleCash-alloc.reduce((a,b)=>a+b,0));
-  for(let i=0;rem>0;i=(i+1)%alloc.length){alloc[i]++;rem--;}
-
-  const items=specs.map((x,i)=>{
-    const target=alloc[i];
-    return {
-      role,position:x.position,
-      label:String(x.spec.label||'SLOT').replace(new RegExp('^'+role+'\\d+\\s*'),''),
-      intent:x.spec.intent||'VALORE',
-      target,
-      low:Math.max(1,Math.floor(target*.75)),
-      high:Math.max(target,Math.ceil(target*1.25))
-    };
-  });
-
-  const reserve=Math.max(0,slots-1);
-  const out={cash,slots,critical,items,reserve,spendable:Math.max(0,cash-reserve),roleCash};
-  DS_FAST_CACHE.set(key,out);
-  return out;
-}
-
-function renderDynamicRosterPlanFast(){
-  const el=document.getElementById('dashboardDynamicPlan');
-  if(!el)return;
-  const op=dsFastOperationalPlan();
-  const count=roster(state.me).length;
-
-  if(!op.critical){
+    const s=dynamicPlanStatus(),targets=dynamicPlanTargets(3);
+    const mode=isInitialMarket()?`BLOCCO ${initialBlockLabel()}`:`${activeMarketSession().name} · LIBERO`;
     el.innerHTML=`<div class="dynamicPlanCard">
-      <div class="dynamicPlanHead"><div><div class="dynamicPlanTitle">Piano Rosa · completa</div>
-      <div class="dynamicPlanSub">${count}/25 giocatori · ${op.cash} cr rimasti</div></div>
-      <div class="dynamicPlanStatus good">🟢 COMPLETA</div></div>
+      <div class="dynamicPlanHead"><div><div class="dynamicPlanTitle">Piano Rosa · aggiornamento live</div>
+      <div class="dynamicPlanSub">${mode} · ${roster(state.me).length}/25 giocatori · ${s.cash} cr rimasti</div></div>
+      <div class="dynamicPlanStatus ${s.level}">${s.label}</div></div>
+      ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(); const d=ap.delta.delta; return `
+      <div class="budgetEquation">
+        <div><span>P + D</span><b>${ap.pd}</b></div><strong>+</strong>
+        <div><span>C + A</span><b>${ap.ca}</b></div><strong>+</strong>
+        <div><span>RISERVA MINIMA</span><b>${ap.safety}</b></div><strong>+</strong>
+        <div class="treasury"><span>TESORETTO AI</span><b>${ap.treasury.value}</b></div><strong>=</strong>
+        <div class="total"><span>TOTALE</span><b>${ap.totalAllocated}</b></div>
+      </div>
+      <div class="dynamicPlanMetrics">
+        <div class="dynamicPlanMetric"><span>SPENDIBILE BLOCCO ATTUALE</span><b>${s.spendable}</b></div>
+        <div class="dynamicPlanMetric"><span>PROTETTO BLOCCHI FUTURI</span><b>${s.futureBudget}</b></div>
+        <div class="dynamicPlanMetric"><span>MEDIA / SLOT</span><b>${s.avg}</b></div>
+      </div>
+      <div class="dynamicBudgetLive">
+        <div><span>VS PIANO</span><b class="${d>=0?'pos':'neg'}">${d>=0?'+':''}${d} cr</b><small>${d>0?'RISPARMIO':d<0?'EXTRA SPESA':'IN LINEA'}</small></div>
+        ${['P','D','C','A'].map(r=>`<div><span>${r} DISPONIBILE</span><b>${ap.roles[r].allocation}</b><small>${ap.roles[r].temp.label}${ap.roles[r].temp.pct?` ${ap.roles[r].temp.pct>0?'+':''}${ap.roles[r].temp.pct}%`:''}</small></div>`).join('')}
+      </div>`})()}
+      ${(()=>{const ap=s.adaptive||adaptiveBudgetPlan(),use=treasuryBestUse();return ap.treasury.value?`
+      <div class="treasuryBox"><div><span>💰 TESORETTO AI</span><b>${ap.treasury.value} cr</b></div><p>${esc(use.text)}</p></div>`:''})()}
+      <div class="dynamicPlanGoal"><div class="dynamicPlanGoalTitle">🎯 COSA FARE ADESSO</div>
+      <div class="dynamicPlanGoalText">${roleCount(state.me,'P')<3?`🧤 <b>PORTIERI · ${esc(keeperBlockLabel())}</b> · ${keeperBlockLocked(state.me)?`P2/P3 vincolati alla stessa squadra del P1.`:`Il P1 determina automaticamente la squadra di P2 e P3.`}<br>`:''}${s.reason} Budget futuro C+A: <b>${s.futureBudget} cr</b> · Riserva minima: <b>${(s.adaptive||adaptiveBudgetPlan()).safety} cr</b>.</div></div>
+      <div class="dynamicPlanTargets">${targets.map((x,n)=>`<div class="dynamicPlanTarget" onclick="openAIForPlayer(${x.index})">
+        <div class="dynamicPlanRank">${n+1}</div><div><div class="dynamicPlanName">${esc(x.p.name)}</div>
+        <div class="dynamicPlanMeta">${x._dynSpec.label} · ${x._dynSpec.intent} · ${strongRosterTargetReason(x)}</div></div>
+        <div class="dynamicPlanPrice">${x._dynPx.ideal}<small>MAX PIANO ${x._dynCap}</small></div></div>`).join('')||'<div class="empty">Nessun obiettivo aperto nel mercato corrente.</div>'}</div>
+      <div class="dynamicPlanSave">💡 ${dynamicPlanSavingTip(targets)}</div>
     </div>`;
-    return;
+  }catch(err){
+    console.error('Piano Rosa Dinamico AI',err);
+    const t=aiTreasury();
+    el.innerHTML=`<div class="dynamicPlanCard"><div class="dynamicPlanTitle">Piano Rosa · recupero sicuro</div>
+      <div class="dynamicPlanSub">${roster(state.me).length}/25 giocatori · ${budget(state.me)} cr rimasti</div>
+      <div class="treasuryBox"><div><span>💰 TESORETTO AI</span><b>${t.value} cr</b></div>
+      <p>Il budget è salvo. Ricalcolo strategico temporaneamente semplificato.</p></div></div>`;
   }
-
-  const c=op.critical;
-  const first=op.items[0];
-  el.innerHTML=`<div class="dynamicPlanCard">
-    <div class="dynamicPlanHead">
-      <div><div class="dynamicPlanTitle">Piano Rosa · aggiornamento live</div>
-      <div class="dynamicPlanSub">${count}/25 giocatori · ${op.cash} cr rimasti · ${op.slots} slot aperti</div></div>
-      <div class="dynamicPlanStatus ${op.cash/op.slots<3?'bad':'warn'}">${op.cash/op.slots<3?'🔴 RECUPERO ROSA':'🟡 GESTIONE ATTIVA'}</div>
-    </div>
-
-    <div class="budgetEquation">
-      <div><span>SPENDIBILE ORA</span><b>${op.spendable}</b></div><strong>+</strong>
-      <div><span>RISERVA SLOT</span><b>${op.reserve}</b></div><strong>=</strong>
-      <div class="total"><span>TOTALE</span><b>${op.cash}</b></div>
-    </div>
-
-    <div class="dynamicAction">
-      <b>🎯 COSA FARE ADESSO</b>
-      <div>Priorità: <strong>${roleName(c.role)}</strong> · ${c.owned}/${LIMITS[c.role]} coperti · forza ${c.strength}/99.
-      ${first?`Prossimo slot <strong>${first.role}${first.position} ${esc(first.label)}</strong>: obiettivo ${first.target} cr, fascia ${first.low}-${first.high}.`:''}</div>
-    </div>
-
-    <div class="slotPlanBox" style="margin-top:12px">
-      <div class="slotPlanHead"><div class="slotPlanTitle">🎯 PIANO OPERATIVO · ${roleName(c.role).toUpperCase()}</div>
-      <div class="slotPlanBudget">${op.roleCash} cr reparto</div></div>
-      <div class="slotPlanGrid">
-        ${op.items.map((x,i)=>`<div class="slotPlanItem ${i===0?'active':''}">
-          <span>${x.role}${x.position} · ${i===0?'PRIORITÀ ADESSO':'PROSSIMO SLOT'}</span>
-          <b>${esc(x.label)} · ${x.target} cr</b>
-          <span>FASCIA ${x.low}-${x.high} · ${esc(x.intent)}</span>
-        </div>`).join('')}
-      </div>
-      <div class="playerMetaLine" style="margin-top:8px">🛡️ Ricalcolo automatico dopo ogni acquisto · almeno 1 cr protetto per ciascun altro slot.</div>
-    </div>
-  </div>`;
 }
-
-function renderStrongRosterAIFast(){
-  const el=document.getElementById('dashboardStrongRoster');
-  if(!el)return;
-
-  const count=roster(state.me).length, cash=budget(state.me), slots=remainingRosterSlots(state.me);
-  const plan=activeFormationPlan(state.me);
-  const roleMap={};
-  ['P','D','C','A'].forEach(r=>{
-    try{roleMap[r]=strongRoleStatus(r)}
-    catch(e){
-      const n=roleCount(state.me,r);
-      roleMap[r]={score:Math.round((n/Math.max(1,LIMITS[r]))*99),count:n,profiles:[]};
-    }
-  });
-
-  const completed=['P','D','C','A'].filter(r=>roleCount(state.me,r)>=LIMITS[r]);
-  const scores=['P','D','C','A'].map(r=>roleMap[r].score||0);
-  const overall=Math.round(scores.reduce((a,b)=>a+b,0)/4);
-
-  let bonus='—', discipline='—', continuity='—';
-  try{
-    const all=Object.values(roleMap).flatMap(x=>x.profiles||[]);
-    if(all.length){
-      bonus=Math.round(all.reduce((s,x)=>s+(x.bonus||0),0)/all.length);
-      discipline=Math.round(all.reduce((s,x)=>s+(x.discipline||0),0)/all.length);
-      continuity=Math.round(all.reduce((s,x)=>s+(x.continuity||0),0)/all.length);
-    }
-  }catch(e){}
-
-  const op=dsFastOperationalPlan();
-  const targetRole=op.critical?.role;
-  const targets=targetRole?dsFastCandidates(targetRole,5):[];
-
-  el.innerHTML=`<div class="rosaForteCard">
-    <div class="rosaForteHead">
-      <div><div class="rosaForteTitle">Progetto Rosa · ${esc(plan.name)}</div>
-      <div class="rosaForteSub">${count}/25 giocatori · ${cash} crediti rimasti</div></div>
-      <div class="rosaForteScore"><b>${overall}</b><span>FORZA ROSA /99</span></div>
-    </div>
-    <div class="rosaForteProgress"><i style="width:${overall}%"></i></div>
-
-    <div class="rosaForteRoles">
-      ${['P','D','C','A'].map(r=>`<div class="rosaForteMetric"><span>${r}</span><b>${roleMap[r].score||0}/99</b></div>`).join('')}
-    </div>
-
-    <div class="rosaForteExtra">
-      <div class="rosaForteMetric"><span>BONUS</span><b>${bonus}</b></div>
-      <div class="rosaForteMetric"><span>ANTI-MALUS</span><b>${discipline}</b></div>
-      <div class="rosaForteMetric"><span>CONTINUITÀ</span><b>${continuity}</b></div>
-      <div class="rosaForteMetric"><span>COMPLETAMENTO</span><b>${Math.round(count/25*100)}%</b></div>
-    </div>
-
-    <div class="rosaForteBlock"><b>🧠 Lettura AI:</b>
-      ${targetRole?`Priorità ${roleName(targetRole)}: ${roleCount(state.me,targetRole)}/${LIMITS[targetRole]} coperti. Budget ${cash} cr, ${slots} slot aperti. Il motore ordina solo profili acquistabili valutando qualità, prezzo e crediti necessari per completare gli altri slot.`:'Rosa completa.'}
-    </div>
-
-    ${targets.length?`
-      <div class="rosaForteTargetsTitle">🎯 MIGLIORI PROFILI SOSTENIBILI ADESSO</div>
-      ${targets.map((x,n)=>`<div class="rosaForteTarget" onclick="openAIForPlayer(${x.index})">
-        <div class="rosaForteTargetRank">${n+1}</div>
-        <div>
-          <div class="rosaForteTargetName">${isFavorite(x.p.name)?'⭐ ':''}${esc(x.p.name)}
-            <span class="strongScore ${strongScoreClass(x.q)}">${x.q}/99</span></div>
-          <div class="rosaForteTargetMeta">${x.p.role} · ${esc(x.p.team)} · FVM ${x.p.fvm} · QI ${x.p.qi}</div>
-          <span class="rosaForteSlot">${esc(x.smartLabel||'ALTERNATIVA')} · ${op.items[0]?esc(op.items[0].label):'PROSSIMO SLOT'}</span>
-        </div>
-        <div class="rosaForteTargetPrice">${x.px.reserveBlocked?'LASCIA':`${x.px.low}-${x.px.maxRec}`}<small>MIN ${x.px.low} · IDEALE ${x.px.ideal} · MAX RANGE ${x.px.high} · NON OLTRE ${x.px.maxRec}</small></div>
-      </div>`).join('')}
-    `:''}
-  </div>`;
-}
-
-function renderStrategy40Fast(){
-  const el=document.getElementById('dashboardStrategy40');
-  if(!el)return;
-
-  const op=dsFastOperationalPlan();
-  const cash=budget(state.me), slots=remainingRosterSlots(state.me);
-  const rows=['P','D','C','A'].map(r=>{
-    const owned=roleCount(state.me,r);
-    const missing=Math.max(0,LIMITS[r]-owned);
-    let score=0;
-    try{score=strongRoleStatus(r).score||0}catch(e){score=Math.round((owned/LIMITS[r])*99)}
-    return {r,owned,missing,score};
-  });
-
-  const allowed=isInitialMarket()?initialBlockRoles():['P','D','C','A'];
-  const active=rows.filter(x=>x.missing>0&&allowed.includes(x.r));
-  active.sort((a,b)=>{
-    const ax=(a.missing/LIMITS[a.r])*65+(99-a.score)*.35;
-    const bx=(b.missing/LIMITS[b.r])*65+(99-b.score)*.35;
-    return bx-ax;
-  });
-
-  const first=active[0]||null;
-  const candidates=first?dsFastCandidates(first.r,3):[];
-
-  el.innerHTML=`<div class="strategy40">
-    <div class="strategy40Head">
-      <div>
-        <div class="strategy40Title">${first?`Priorità attuale: ${roleName(first.r)}`:'Rosa completata'}</div>
-        <div class="strategy40Text">${first?`Mancano ${first.missing} slot. Forza reparto ${first.score}/99. Con ${cash} cr e ${slots} posti aperti, il D.S. protegge ${Math.max(0,slots-1)} cr e concentra il surplus sul prossimo slot di qualità.`:'Nessun altro acquisto necessario.'}</div>
-      </div>
-      <div class="strategy40Badge">${esc(activeFormationPlan(state.me).name)}</div>
-    </div>
-
-    <div class="strategy40Roles">
-      ${rows.map(x=>`<div class="strategy40Role ${first&&x.r===first.r?'hot':''}">
-        <span>${x.r}</span><b>${x.missing?x.score:'✓'}</b><em>${x.missing?`${x.missing} slot · ${x.score}/99`:'completo'}</em>
-      </div>`).join('')}
-    </div>
-
-    ${op.items.length?`<div class="strategy40Targets">
-      <div class="strategy40Target">
-        <div><div class="strategy40TargetName">PROSSIMO SLOT · ${op.items[0].role}${op.items[0].position} ${esc(op.items[0].label)}</div>
-        <div class="strategy40TargetMeta">Obiettivo ${op.items[0].target} cr · fascia ${op.items[0].low}-${op.items[0].high} · ${esc(op.items[0].intent)}</div></div>
-        <div class="strategy40TargetPrice">${op.items[0].target} cr</div>
-      </div>
-    </div>`:''}
-
-    ${candidates.length?`<div class="strategy40Targets">
-      ${candidates.map((x,n)=>`<div class="strategy40Target" onclick="openAIForPlayer(${x.index})">
-        <div><div class="strategy40TargetName">${n+1}. ${esc(x.p.name)}</div>
-        <div class="strategy40TargetMeta">${esc(x.smartLabel||'ALTERNATIVA')} · score ${x.q}/99 · FVM ${x.p.fvm} · QI ${x.p.qi}</div></div>
-        <div class="strategy40TargetPrice">${x.px.reserveBlocked?'LASCIA':`${x.px.low}-${x.px.maxRec} cr`}<small style="display:block;font-size:9px;color:var(--muted);margin-top:3px">MIN ${x.px.low} · IDEALE ${x.px.ideal} · MAX ${x.px.high} · NON OLTRE ${x.px.maxRec}</small></div>
-      </div>`).join('')}
-    </div>`:''}
-
-    <div class="rosaForteWarning">⚡ Motore D.S. Fast: pre-filtra l'archivio e applica l'AI completa solo ai migliori candidati. Tab rapide senza perdere piano, forza rosa e strategia.</div>
-  </div>`;
-}
-function renderStrongRosterAIFull(){
+function renderStrongRosterAI(){
   const el=document.getElementById('dashboardStrongRoster');
   if(!el)return;
   const g=strongRosterGlobal();
@@ -8159,8 +7711,7 @@ function renderStrongRosterAIFull(){
         <div class="rosaForteMetric"><span>COMPLETAMENTO</span><b>${Math.round(g.completion*100)}%</b></div>
       </div>
 
-      <div class="rosaForteBlock"><b>🧠 Lettura AI:</b> ${dsOperationalVerdict(g)}</div>
-      ${renderDsOperationalPlan()}
+      <div class="rosaForteBlock"><b>🧠 Lettura AI:</b> ${strongRosterVerdict(g)}</div>
 
       <div class="slotPlanBox">
         <div class="slotPlanHead">
@@ -8215,9 +7766,6 @@ ${x._favoriteAlts.length?`<div class="favAiAlts fav675Alts"><b>Alternative</b><d
       </div>
     </div>`;
 }
-
-
-function renderStrongRosterAI(){ return renderStrongRosterAIFast(); }
 
 function directorRoleSnapshot(role){
   const owned=roleCount(state.me,role);
@@ -8393,34 +7941,40 @@ function renderDashboardControlRaw(){
 
   const move=document.getElementById('dashboardNextMove');
   if(move){
-    const candidates=PLAYER_ARCHIVE
-      .map((p,index)=>buyNowCandidate(index))
-      .filter(Boolean)
-      .sort((a,b)=>b.score-a.score || b.fit-a.fit || b.ai.score-a.ai.score);
-    const x=candidates[0];
+    // V70.8.3 - STATO ROSA COMPLETA (isolato dalla V73.12):
+    // quando la rosa ha raggiunto tutti i 25 slot, non calcolare altri target AI.
+    if(r.length>=total){
+      move.innerHTML='<div class="empty"><b>✅ Rosa completata</b><br>Asta completata: non ci sono altri acquisti da pianificare.</div>';
+    }else{
+      const candidates=PLAYER_ARCHIVE
+        .map((p,index)=>buyNowCandidate(index))
+        .filter(Boolean)
+        .sort((a,b)=>b.score-a.score || b.fit-a.fit || b.ai.score-a.ai.score);
+      const x=candidates[0];
 
-    move.innerHTML=x?`
-      <div class="dashMove dashAiHero">
-        <div style="margin-bottom:6px"><span class="ai2Chip">AI ASTA 2.0 · ${activeFormationPlan().name}</span></div>
-        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-          <div>
-            <div class="dashMoveName">${esc(x.p.name)}</div>
-            <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+      move.innerHTML=x?`
+        <div class="dashMove dashAiHero">
+          <div style="margin-bottom:6px"><span class="ai2Chip">AI ASTA 2.0 · ${activeFormationPlan().name}</span></div>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+            <div>
+              <div class="dashMoveName">${esc(x.p.name)}</div>
+              <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+            </div>
+            <span class="tag good">${x.score}/99</span>
           </div>
-          <span class="tag good">${x.score}/99</span>
-        </div>
-        <div class="dashMoveWhy">${buyNowReason(x)}</div>
-        <div class="dashMoveMetrics">
-          <div class="dashMoveMetric"><span>IDEALE</span><b>${x.px.ideal}</b></div>
-          <div class="dashMoveMetric"><span>RANGE</span><b>${x.px.low}-${x.px.high}</b></div>
-          <div class="dashMoveMetric"><span>NON OLTRE</span><b>${x.px.maxRec}</b></div>
-        </div>
-        <div class="dashMoveActions">
-          <button class="secondary" onclick="openAIForPlayer(${x.index})">🤖 ANALIZZA</button>
-          <button class="primary" style="position:static" onclick="buyFromListone(${x.index})">ASTA</button>
-        </div>
-      </div>`
-      :`<div class="empty">Nessun consiglio disponibile: la rosa potrebbe essere completa.</div>`;
+          <div class="dashMoveWhy">${buyNowReason(x)}</div>
+          <div class="dashMoveMetrics">
+            <div class="dashMoveMetric"><span>IDEALE</span><b>${x.px.ideal}</b></div>
+            <div class="dashMoveMetric"><span>RANGE</span><b>${x.px.low}-${x.px.high}</b></div>
+            <div class="dashMoveMetric"><span>NON OLTRE</span><b>${x.px.maxRec}</b></div>
+          </div>
+          <div class="dashMoveActions">
+            <button class="secondary" onclick="openAIForPlayer(${x.index})">🤖 ANALIZZA</button>
+            <button class="primary" style="position:static" onclick="buyFromListone(${x.index})">ASTA</button>
+          </div>
+        </div>`
+        :`<div class="empty">Nessun consiglio disponibile: la rosa potrebbe essere completa.</div>`;
+    }
   }
 
   try{
@@ -8478,7 +8032,11 @@ function renderDashboardControl(){
   if(team)team.textContent=state.managers[me]||'—';
 
   const move=document.getElementById('dashboardNextMove');
-  if(move && !move.dataset.ready){
+  const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
+  if(move && roster(me).length>=total){
+    move.innerHTML='<div class="empty"><b>✅ Rosa completata</b><br>Asta completata: non ci sono altri acquisti da pianificare.</div>';
+    move.dataset.ready='1';
+  }else if(move && !move.dataset.ready){
     move.innerHTML='<div class="empty" style="padding:12px">🤖 Aggiorno il consiglio AI…</div>';
   }
 
@@ -8492,6 +8050,8 @@ function renderDashboardControl(){
 
 let ASTA_LIVE_PLAYER=-1;
 let ASTA_LIVE_LAST_PRICE=null;
+// V70.8.7 - memorizza se REGISTRA ESITO arriva davvero da Asta Live.
+let ASTA_LIVE_OUTCOME_SOURCE=null;
 
 
 function renderAstaLive(){
@@ -8526,62 +8086,25 @@ function renderAstaLiveSuggestions(){
 }
 function selectAstaLivePlayer(index){
   const chosen=PLAYER_ARCHIVE[index];
-  if(!chosen)return;
-
-  if(chosen.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(chosen,state.me)){
+  if(chosen && chosen.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(chosen,state.me)){
     alert(`Blocco portieri ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`);
     return;
   }
-  if(!marketRoleAllowed(chosen.role)){
+  if(chosen && !marketRoleAllowed(chosen.role)){
     alert(`Asta iniziale: blocco ${initialBlockLabel()}. Puoi chiamare ${allowedInitialRoleText()}.`);
     return;
   }
-
-  // V72.5 - selezione persistente: il tap deve "agganciare" subito il giocatore.
   ASTA_LIVE_PLAYER=index;
-
   const input=document.getElementById('astaLiveSearch');
-  if(input)input.value=chosen.name;
-
+  if(input)input.value='';
   const sug=document.getElementById('astaLiveSuggestions');
-  if(sug){
-    sug.classList.remove('show');
-    sug.innerHTML='';
-  }
-
-  // Mostra immediatamente una card leggera, prima dei calcoli AI.
-  const selected=document.getElementById('astaLiveSelected');
-  const decision=document.getElementById('astaLiveDecision');
-  if(selected){
-    selected.innerHTML=`
-      <div class="astaSelectedCard">
-        <div>
-          <div class="astaSelectedName">${esc(chosen.name)}</div>
-          <div class="astaSelectedMeta">${chosen.role} · ${esc(chosen.team)} · QI ${chosen.qi} · FVM ${chosen.fvm}</div>
-        </div>
-        <button class="astaClear" onclick="clearAstaLivePlayer()">✕</button>
-      </div>`;
-  }
-  if(decision){
-    decision.innerHTML='<div class="empty">🤖 Carico Asta Live…</div>';
-  }
-
-  // V72.7: nessuna coda asincrona che possa lasciare Asta Live bloccata.
-  // Render sincrono e protetto: in caso di errore l'interfaccia torna subito utilizzabile.
-  try{
-    renderAstaLiveSelected();
-  }catch(err){
-    console.error('Asta Live selection',err);
-    if(decision){
-      decision.innerHTML=`<div class="empty">⚠️ Analisi non disponibile per ${esc(chosen.name)}. La selezione resta attiva e puoi cercare subito un altro giocatore.</div>`;
-    }
-  }
+  if(sug)sug.classList.remove('show');
+  renderAstaLiveSelected();
 }
 function clearAstaLivePlayer(){
   ASTA_LIVE_PLAYER=-1;
-  const input=document.getElementById('astaLiveSearch');
-  if(input)input.value='';
   renderAstaLiveSelected();
+  const input=document.getElementById('astaLiveSearch');
   if(input)input.focus();
 }
 
@@ -8607,14 +8130,10 @@ function renderRivalLiveBox(playerIndex,currentBid=0){
 
 function refreshRivalLiveBox(){
   if(ASTA_LIVE_PLAYER==null)return;
-  const bid=currentAstaLiveBid();
+  const input=document.getElementById('astaLivePrice');
+  const bid=Math.max(0,Number(input?.value)||0);
   const box=document.getElementById('rivalLiveDynamicBox');
-  if(box){
-    box.outerHTML=renderRivalLiveBox(ASTA_LIVE_PLAYER,bid);
-    return;
-  }
-  const lazy=document.getElementById('astaLiveRivalLazy');
-  if(lazy)lazy.innerHTML=renderRivalLiveBox(ASTA_LIVE_PLAYER,bid);
+  if(box)box.outerHTML=renderRivalLiveBox(ASTA_LIVE_PLAYER,bid);
 }
 
 function simulatedRosterImpact(playerIndex,price){
@@ -8692,25 +8211,11 @@ function favoriteLiveHierarchy(playerIndex){
 function liveAuctionAI(playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
   const base=aiPlayerAnalysis(playerIndex,state.me);
-  if(!base||!p)return null;
-
-  // V72.8 - FIX MIRATO PROFILI PREFERITI
-  // Adzic/Mastantuono entrano nella gerarchia "preferiti" (stella), Messias no.
-  // Se quella sola gerarchia fallisce, Asta Live deve continuare col motore base
-  // invece di rendere indisponibile tutta l'analisi.
-  let hierarchy=null;
-  try{
-    hierarchy=favoriteLiveHierarchy(playerIndex);
-  }catch(err){
-    console.warn('[V72.8] gerarchia preferiti ignorata per',p.name,err);
-    hierarchy=null;
-  }
-
+  if(!base)return null;
+  const hierarchy=favoriteLiveHierarchy(playerIndex);
   if(!hierarchy)return enforceAuctionBaseFloor({...base,_favoriteHierarchy:null},p);
 
-  const px=hierarchy.me && hierarchy.me._favoritePx;
-  if(!px)return enforceAuctionBaseFloor({...base,_favoriteHierarchy:null},p);
-
+  const px=hierarchy.me._favoritePx;
   return enforceAuctionBaseFloor({
     ...base,
     low:px.low,
@@ -9053,55 +8558,17 @@ function liveSustainableCap(playerIndex,rawMax){
   if(!p)return 0;
 
   const safe=Math.max(0,safeMaxBid(state.me));
-  const dsEnvEarly=dsLiveSlotEnvelope(playerIndex);
-  const isFinalRosterSlotEarly=remainingRosterSlots(state.me)===1;
-  const rawStrategicMax = isFinalRosterSlotEarly && dsEnvEarly
-    ? Math.max(Number(rawMax)||0, Number(dsEnvEarly.ideal)||0)
-    : (Number(rawMax)||0);
-  const baseStop=Math.max(0,Math.min(rawStrategicMax,safe));
+  const baseStop=Math.max(0,Math.min(Number(rawMax)||0,safe));
   if(baseStop<=0)return 0;
 
-  // V71.4 - Il Piano D.S. è la base economica dello slot corrente.
-  // Asta Live può stringere il tetto per un profilo debole, ma non deve
-  // annullare il target del Piano per un profilo realmente adatto allo slot.
-  const dsEnv=dsLiveSlotEnvelope(playerIndex);
-  const adaptiveCap=adaptiveSlotCap(p.role,baseStop,null);
-  let slotCap=adaptiveCap;
-
-  if(dsEnv){
-    const a0=liveAuctionAI(playerIndex);
-    const fitScore=Math.max(
-      Number(a0?._slotScore)||0,
-      Number(a0?.score)||0,
-      Number(a0?.fit)||0
-    );
-
-    // V73.9 - FIX ULTIMO SLOT:
-    // quando manca UN SOLO giocatore alla rosa non esistono più slot successivi
-    // da proteggere. Asta Live deve quindi rispettare almeno l'obiettivo economico
-    // deciso dal Piano D.S., senza trasformare 1 cr in "ULTIMO CREDITO" se il
-    // Piano ha ancora 2 cr realmente spendibili.
-    const isFinalRosterSlot = remainingRosterSlots(state.me)===1;
-    const dsTarget = Math.max(1, Number(dsEnv.ideal)||1);
-    const dsHigh = Math.max(dsTarget, Number(dsEnv.maxRec)||dsTarget);
-
-    // Profilo adeguato: almeno il target D.S.; profilo forte: può usare la fascia MAX.
-    // Nell'ULTIMO slot il target D.S. è sempre raggiungibile entro il budget reale.
-    const qualifiesTarget=isFinalRosterSlot || fitScore>=55 || baseStop>=dsTarget;
-    const qualifiesHigh=fitScore>=72;
-
-    if(qualifiesTarget)
-      slotCap=Math.max(slotCap,Math.min(safe, isFinalRosterSlot ? dsTarget : Math.min(baseStop,dsTarget)));
-    if(qualifiesHigh)
-      slotCap=Math.max(slotCap,Math.min(baseStop,dsHigh));
-
-    // Ultimo slot: il tetto non può essere inferiore al target del Piano,
-    // ma resta SEMPRE limitato ai crediti realmente disponibili.
-    if(isFinalRosterSlot)
-      slotCap=Math.max(slotCap,Math.min(safe,dsTarget));
-  }
-
-  const normalStop=Math.max(0,Math.min(baseStop,slotCap));
+  // V70.8.1 - FIX ULTIMO SLOT (isolato, senza Piano Operativo V70.9+):
+  // con un solo posto rosa rimasto non esistono altri slot da proteggere.
+  // Il tetto live puo quindi usare tutto il MAX SICURA, sempre entro il valore
+  // strategico del giocatore (rawMax) e i crediti realmente disponibili.
+  const isFinalRosterSlot=remainingRosterSlots(state.me)===1;
+  const normalStop=isFinalRosterSlot
+    ? baseStop
+    : Math.max(0,Math.min(baseStop,adaptiveSlotCap(p.role,baseStop,null)));
   const treasury=treasuryCanBoost(playerIndex);
   let cap=treasury.allow>0
     ? Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow))
@@ -9122,7 +8589,7 @@ function liveSustainableCap(playerIndex,rawMax){
   const base=auctionBasePrice(p);
   // V70.8: la riserva di completamento è già incorporata nei cap.
   // Evitiamo una seconda penalizzazione automatica che rendeva l'AI troppo conservativa.
-  if(status.level==='bad' && cap>base && dsGlobalBalance().avg<3 && !dsEnv) cap-=1;
+  if(status.level==='bad' && cap>base && dsGlobalBalance().avg<3 && !isFinalRosterSlot) cap-=1;
 
   const reserveCap=liveReserveProtectedCap(playerIndex);
   cap=Math.min(cap,reserveCap);
@@ -9151,16 +8618,6 @@ function cachedCalibratedLivePrices(playerIndex){
   return value;
 }
 
-// V71.0 - PONTE DIRETTORE SPORTIVO <-> ASTA LIVE
-function dsLiveSlotEnvelope(playerIndex){
-  const p=PLAYER_ARCHIVE[playerIndex];
-  if(!p)return null;
-  const op=dsOperationalRecoveryPlan();
-  const next=roleCount(state.me,p.role)+1;
-  const item=(op.items||[]).find(x=>x.role===p.role && x.position===next);
-  if(!item)return null;
-  return {low:item.rangeMin,ideal:item.target,high:item.rangeMax,maxRec:item.rangeMax,label:item.label,position:item.position};
-}
 function calibratedLivePrices(playerIndex){
   const a=liveAuctionAI(playerIndex),p=PLAYER_ARCHIVE[playerIndex];
   if(!a||!p)return null;
@@ -9182,17 +8639,6 @@ function calibratedLivePrices(playerIndex){
   const high=Math.max(ideal,Math.round(a.high*mult));
   let maxRec=Math.max(high,Math.min(safe,Math.round(a.maxRec*mult)));
   let out={...a,low,ideal,high,maxRec,market:signal,marketTier:tier,comparableCount:sameTier.count,adjustment:Math.round(adj*100),rivalPressure:pressure};
-  // V71.0: il Piano Operativo diventa una guida reale del Live.
-  // Il valore del giocatore può stringere la fascia; il DS impedisce che il live la ignori.
-  const dsEnv=dsLiveSlotEnvelope(playerIndex);
-  if(dsEnv){
-    out.dsEnvelope=dsEnv;
-    out.low=Math.max(1,Math.min(out.low,dsEnv.low));
-    out.ideal=Math.max(out.low,Math.min(out.ideal,dsEnv.ideal));
-    out.high=Math.max(out.ideal,Math.min(out.high,dsEnv.high));
-    out.maxRec=Math.max(out.high,Math.min(out.maxRec,dsEnv.maxRec));
-  }
-
   // V69.4: per ogni portiere, incluso il P1 non ancora acquistato, riserva SEMPRE
   // le QI minime dei portieri necessari a completare il blocco della stessa squadra.
   if(p.role==='P'){
@@ -9233,26 +8679,13 @@ function calibratedLivePrices(playerIndex){
   // senza violare la riserva minima. Non rialziamo artificialmente il tetto alla QI.
   const officialBase=auctionBasePrice(p);
   if(sustainableCap<officialBase){
-    // V71.0: NON ACQUISTABILE non significa "nessuna valutazione".
-    // Mostriamo sempre la fascia economica teorica/sostenibile e separiamo
-    // la decisione sulla QI corrente (che resta LASCIA).
-    const env=out.dsEnvelope;
-    const cap=Math.max(0,sustainableCap);
-    if(env){
-      out.low=Math.max(1,Math.min(env.low,cap||env.low));
-      out.ideal=Math.max(out.low,Math.min(env.ideal,cap||env.ideal));
-      out.high=Math.max(out.ideal,Math.min(env.high,cap||env.high));
-      out.maxRec=cap;
-    }else{
-      out.low=Math.max(1,Math.min(Number(out.low)||1,cap||1));
-      out.ideal=Math.max(out.low,Math.min(Number(out.ideal)||out.low,cap||out.low));
-      out.high=Math.max(out.ideal,Math.min(Number(out.high)||out.ideal,cap||out.ideal));
-      out.maxRec=cap;
-    }
+    out.low=null;
+    out.ideal=null;
+    out.high=null;
+    out.maxRec=sustainableCap;
     out.officialBase=officialBase;
     out.baseTooHigh=true;
     out.reserveBlocked=true;
-    out.priceInformative=true;
     return out;
   }
 
@@ -9352,8 +8785,8 @@ function liveAuctionDecision5(playerIndex,price){
   const keeperProtection=(p.role==='P')?keeperCandidateReserve(p,state.me):null;
 
   if(a.reserveBlocked && bid>=basePrice){
-    action='LASCIA';level='stop';headline='QI OLTRE IL TETTO SOSTENIBILE';
-    why=`La QI è ${basePrice} cr, mentre il NON OLTRE sostenibile è ${decisionMax} cr. A ${bid} cr devi lasciare: la valutazione economica resta visibile, ma non è un prezzo d'asta raggiungibile senza compromettere il piano rosa.`;
+    action='LASCIA';level='stop';headline='RISERVA MINIMA PROTETTA';
+    why=`A ${bid} cr intaccheresti i crediti necessari per completare gli slot rimanenti. Questo giocatore non è acquistabile alla QI attuale.`;
   }else if(wrongKeeperBlock){
     action='LASCIA';level='stop';headline='FUORI BLOCCO PORTIERI';
     why=`Hai scelto il blocco ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`;
@@ -9369,7 +8802,10 @@ function liveAuctionDecision5(playerIndex,price){
     action='LASCIA';level='stop';headline='OLTRE IL LIMITE STRATEGICO';
     why=`A ${bid} cr non conviene più. Il limite AI aggiornato è ${decisionMax} cr.`;
   }else if(bid===decisionMax){
-    action='ULTIMO CREDITO';level='danger';headline='TETTO ASSOLUTO';
+    // V70.8.2 - Etichetta corretta al tetto: "ULTIMO CREDITO" solo quando
+    // resta davvero 1 credito totale; altrimenti il prezzo è semplicemente il
+    // limite massimo strategico del giocatore. Nessuna soglia viene modificata.
+    action=budget(state.me)===1?'ULTIMO CREDITO':'LIMITE MASSIMO';level='danger';headline='TETTO ASSOLUTO';
     why=`${isLastRoleSlot?`Ultimo slot ${p.role}. `:''}Puoi arrivare a ${stop} cr, ma non fare il rilancio successivo.`;
   }else if(treasury.allow>0&&bid>normalStop&&bid<=stop){
     action='SFORA COL TESORETTO';level='treasury';headline='OBIETTIVO STRATEGICO';
@@ -9418,11 +8854,9 @@ function liveAuctionDecision5(playerIndex,price){
 
   if(overPlan>0&&level!=='stop') why+=` Sei già ${overPlan} cr sopra il piano: prudenza.`;
 
-  // V71.5: il budget critico NON deve trasformare automaticamente MIN/IDEALE
-  // in "ULTIMI CREDITI". Il tetto sostenibile ha già protetto la riserva minima.
-  // "ULTIMO CREDITO" scatta solo sul NON OLTRE (decisionMax).
-  if(impact.budgetLabel==='CRITICO'&&bid>=a.low&&level!=='stop'&&level!=='treasury'&&bid<decisionMax){
-    why+=` ⚠️ Dopo l'acquisto il budget sarà sotto pressione, ma il prezzo resta sostenibile entro il NON OLTRE di ${decisionMax} cr.`;
+  if(impact.budgetLabel==='CRITICO'&&bid>=a.low&&level!=='stop'&&level!=='treasury'){
+    action='ULTIMI CREDITI';level='danger';headline='BUDGET SOTTO PRESSIONE';
+    why+=` Dopo l'acquisto il budget per gli slot rimanenti diventerebbe critico.`;
   }
 
   let alternativeText='';
@@ -9449,27 +8883,12 @@ function liveAuctionDecision5(playerIndex,price){
 }
 
 function auctionSimulatorDecision(playerIndex,price){
-  const bid=Math.max(0,Number(price)||0);
-  if(bid<=0){
-    const p=PLAYER_ARCHIVE[playerIndex];
-    return {
-      action:'IN ATTESA',cls:'wait',
-      why:'Inserisci il prezzo corrente: la simulazione userà la stessa decisione di Asta Live.',
-      stop:0,
-      impact:simulatedRosterImpact(playerIndex,0),
-      rivals:rivalLiveSummary(playerIndex,0),
-      bestAlt:null,budgetPlan:adaptiveBudgetPlan(),decision5:null
-    };
-  }
-
-  // V71.3: UNICA FONTE DI VERITÀ.
-  // COMPRA/LASCIA/ULTIMO CREDITO provengono sempre da liveAuctionDecision5().
-  const d=liveAuctionDecision5(playerIndex,bid);
+  const d=liveAuctionDecision5(playerIndex,price);
   if(!d)return null;
   const cls=d.level==='stop'?'stop':(['wait','danger','treasury'].includes(d.level)?'wait':'buy');
   return {
     action:d.action,cls,why:d.why,stop:d.stop,
-    impact:d.impact,rivals:rivalLiveSummary(playerIndex,bid),
+    impact:d.impact,rivals:rivalLiveSummary(playerIndex,price),
     bestAlt:d.bestAlt,budgetPlan:d.ap,
     decision5:d
   };
@@ -9482,7 +8901,7 @@ function renderAuctionSimulator(playerIndex,price){
   const alt=sim.bestAlt;
   return `<div class="auctionSimBox" id="auctionSimulatorBox">
     <div class="auctionSimHead">
-      <div class="auctionSimTitle">${sim.action==='LASCIA'?'🧠 SE LO COMPRASSI A QUESTO PREZZO':'🧠 DOPO QUESTO ACQUISTO'}</div>
+      <div class="auctionSimTitle">🧠 DOPO QUESTO ACQUISTO</div>
       <div class="auctionSimAction ${sim.cls}">${esc(sim.action)}</div>
     </div>
     <div class="auctionSimGrid">
@@ -9500,15 +8919,9 @@ function renderAuctionSimulator(playerIndex,price){
 
 function refreshAuctionSimulator(){
   if(ASTA_LIVE_PLAYER==null)return;
-  const bid=currentAstaLiveBid();
+  const bid=Math.max(0,Number(document.getElementById('astaLivePrice')?.value)||0);
   const box=document.getElementById('auctionSimulatorBox');
-  if(box){
-    box.outerHTML=renderAuctionSimulator(ASTA_LIVE_PLAYER,bid);
-    return;
-  }
-  // Se il lazy-load non è ancora terminato, aggiorna direttamente il contenitore.
-  const lazy=document.getElementById('astaLiveSimLazy');
-  if(lazy)lazy.innerHTML=renderAuctionSimulator(ASTA_LIVE_PLAYER,bid);
+  if(box)box.outerHTML=renderAuctionSimulator(ASTA_LIVE_PLAYER,bid);
 }
 // V70.6 - LAZY LOAD ASTA LIVE
 function hydrateAstaLiveAlternatives(playerIndex){
@@ -9541,338 +8954,132 @@ function hydrateAstaLiveAlternatives(playerIndex){
   },0);
 }
 
-function currentAstaLiveBid(){
-  return Math.max(0,Number(document.getElementById('astaLivePrice')?.value)||0);
-}
-
 function hydrateAstaLiveSecondary(playerIndex){
-  // V71.3: tutti i moduli leggono SEMPRE lo stesso prezzo corrente.
+  // V70.7: diamo priorità assoluta alla scheda/decisione.
   setTimeout(()=>{
     if(playerIndex!==ASTA_LIVE_PLAYER)return;
     const sim=document.getElementById('astaLiveSimLazy');
-    if(sim)sim.innerHTML=renderAuctionSimulator(playerIndex,currentAstaLiveBid());
+    if(sim)sim.innerHTML=renderAuctionSimulator(playerIndex,0);
   },120);
 
   setTimeout(()=>{
     if(playerIndex!==ASTA_LIVE_PLAYER)return;
     const rv=document.getElementById('astaLiveRivalLazy');
-    if(rv)rv.innerHTML=renderRivalLiveBox(playerIndex,currentAstaLiveBid());
+    if(rv)rv.innerHTML=renderRivalLiveBox(playerIndex,0);
   },220);
 
   setTimeout(()=>hydrateAstaLiveAlternatives(playerIndex),350);
-}
-
-function astaLiveFastPrices(playerIndex){
-  const p=PLAYER_ARCHIVE[playerIndex];
-  if(!p)return null;
-
-  const cash=Math.max(0,budget(state.me));
-  const slots=Math.max(1,remainingRosterSlots(state.me));
-  const isFinalRosterSlot=slots===1;
-  const hardCap=Math.max(0,cash-Math.max(0,slots-1));
-  const base=Math.max(1,auctionBasePrice(p));
-
-  // V73.4 - SOLO TWEAK DEL TETTO INDIVIDUALE
-  // Manteniamo invariati UI, D.S., alternative, tab e motore FAST.
-  let quality=50;
-  try{
-    quality=typeof dsFastPlayerQuality==='function'?dsFastPlayerQuality(p):50;
-  }catch(_e){quality=50;}
-
-  let target=Math.min(base,hardCap);
-  let low=target, high=target, maxRec=target;
-
-  try{
-    const op=typeof dsFastOperationalPlan==='function'?dsFastOperationalPlan():null;
-    const current=op&&op.items&&op.items[0];
-
-    if(current && current.role===p.role){
-      const slotTarget=Math.max(1,Number(current.target)||1);
-      const slotLow=Math.max(1,Number(current.low)||slotTarget);
-      const slotHigh=Math.max(slotTarget,Number(current.high)||slotTarget);
-
-      let playerCap;
-      if(quality<36 && !isFinalRosterSlot){
-        playerCap=Math.max(base,Math.min(slotLow,hardCap));
-      }else{
-        // V73.10: nell'ULTIMO slot rosa non esistono crediti da proteggere per acquisti successivi.
-        // Anche un profilo di completamento sotto 36/99 può quindi raggiungere il target/fascia
-        // del Piano D.S., sempre e soltanto entro i crediti realmente disponibili (hardCap).
-        playerCap=Math.max(base,Math.min(slotHigh,hardCap));
-      }
-
-      maxRec=Math.max(base,Math.min(hardCap,playerCap));
-
-      if(maxRec<=base){
-        low=base;
-        target=base;
-        high=base;
-      }else{
-        low=Math.max(base,Math.min(slotLow,maxRec));
-        target=Math.max(low,Math.min(slotTarget,maxRec));
-        high=maxRec;
-      }
-    }else{
-      const qualityExtra=quality>=58?2:quality>=46?1:0;
-      maxRec=Math.max(base,Math.min(hardCap,base+qualityExtra));
-      low=base;
-      target=Math.max(base,Math.min(maxRec,maxRec>base?maxRec-1:maxRec));
-      high=maxRec;
-    }
-  }catch(err){
-    console.warn('[V73.4] piano D.S. fallback',err);
-    maxRec=Math.max(base,Math.min(hardCap,base));
-    target=low=high=maxRec;
-  }
-
-  if(base>hardCap){
-    return {
-      low:hardCap,ideal:hardCap,high:hardCap,maxRec:hardCap,
-      blocked:true,base,hardCap,quality,finalRosterSlot:isFinalRosterSlot
-    };
-  }
-
-  return {
-    low:Math.max(1,Math.min(low,maxRec)),
-    ideal:Math.max(1,Math.min(target,maxRec)),
-    high:Math.max(1,Math.min(high,maxRec)),
-    maxRec:Math.max(1,maxRec),
-    blocked:false,base,hardCap,quality,finalRosterSlot:isFinalRosterSlot
-  };
-}
-
-function astaLiveFastAction(price,px){
-  price=Math.max(0,Number(price)||0);
-  if(!px)return {action:'LASCIA',cls:'stop'};
-  if(px.blocked || price>px.maxRec)return {action:'LASCIA',cls:'stop'};
-  // V73.10: se l'ultimo slot ha IDEALE coincidente con il tetto reale,
-  // quel prezzo è ancora un acquisto corretto, non un avviso "ULTIMO CREDITO".
-  if(px.finalRosterSlot && price===px.maxRec && price===px.ideal)
-    return {action:'COMPRA',cls:'go'};
-  // V73.11: sola modifica testuale. Se il tetto del giocatore viene raggiunto ma
-  // non siamo davvero all'ultimo credito totale, mostra "LIMITE MASSIMO".
-  // Nessuna soglia o decisione d'asta viene modificata.
-  if(price===px.maxRec)return {action:budget(state.me)===1?'ULTIMO CREDITO':'LIMITE MASSIMO',cls:'wait'};
-  if(price<=px.ideal)return {action:'COMPRA',cls:'go'};
-  if(price<px.maxRec)return {action:`PUOI RILANCIARE · MAX ${px.maxRec}`,cls:'wait'};
-  return {action:'LASCIA',cls:'stop'};
-}
-
-function astaLiveFastAlternatives(playerIndex,limit=3){
-  const p=PLAYER_ARCHIVE[playerIndex];
-  if(!p)return [];
-  const cash=Math.max(0,budget(state.me));
-  const slots=Math.max(1,remainingRosterSlots(state.me));
-  const hardCap=Math.max(0,cash-Math.max(0,slots-1));
-  const rows=[];
-  for(let i=0;i<PLAYER_ARCHIVE.length;i++){
-    if(i===playerIndex)continue;
-    const q=PLAYER_ARCHIVE[i];
-    if(!q || q.role!==p.role)continue;
-    if(purchaseForArchivePlayer(q.name)||isUnavailablePlayer(q.name))continue;
-    const base=Math.max(1,auctionBasePrice(q));
-    if(base>hardCap)continue;
-    const quality=typeof dsFastPlayerQuality==='function'?dsFastPlayerQuality(q):50;
-    rows.push({i,p:q,quality,base});
-  }
-  rows.sort((a,b)=>b.quality-a.quality || a.base-b.base);
-  return rows.slice(0,limit);
-}
-
-function astaLiveFastImpact(playerIndex,price){
-  const p=PLAYER_ARCHIVE[playerIndex];
-  const cash=Math.max(0,budget(state.me));
-  const slots=Math.max(1,remainingRosterSlots(state.me));
-  const after=Math.max(0,cash-price);
-  const slotsAfter=Math.max(0,slots-1);
-  const reserveAfter=slotsAfter;
-  const free=Math.max(0,after-reserveAfter);
-  const quality=typeof dsFastPlayerQuality==='function'?dsFastPlayerQuality(p):50;
-  let label='SICURO';
-  if(slotsAfter>0 && after===reserveAfter)label='CRITICO';
-  else if(slotsAfter>0 && free<=2)label='SOTTO PRESSIONE';
-  return {after,slotsAfter,reserveAfter,free,quality,label};
 }
 
 function renderAstaLiveSelected(){
   const selected=document.getElementById('astaLiveSelected');
   const decision=document.getElementById('astaLiveDecision');
   if(!selected||!decision)return;
-
-  if(ASTA_LIVE_PLAYER==null || ASTA_LIVE_PLAYER<0 || !PLAYER_ARCHIVE[ASTA_LIVE_PLAYER]){
+  const p=PLAYER_ARCHIVE[ASTA_LIVE_PLAYER];
+  if(!p){
     selected.innerHTML='';
     decision.innerHTML='<div class="empty">Cerca il giocatore chiamato per attivare l’assistente Asta Live.</div>';
     return;
   }
+  const a=cachedCalibratedLivePrices(ASTA_LIVE_PLAYER);
+  if(!a){
+    selected.innerHTML='';
+    decision.innerHTML='<div class="empty">Analisi non disponibile.</div>';
+    return;
+  }
 
-  const p=PLAYER_ARCHIVE[ASTA_LIVE_PLAYER];
-  const px=astaLiveFastPrices(ASTA_LIVE_PLAYER);
-  const initialPrice=Math.max(1,Number(px?.base)||auctionBasePrice(p)||1);
-  const v=astaLiveFastAction(initialPrice,px);
-  const impact=astaLiveFastImpact(ASTA_LIVE_PLAYER,initialPrice);
-  const alts=astaLiveFastAlternatives(ASTA_LIVE_PLAYER,3);
+  const safe=safeMaxBid(state.me);
+  const absoluteCap=Math.max(1,Math.min(a.maxRec,safe));
+  const hierarchy=a._favoriteHierarchy;
 
   selected.innerHTML=`
     <div class="astaSelectedCard">
       <div>
         <div class="astaSelectedName">${esc(p.name)}</div>
         <div class="astaSelectedMeta">${p.role} · ${esc(p.team)} · QI ${p.qi} · FVM ${p.fvm} · BASE ASTA ${auctionBasePrice(p)}</div>
+        ${hierarchy?`<div class="liveFavRank ${hierarchy.isFirst?'first':'alt'}">${esc(hierarchy.label)}</div>`:''}
       </div>
       <button class="astaClear" onclick="clearAstaLivePlayer()">✕</button>
     </div>`;
 
-  if(!px){
-    decision.innerHTML=`<div class="empty">⚠️ Analisi non disponibile per ${esc(p.name)}.</div>`;
-    return;
-  }
-
   decision.innerHTML=`
-    <div class="astaLiveDecisionCard">
-      <div class="astaLiveDecisionHead">
+    <div class="astaDecision">
+      <div class="astaDecisionHead">
         <div>
-          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.9</div>
-          <div class="astaLiveDecisionSub">Decisione immediata · prezzo, budget futuro, qualità e alternative.</div>
+          <div class="astaDecisionTitle">🤖 Asta Live AI 7.8</div>
+          <div class="astaDecisionText">${marketModeText()} · prezzi già corretti sul MAX sostenibile reale di rosa, budget, slot, alternative e Tesoretto.</div>
+          ${hierarchy?`<div class="liveFavExplain">${hierarchy.isFirst
+            ? (a.reserveBlocked
+                ? `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}, ma oggi non è acquistabile alla sua QI senza intaccare la riserva minima.`
+                : `È la prima scelta del D.S. AI per ${esc(hierarchy.me._slotSpec.label)}. L'AI può spingersi leggermente di più, ma NON oltre ${absoluteCap} cr.`)
+            : (()=> {
+                const fc=sustainableAlternativeCandidate(hierarchy.firstChoice.index);
+                return fc
+                  ? `${esc(hierarchy.firstChoice.p.name)} è la prima scelta sostenibile per ${esc(hierarchy.me._slotSpec.label)}. Questo giocatore è l'alternativa n.${hierarchy.rank}.`
+                  : `La prima scelta originaria per ${esc(hierarchy.me._slotSpec.label)} non è più sostenibile con il budget attuale. L'AI sta cercando il miglior profilo realmente acquistabile.`;
+              })()}</div>`:''}
         </div>
-        <div class="liveMiniScore">${impact.quality}/99</div>
+        <div style="display:flex;gap:4px;align-items:center">
+          ${(()=>{const sr=strongRosterProfile(ASTA_LIVE_PLAYER,state.me);return sr?`<span class="strongScore ${strongScoreClass(sr.score)}">ROSA ${sr.score}/99</span>`:''})()}
+          <span class="tag good">${a.score}/99</span>
+        </div>
       </div>
 
-      <div class="astaThresholdGrid">
-        <div><span>MIN</span><b>${px.low}</b></div>
-        <div><span>IDEALE</span><b>${px.ideal}</b></div>
-        <div><span>MAX RANGE</span><b>${px.high}</b></div>
-        <div><span>NON OLTRE</span><b>${px.maxRec}</b></div>
+      <div class="astaAiGrid">
+        <div class="astaAiMetric"><span>MIN</span><b>${a.reserveBlocked?'—':a.low}</b></div>
+        <div class="astaAiMetric"><span>IDEALE</span><b>${a.reserveBlocked?'—':a.ideal}</b></div>
+        <div class="astaAiMetric"><span>MAX RANGE</span><b>${a.reserveBlocked?'—':a.high}</b></div>
+        <div class="astaAiMetric"><span>NON OLTRE</span><b>${a.reserveBlocked?'—':absoluteCap}</b></div>
+        ${a.reserveBlocked?`<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:#ffb3b3;padding-top:6px">🔒 NON ACQUISTABILE · QI ${auctionBasePrice(p)} superiore al tetto sostenibile senza intaccare la riserva minima.</div>`:''}
+        ${p.role==='P' && a.keeperBlockPossible ? `<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:var(--muted);padding-top:6px">🧤 BLOCCO ${esc(a.keeperBlockTeam||p.team)} · riserva P2/P3: <b>${a.keeperBlockReserve} cr</b> (QI ${esc((a.keeperBlockBases||[]).join(' + '))}) · MAX P1 protetto: <b>${absoluteCap} cr</b></div>` : ''}
       </div>
 
-      ${px.blocked?`
-        <div class="astaLiveBlocked">🔒 NON ACQUISTABILE ALLA QI · QI ${px.base} cr &gt; NON OLTRE ${px.maxRec} cr.</div>
-      `:''}
+      <input id="astaLivePrice" class="astaPriceInput" type="number" min="${auctionBasePrice(p)}" inputmode="numeric"
+        value="${auctionBasePrice(p)}" placeholder="Base ${auctionBasePrice(p)}" oninput="evaluateAstaLiveBid()">
 
-      <input id="astaLivePrice" type="number" min="1" value="${initialPrice}" inputmode="numeric"
-        oninput="refreshAstaLiveFastDecision()" class="astaLivePriceInput">
-
-      <div class="bidQuick">
-        <button onclick="astaLiveFastStep(1)">+1</button>
-        <button onclick="astaLiveFastStep(2)">+2</button>
-        <button onclick="astaLiveFastStep(3)">+3</button>
-        <button onclick="astaLiveFastStep(5)">+5</button>
-        <button onclick="astaLiveFastStep(10)">+10</button>
-        <button onclick="astaLiveFastSetMax()">MAX</button>
+      <div class="astaBidQuick">
+        ${[1,2,3,5,10].map(v=>`<button onclick="addAstaLiveBid(${v})">+${v}</button>`).join('')}
+        <button onclick="setAstaLiveMax()">MAX</button>
       </div>
 
-      <div id="astaLiveFastVerdict" class="bidVerdict ${v.cls}">
-        <div class="bidVerdictTitle">${v.action}</div>
-        <div class="bidVerdictText">${px.blocked
-          ? `La base d’asta supera il tetto sostenibile con ${budget(state.me)} crediti e ${remainingRosterSlots(state.me)} slot aperti.`
-          : `Prezzo ${initialPrice} cr · obiettivo ${px.ideal} · NON OLTRE ${px.maxRec}.`}</div>
+      <div class="astaLiveSmartBar">
+        <div class="astaLiveSmartScale">
+          <i id="astaLiveSmartMarker" class="astaLiveSmartMarker" style="left:0%"></i>
+        </div>
+        <div class="astaLiveSmartLabels">
+          ${a.reserveBlocked
+            ? `<span>MIN —</span><span>IDEALE —</span><span>MAX —</span><span>STOP —</span>`
+            : `<span>MIN ${a.low}</span><span>IDEALE ${a.ideal}</span><span>MAX ${a.high}</span><span>STOP ${absoluteCap}</span>`}
+        </div>
       </div>
 
-      <div id="astaLiveFastDetails">
-        ${astaLiveFastDetailsHTML(ASTA_LIVE_PLAYER,initialPrice)}
+      <div id="astaLiveDecisionBadge" class="astaLiveDecisionBadge">INSERISCI PREZZO</div>
+      <div id="astaLiveDelta" class="astaLiveDelta">L'AI aggiorna la decisione mentre rilanci.</div>
+      <div id="astaLiveVerdict" class="astaVerdict">Inserisci il prezzo attuale per sapere se rilanciare.</div>
+
+      <div id="astaLiveSimLazy"><div class="playerMetaLine" style="padding:10px 0">🧠 Analisi acquisto in caricamento…</div></div>
+
+      <div id="astaLiveRivalLazy"><div class="playerMetaLine" style="padding:10px 0">👥 Pressione avversari in caricamento…</div></div>
+
+      <div id="astaLiveAltLazy"><div class="playerMetaLine" style="padding:10px 0">⚡ Alternative sostenibili in caricamento…</div></div>
+
+      <div class="astaLiveDecisionActions">
+        <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">🤖 ANALISI COMPLETA</button>
+        <button class="primary" style="position:static" onclick="registerAstaLiveOutcome(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
       </div>
     </div>`;
-}
-
-function astaLiveFastDetailsHTML(playerIndex,price){
-  const p=PLAYER_ARCHIVE[playerIndex];
-  const px=astaLiveFastPrices(playerIndex);
-  const impact=astaLiveFastImpact(playerIndex,price);
-  const alts=astaLiveFastAlternatives(playerIndex,3);
-
-  const priceState=price<px.low?'AFFARE':
-                   price<=px.ideal?'PREZZO GIUSTO':
-                   price<px.maxRec?'ZONA RILANCIO':
-                   price===px.maxRec?(budget(state.me)===1?'ULTIMO CREDITO':'LIMITE MASSIMO'):'OLTRE TETTO';
-
-  return `
-    <div class="liveInfoPanel">
-      <div class="liveInfoTitle">🧠 PERCHÉ</div>
-      <div class="liveInfoText">
-        ${priceState}. ${esc(p.name)} ha qualità stimata <b>${impact.quality}/99</b>.
-        ${px.blocked
-          ? `La QI/base asta (${px.base}) è già superiore al limite sostenibile (${px.maxRec}).`
-          : `Il D.S. considera sostenibile questo profilo fino a <b>${px.maxRec} cr</b> per lo slot corrente.`}
-      </div>
-    </div>
-
-    <div class="liveImpactPanel ${impact.label==='CRITICO'?'critical':''}">
-      <div class="liveInfoTitle">🧠 DOPO QUESTO ACQUISTO</div>
-      <div class="liveImpactGrid">
-        <div><span>BUDGET</span><b>${budget(state.me)} → ${impact.after}</b></div>
-        <div><span>POSTI</span><b>${remainingRosterSlots(state.me)} → ${impact.slotsAfter}</b></div>
-        <div><span>RISERVA MINIMA</span><b>${impact.reserveAfter} cr</b></div>
-        <div><span>BUDGET FUTURO</span><b>${impact.label}</b></div>
-      </div>
-      <div class="liveInfoText">
-        ${impact.slotsAfter
-          ? `Dopo l'acquisto restano ${impact.slotsAfter} slot. Margine libero oltre la riserva minima: <b>${impact.free} cr</b>.`
-          : `Rosa completata dopo questo acquisto.`}
-      </div>
-    </div>
-
-    <div class="liveAltPanel">
-      <div class="liveInfoTitle">🔄 ALTERNATIVE SE MOLLI</div>
-      ${alts.length?`<div class="liveAltGrid">${alts.map(a=>{
-        const ap=astaLiveFastPrices(a.i);
-        return `<button onclick="selectAstaLivePlayer(${a.i})">
-          <b>${esc(a.p.name)}</b>
-          <span>QI ${a.base} · ${a.quality}/99 · NON OLTRE ${ap.maxRec}</span>
-        </button>`;
-      }).join('')}</div>`:
-      `<div class="liveInfoText">Nessuna alternativa sostenibile trovata nella stessa fascia.</div>`}
-    </div>
-
-    <div class="liveActions">
-      <button class="secondary" onclick="openAIForPlayer(${playerIndex})">🤖 ANALISI COMPLETA</button>
-      <button class="primary" onclick="openBuy(${playerIndex})">✅ REGISTRA ESITO</button>
-    </div>`;
-}
-
-function refreshAstaLiveFastDecision(){
-  if(ASTA_LIVE_PLAYER==null||ASTA_LIVE_PLAYER<0)return;
-  const input=document.getElementById('astaLivePrice');
-  const out=document.getElementById('astaLiveFastVerdict');
-  const details=document.getElementById('astaLiveFastDetails');
-  if(!input||!out)return;
-  const px=astaLiveFastPrices(ASTA_LIVE_PLAYER);
-  const price=Math.max(1,Number(input.value)||1);
-  const v=astaLiveFastAction(price,px);
-  out.className=`bidVerdict ${v.cls}`;
-  out.innerHTML=`<div class="bidVerdictTitle">${v.action}</div>
-    <div class="bidVerdictText">Prezzo ${price} cr · obiettivo ${px.ideal} · NON OLTRE ${px.maxRec}.</div>`;
-  if(details)details.innerHTML=astaLiveFastDetailsHTML(ASTA_LIVE_PLAYER,price);
-}
-
-
-function refreshAstaLiveFastDecision(){
-  if(ASTA_LIVE_PLAYER==null||ASTA_LIVE_PLAYER<0)return;
-  const input=document.getElementById('astaLivePrice');
-  const out=document.getElementById('astaLiveFastVerdict');
-  if(!input||!out)return;
-  const px=astaLiveFastPrices(ASTA_LIVE_PLAYER);
-  const price=Math.max(1,Number(input.value)||1);
-  const v=astaLiveFastAction(price,px);
-  out.className=`bidVerdict ${v.cls}`;
-  out.innerHTML=`<div class="bidVerdictTitle">${v.action}</div>
-    <div class="bidVerdictText">Prezzo corrente ${price} cr · obiettivo ${px.ideal} · NON OLTRE ${px.maxRec}.</div>`;
-}
-
-function astaLiveFastStep(n){
-  const input=document.getElementById('astaLivePrice');
-  if(!input)return;
-  input.value=Math.max(1,(Number(input.value)||0)+Number(n||0));
-  refreshAstaLiveFastDecision();
-}
-
-function astaLiveFastSetMax(){
-  if(ASTA_LIVE_PLAYER==null||ASTA_LIVE_PLAYER<0)return;
-  const px=astaLiveFastPrices(ASTA_LIVE_PLAYER);
-  const input=document.getElementById('astaLivePrice');
-  if(input&&px){input.value=px.maxRec;refreshAstaLiveFastDecision();}
+  // Prima mostra subito la scheda base, poi carica i moduli pesanti.
+  requestAnimationFrame(()=>{
+    setTimeout(()=>evaluateAstaLiveBid(),0);
+    hydrateAstaLiveSecondary(ASTA_LIVE_PLAYER);
+  });
 }
 function registerAstaLiveOutcome(index){
   const el=document.getElementById('astaLivePrice');
   const price=Math.max(0,parseInt(el?.value,10)||0);
   ASTA_LIVE_LAST_PRICE=price>0?price:null;
+  // V70.8.7: ricorda il giocatore perso solo quando l'esito nasce da Asta Live.
+  ASTA_LIVE_OUTCOME_SOURCE=(Number.isInteger(Number(index)) && Number(index)>=0)?Number(index):null;
   buyFromListone(index);
 }
 function addAstaLiveBid(v){
@@ -9940,8 +9147,7 @@ function evaluateAstaLiveBid(){
 
   if(delta){
     if(a.reserveBlocked){
-      const qi=auctionBasePrice(PLAYER_ARCHIVE[ASTA_LIVE_PLAYER]);
-      delta.innerHTML=`QI ${qi} cr · NON OLTRE ${stop} cr · <b>${Math.max(0,qi-stop)} cr sopra il tetto sostenibile</b>`;
+      delta.innerHTML=`QI ${auctionBasePrice(PLAYER_ARCHIVE[ASTA_LIVE_PLAYER])} cr · <b>acquisto bloccato dalla riserva minima</b>`;
     }else{
       const idealGap=a.ideal-price;
       delta.innerHTML=idealGap>=0
@@ -10039,6 +9245,77 @@ function renderRosesPage(){
 }
 
 
+// V70.8.5 — Dashboard Situazione lega + pericolosità avversari (isolata dalla V73.14).
+// La pericolosità è solo informativa: NON modifica budget, D.S. AI o decisioni d'asta.
+function renderLeagueSituation(){
+  const list=document.getElementById('leagueSituationList');
+  const summary=document.getElementById('leagueSituationSummary');
+  if(!list||!summary)return;
+
+  const totalSlots=Object.values(LIMITS).reduce((s,n)=>s+n,0);
+  const rows=(state.managers||[]).map((name,i)=>{
+    const count=roster(i).length;
+    const missing=Math.max(0,totalSlots-count);
+    const bud=budget(i);
+    return {name,i,count,missing,budget:bud,spent:spent(i),pressure:missing>0?bud/missing:0};
+  });
+  const totalBudget=rows.reduce((s,x)=>s+x.budget,0);
+  const totalMissing=rows.reduce((s,x)=>s+x.missing,0);
+
+  const activePressures=rows.filter(x=>x.missing>0).map(x=>x.pressure).sort((a,b)=>a-b);
+  const median=activePressures.length
+    ? (activePressures.length%2
+        ? activePressures[(activePressures.length-1)/2]
+        : (activePressures[activePressures.length/2-1]+activePressures[activePressures.length/2])/2)
+    : 0;
+
+  function dangerFor(x){
+    if(x.missing===0)return {key:'complete',label:'ROSA COMPLETA'};
+    if(x.i===state.me)return null;
+    if(!median)return {key:'medium',label:'PERICOLO MEDIO'};
+    const rel=x.pressure/median;
+    if(rel>=1.35)return {key:'high',label:'PERICOLO ALTO'};
+    if(rel<=0.70)return {key:'low',label:'PERICOLO BASSO'};
+    return {key:'medium',label:'PERICOLO MEDIO'};
+  }
+
+  const dangerous=rows.filter(x=>{const d=dangerFor(x);return d&&d.key==='high'}).length;
+  summary.innerHTML=`
+    <div class="leagueSituationKpi"><span>CREDITI RIMASTI</span><b>${totalBudget}</b></div>
+    <div class="leagueSituationKpi"><span>POSTI MANCANTI</span><b>${totalMissing}</b></div>
+    <div class="leagueSituationKpi"><span>PERICOLO ALTO</span><b>${dangerous}</b></div>`;
+
+  list.innerHTML=rows.map(x=>{
+    const danger=dangerFor(x);
+    const badge=x.i===state.me?'':`<span class="leagueDangerBadge ${danger.key}">${danger.label}</span>`;
+    return `
+    <div class="leagueSituationRow ${x.i===state.me?'mine':''}" onclick="closeLeagueSituationPage();openParticipant(${x.i})">
+      <div class="leagueSituationTop">
+        <div style="min-width:0">
+          <div class="leagueSituationName">${esc(x.name)}${x.i===state.me?' · LA MIA ROSA':''}</div>
+          <div class="leagueSituationMeta">${x.count}/${totalSlots} giocatori · ${x.missing===0?'rosa completa':`${x.missing} posti mancanti`} · spesi ${x.spent} cr</div>
+          ${badge}
+        </div>
+        <div class="leagueSituationBudget">${x.budget}<small>crediti</small></div>
+      </div>
+      <div class="leagueSituationRoles">
+        ${['P','D','C','A'].map(r=>`<div class="leagueSituationRole">${r}<b>${roleCount(x.i,r)}/${LIMITS[r]}</b></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function openLeagueSituationPage(){
+  renderLeagueSituation();
+  const modal=document.getElementById('leagueSituationModal');
+  if(modal){modal.classList.add('show');modal.setAttribute('aria-hidden','false');}
+  document.body.classList.add('league-situation-open');
+}
+function closeLeagueSituationPage(){
+  const modal=document.getElementById('leagueSituationModal');
+  if(modal){modal.classList.remove('show');modal.setAttribute('aria-hidden','true');}
+  document.body.classList.remove('league-situation-open');
+}
+
 function renderMarketContextBars(){
   const s=activeMarketSession();
   const dash=document.getElementById('dashboardMarketContext');
@@ -10133,22 +9410,19 @@ function render(){
   }else if(id==='players'){
     renderRosesPage();
   }else if(id==='dsai'){
-    // V71.9: entrando nel D.S. NON calcolare tutte le tre analisi.
+    // Carica tutti i motori del Direttore Sportivo anche entrando direttamente dalla tab.
+    // La Dashboard Compact resta separata e non viene ricostruita qui.
+    try{
+      const activeTab=document.querySelector('#dsai .dsAiTabs button.active');
+      if(!document.querySelector('#dsai .dsSection.active')){
+        document.getElementById('dsDynamic')?.classList.add('active');
+      }
+    }catch(e){}
     try{ renderDSModuleSelector(); }catch(err){ console.error('Modulo D.S. AI',err); }
-
-    let active=document.querySelector('#dsai .dsSection.active');
-    if(!active){
-      active=document.getElementById('dsDynamic');
-      if(active)active.classList.add('active');
-    }
-    const tabId=active?.id||'dsDynamic';
-    const token=++DS_RENDER_TOKEN;
-    const box=dsTabTargetBox(tabId);
-    if(box){
-      if(DS_VIEW_CACHE[tabId])box.innerHTML=DS_VIEW_CACHE[tabId];
-      else box.innerHTML=dsCheapPlaceholder(tabId);
-    }
-    requestAnimationFrame(()=>dsRenderSelected(tabId,token));
+    try{ renderDirectorSportivoAI(); }catch(err){ console.error('Direttore Sportivo AI',err); }
+    try{ renderDynamicRosterPlan(); }catch(err){ console.error('Piano Rosa Dinamico AI',err); }
+    try{ renderStrongRosterAI(); }catch(err){ console.error('Rosa Forte AI',err); }
+    try{ renderStrategy40(); }catch(err){ console.error('Strategia AI 4.0',err); }
   }else if(id==='more'){
     renderMarketSeasonPanel();
     renderHistory();
@@ -10258,6 +9532,26 @@ function toggleFavorite(name,event){
   try{renderDynamicRosterPlan();}catch(e){}
 }
 
+// V70.8.7 — Filtro compatto per squadra nella barra principale.
+function initListoneTeamFilter(){
+  const el=document.getElementById('listoneTeamFilter');
+  if(!el)return;
+  const teams=[...new Set(PLAYER_ARCHIVE.map(p=>String(p.team||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
+  const current=listoneTeamFilter;
+  const signature=teams.join('|');
+  if(el.dataset.signature!==signature){
+    el.innerHTML='<option value="ALL">Tutte le squadre</option>'+teams.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    el.dataset.signature=signature;
+  }
+  if(current!=='ALL' && !teams.includes(current))listoneTeamFilter='ALL';
+  el.value=listoneTeamFilter;
+}
+function setListoneTeamFilter(value){
+  listoneTeamFilter=value||'ALL';
+  resetListoneRenderLimit();
+  renderListone();
+}
+
 function setListoneFilter(filter,btn){
   resetListoneRenderLimit();
   listoneFilter=filter;
@@ -10286,6 +9580,7 @@ function loadMoreListone(){LISTONE_RENDER_LIMIT+=60;renderListone()}
 
 function renderListone(){
   renderArchiveInfo();
+  initListoneTeamFilter();
   updateCompareButton();
   const box=document.getElementById('listonePlayers');
   if(!box) return;
@@ -10303,6 +9598,7 @@ function renderListone(){
     if(listoneFilter==='FREE' && (bought||unavailable)) return false;
     if(listoneFilter==='TAKEN' && !bought) return false;
     if(listoneFilter==='FAV' && !isFavorite(p.name)) return false;
+    if(listoneTeamFilter!=='ALL' && String(p.team)!==listoneTeamFilter) return false;
     return true;
   });
   rows.sort((a,b)=>a.role.localeCompare(b.role)||b.fvm-a.fvm||a.name.localeCompare(b.name));
@@ -10373,23 +9669,14 @@ function setAIRosterModule(id){
   AI_ROSTER_MODULE=id;
   localStorage.setItem('astaFantaFormationModule',id);
   clearPerformanceCaches();
-  DS_VIEW_CACHE.dsDynamic='';
-  DS_VIEW_CACHE.dsStrong='';
-  DS_VIEW_CACHE.dsStrategy='';
   try{renderFormationPage();}catch(e){}
   try{refreshTop5LiveIfOpen();}catch(e){}
   try{renderPremiumDashboardHero();}catch(e){}
   try{renderDSModuleSelector();}catch(e){}
-
-  // Aggiorna solo la tab D.S. visibile.
-  if(activePageId()==='dsai'){
-    const active=document.querySelector('#dsai .dsSection.active');
-    const tabId=active?.id||'dsDynamic';
-    const token=++DS_RENDER_TOKEN;
-    const box=dsTabTargetBox(tabId);
-    if(box)box.innerHTML=dsCheapPlaceholder(tabId);
-    requestAnimationFrame(()=>setTimeout(()=>dsRenderSelected(tabId,token),35));
-  }
+  try{renderDirectorSportivoAI();}catch(e){}
+  try{renderDynamicRosterPlan();}catch(e){}
+  try{renderStrongRosterAI();}catch(e){}
+  try{renderStrategy40();}catch(e){}
 }
 
 function aiRosterTier(role,slot,plan){
@@ -10815,7 +10102,7 @@ function liveTop5Candidate(index,role){
   if(purchaseForArchivePlayer(p.name) || isUnavailablePlayer(p.name))return null;
   if(roleCount(state.me,role)>=LIMITS[role])return null;
 
-  const ai=unifiedAuctionAnalysis(index,state.me);
+  const ai=aiPlayerAnalysis(index,state.me);
   if(!ai)return null;
 
   const fit=rosterFitScore(p,ai,state.me);
@@ -11796,6 +11083,82 @@ function bestAlternativesFor(sourceIndex){
     .sort((a,b)=>b.score-a.score || b.compareScore-a.compareScore || b.ai.score-a.ai.score)
     .slice(0,10);
 }
+// V70.8.7 - Alternative automatiche dopo aver perso un giocatore in Asta Live.
+// Stesso ruolo, QI il più vicino possibile e solo giocatori ancora disponibili.
+function automaticLostAlternativesFor(sourceIndex){
+  const source=PLAYER_ARCHIVE[sourceIndex];
+  if(!source)return [];
+  const srcQi=Math.max(1,Number(source.qi)||auctionBasePrice(source)||1);
+  const rows=[];
+
+  for(let index=0;index<PLAYER_ARCHIVE.length;index++){
+    if(index===sourceIndex)continue;
+    const p=PLAYER_ARCHIVE[index];
+    if(!p || p.role!==source.role)continue;
+    if(purchaseForArchivePlayer(p.name)||isUnavailablePlayer(p.name))continue;
+
+    const x=alternativeScore(index,sourceIndex);
+    if(!x)continue;
+    const qi=Math.max(1,Number(p.qi)||auctionBasePrice(p)||1);
+    x.qiGap=Math.abs(qi-srcQi);
+    x.qiValue=qi;
+    rows.push(x);
+  }
+
+  rows.sort((a,b)=>
+    a.qiGap-b.qiGap ||
+    b.score-a.score ||
+    b.compareScore-a.compareScore ||
+    a.ai.ideal-b.ai.ideal
+  );
+  return rows.slice(0,3);
+}
+
+function openLostAlternativesPage(sourceIndex,lostName,lostPrice,buyerIndex){
+  const source=PLAYER_ARCHIVE[sourceIndex];
+  if(!source)return;
+  const rows=automaticLostAlternativesFor(sourceIndex);
+  const body=document.getElementById('alternativesBody');
+  if(!body)return;
+  const buyerName=state.managers[buyerIndex]||'un avversario';
+
+  body.innerHTML=`
+    <div class="altSource">
+      <div class="meta">🔄 ALTERNATIVE AUTOMATICHE</div>
+      <div class="altName">Hai perso ${esc(lostName||source.name)}</div>
+      <div class="playerMetaLine">${source.role} · ${esc(source.team)} · QI ${source.qi}${lostPrice?` · ceduto a ${esc(buyerName)} per ${lostPrice} cr`:''}</div>
+      <div class="altWhy">Le 3 proposte più vicine per <b>ruolo e QI</b>, ordinate anche per qualità AI, sostenibilità e fit con la tua rosa.</div>
+    </div>
+    ${rows.length?rows.map((x,n)=>`
+      <div class="altCard">
+        <div class="altCardTop">
+          <div class="altRank">${n+1}</div>
+          <div style="flex:1">
+            <div class="altName">${esc(x.p.name)}</div>
+            <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+          </div>
+          <span class="tag">${x.score}/99</span>
+        </div>
+        <div class="altMetrics">
+          <div class="altMetric"><span>DIFF. QI</span><b>${x.qiGap===0?'UGUALE':`±${x.qiGap}`}</b></div>
+          <div class="altMetric"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
+          <div class="altMetric"><span>RANGE</span><b>${x.ai.low}-${x.ai.high}</b></div>
+          <div class="altMetric"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+        </div>
+        <div class="altWhy">${alternativeWhy(x,source)}</div>
+        <div class="altActions">
+          <button class="altCompare" onclick="addAlternativeToCompare(${x.index})">⚖️ CONFRONTA</button>
+          <button class="altAI" onclick="closeAlternativesPage();openAIForPlayer(${x.index})">🤖 AI</button>
+          <button class="altAuction" onclick="closeAlternativesPage();selectAstaLivePlayer(${x.index});showPage('asta')">🔨 ASTA LIVE</button>
+        </div>
+      </div>`).join(''):'<div class="empty">Nessuna alternativa libera disponibile per questo ruolo.</div>'}
+  `;
+
+  document.body.classList.add('alternatives-page-open');
+  document.getElementById('alternativesModal').classList.add('show');
+  body.scrollTop=0;
+}
+
 function alternativeWhy(x,source){
   const bits=[];
   if(x.fit>=75)bits.push('ottimo incastro con la tua rosa');
@@ -13544,31 +12907,6 @@ function aiPlayerAnalysis(index,buyerIndex=state.me){
   return value;
 }
 
-// V71.6 - UNIFIED AUCTION ENGINE
-// La scheda AI completa conserva score/statistiche/verdetto qualitativo,
-// ma PREZZI e DECISIONI provengono dalla stessa fonte di Asta Live.
-function unifiedAuctionAnalysis(index,buyerIndex=state.me){
-  const base=aiPlayerAnalysis(index,buyerIndex);
-  if(!base)return null;
-
-  // Il motore Live è calibrato sulla rosa dell'utente corrente.
-  if(buyerIndex!==state.me)return base;
-  const px=cachedCalibratedLivePrices(index);
-  if(!px)return base;
-
-  return {
-    ...base,
-    low:px.low,
-    ideal:px.ideal,
-    high:px.high,
-    maxRec:px.maxRec,
-    safe:safeMaxBid(state.me),
-    reserveBlocked:Boolean(px.reserveBlocked),
-    priceInformative:Boolean(px.priceInformative),
-    unifiedLive:px
-  };
-}
-
 function comparableAlternativeScore(sourceIndex,candidateIndex){
   const src=PLAYER_ARCHIVE[sourceIndex];
   const p=PLAYER_ARCHIVE[candidateIndex];
@@ -13638,29 +12976,39 @@ function evaluateLiveBid(index){
   const input=document.getElementById('liveBidPrice');
   const out=document.getElementById('liveBidVerdict');
   if(!input||!out)return;
-
   const price=Math.max(1,parseInt(input.value,10)||1);
-  const a=unifiedAuctionAnalysis(index,state.me);
-  const d=liveAuctionDecision5(index,price);
-  if(!a||!d)return;
+  const a=aiPlayerAnalysis(index,state.me);
+  if(!a)return;
 
-  const cls=d.level==='stop'?'stop':(['wait','danger','treasury'].includes(d.level)?'wait':'go');
-  let title='';
-  if(d.action==='LASCIA')title='🛑 LASCIA';
-  else if(d.action==='ULTIMO CREDITO')title='🟠 ULTIMO CREDITO';
-  else if(String(d.action).startsWith('PUOI RILANCIARE'))title=`🟡 ${d.action}`;
-  else if(String(d.action).startsWith('ATTENZIONE'))title=`🟠 ${d.action}`;
-  else if(d.action==='SFORA COL TESORETTO')title='🟣 SFORA COL TESORETTO';
-  else title='✅ COMPRA';
+  let cls='go', title='✅ RILANCIA', text='';
+  if(price<=a.ideal){
+    title='✅ RILANCIA';
+    text=`Sei ancora sotto o in linea col prezzo ideale (${a.ideal}). Hai margine di ${Math.max(0,a.maxRec-price)} crediti prima del tetto AI.`;
+  }else if(price<=a.high){
+    cls='wait';
+    title='🟡 RILANCIA CON CAUTELA';
+    text=`Sei nella parte alta del range consigliato (${a.low}-${a.high}). Puoi continuare, ma ogni rilancio pesa di più sulla strategia.`;
+  }else if(price<a.maxRec){
+    cls='wait';
+    title='🟠 ULTIMI RILANCI';
+    text=`Sei sopra il range consigliato. Restano solo ${a.maxRec-price} crediti di margine prima del NON OLTRE (${a.maxRec}).`;
+  }else{
+    cls='stop';
+    title='🛑 STOP';
+    text=`Hai raggiunto o superato il NON OLTRE AI (${a.maxRec}). A questo prezzo il rapporto valore/budget non è più favorevole.`;
+  }
 
-  const alts=sustainableLiveAlternatives(index,2);
-  const altText=alts.length
-    ? `<div class="bidAlternatives"><strong>Alternative sostenibili:</strong><br>${alts.map(x=>`${esc(x.p.name)} · QI ${x.qi} · non oltre ${x.cap}`).join('<br>')}</div>`
-    : '';
+  const alts=liveBidAlternatives(index);
+  let altText='';
+  if(alts.length){
+    const viable=alts.filter(x=>x.a.maxRec<price || x.a.ideal<price).slice(0,3);
+    const use=viable.length?viable:alts.slice(0,2);
+    altText=`<div class="bidAlternatives"><strong>Alternative ancora libere:</strong><br>${use.map(x=>`${esc(x.p.name)} · ideale ${x.a.ideal} · non oltre ${x.a.maxRec}`).join('<br>')}</div>`;
+  }
 
   out.innerHTML=`<div class="bidVerdict ${cls}">
     <div class="bidVerdictTitle">${title}</div>
-    <div class="bidVerdictText">${esc(d.why)}</div>
+    <div class="bidVerdictText">${text}</div>
     ${altText}
   </div>`;
 }
@@ -13671,7 +13019,7 @@ function renderAIAnalysis(a){
   return `<div class="aiCard">
     <div class="aiScore">
       <div>
-        <div class="k">AI Asta Unificata · ${esc(p.name)}</div>
+        <div class="k">AI Asta · ${esc(p.name)}</div>
         <div class="aiScoreNum">${a.score}<small style="font-size:14px;color:var(--muted)">/99</small></div>
       </div>
       <div style="text-align:right"><div class="tag good">${a.verdict}</div><div class="playerMetaLine">${p.role} · ${p.team} · FVM ${p.fvm}</div></div>
@@ -13710,7 +13058,7 @@ function renderAIAnalysis(a){
       <div class="bidRow">
         <div class="bidField">
           <label>Offerta attuale</label>
-          <input id="liveBidPrice" type="number" min="${auctionBasePrice(p)}" value="${Math.max(auctionBasePrice(p),Number(a.low)||1)}" inputmode="numeric">
+          <input id="liveBidPrice" type="number" min="1" value="${a.low}" inputmode="numeric">
         </div>
         <button class="bidCheck" onclick="evaluateLiveBid(${PLAYER_ARCHIVE.indexOf(p)})">VALUTA</button>
       </div>
@@ -13726,8 +13074,8 @@ function renderAIAnalysis(a){
         <button onclick="stepLiveBid(9)">+9</button>
         <button onclick="stepLiveBid(10)">+10</button>
         <button onclick="focusManualBid()">MANUALE</button>
-        <button onclick="setLiveBid(${Math.max(auctionBasePrice(p),Number(a.high)||auctionBasePrice(p))})" ${Number(a.high)<auctionBasePrice(p)?'disabled title="MAX RANGE sotto la base d\'asta"':''}>MAX RANGE</button>
-        <button onclick="setLiveBid(${Math.max(auctionBasePrice(p),Number(a.maxRec)||auctionBasePrice(p))})" ${Number(a.maxRec)<auctionBasePrice(p)?'disabled title="NON OLTRE sotto la base d\'asta"':''}>NON OLTRE</button>
+        <button onclick="setLiveBid(${a.high})">MAX RANGE</button>
+        <button onclick="setLiveBid(${a.maxRec})">NON OLTRE</button>
       </div>
       <div id="liveBidVerdict"></div>
     </div>
@@ -13735,9 +13083,8 @@ function renderAIAnalysis(a){
     <button class="rivalRadarBtn" onclick="openRivalRadar(${PLAYER_ARCHIVE.indexOf(p)})">👥 RADAR RIVALI SU QUESTO GIOCATORE</button>
 
     <div class="aiReason">
-      ${auctionBasePrice(p)>a.maxRec
-        ? `<strong>Consiglio unificato:</strong> QI/base asta <strong>${auctionBasePrice(p)}</strong> cr superiore al <strong>NON OLTRE ${a.maxRec}</strong>. Questo giocatore non è acquistabile alla base attuale: <strong>LASCIA</strong>.`
-        : `<strong>Consiglio unificato:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti. <strong>NON OLTRE ${a.maxRec}</strong>: è lo stesso tetto usato da Asta Live e dal D.S. AI.`}
+      <strong>Consiglio:</strong> prova a chiudere tra <strong>${a.low} e ${a.high}</strong> crediti. 
+      Non supererei <strong>${a.maxRec}</strong>${a.maxRec<a.safe?' per questo giocatore':' per non compromettere il resto della rosa'}.
       ${gm.note?`<br><br><strong>Tua nota:</strong> ${esc(gm.note)}`:''}
       <br><br>${a.reasons.map(x=>'• '+esc(x)).join('<br>')}
     </div>
@@ -13746,7 +13093,7 @@ function renderAIAnalysis(a){
 let aiReturnScroll=0;
 function openAIForPlayer(index,event){
   if(event)event.stopPropagation();
-  const a=unifiedAuctionAnalysis(index,state.me);
+  const a=aiPlayerAnalysis(index,state.me);
   if(!a)return;
 
   aiReturnScroll=window.scrollY||0;
@@ -13903,6 +13250,8 @@ function closePlayerDetail(){
 
 function buyFromListone(index){
   const p=PLAYER_ARCHIVE[index];
+  // V70.8.7: un ingresso manuale dal Listone non deve ereditare un vecchio esito Asta Live.
+  if(ASTA_LIVE_LAST_PRICE==null)ASTA_LIVE_OUTCOME_SOURCE=null;
   if(!p || alreadyBoughtPlayer(p.name) || isUnavailablePlayer(p.name)) return;
   if(!marketRoleAllowed(p.role)){
     alert(`Asta iniziale: blocco ${initialBlockLabel()}. In questo momento puoi acquistare ${allowedInitialRoleText()}.`);
@@ -14319,28 +13668,9 @@ function leaveSubPage(id){
   }
 }
 
-function openBuy(playerIndex=null, forcedPrice=null){
-  // V73.6 - REGISTRA ESITO mantiene il contesto di Asta Live.
-  // Se arriviamo da Asta Live con un giocatore selezionato, memorizziamo SUBITO
-  // giocatore + ruolo + prezzo corrente prima di cambiare pagina.
-  let liveIndex=(Number.isInteger(Number(playerIndex)) && Number(playerIndex)>=0)
-    ? Number(playerIndex)
-    : null;
-
-  let carriedPrice=null;
-  if(forcedPrice!=null && Number(forcedPrice)>0){
-    carriedPrice=Math.max(1,Number(forcedPrice));
-  }else if(liveIndex!=null && ASTA_LIVE_PLAYER===liveIndex){
-    const livePriceEl=document.getElementById('astaLivePrice');
-    if(livePriceEl && Number(livePriceEl.value)>0){
-      carriedPrice=Math.max(1,Number(livePriceEl.value));
-    }
-  }
-
+function openBuy(){
   let sel=document.getElementById('pbuyer');
   sel.innerHTML=state.managers.map((n,i)=>`<option value="${i}" ${i===state.me?'selected':''}>${esc(n)} · ${budget(i)} cr</option>`).join('');
-
-  // Reset standard: serve ancora quando si apre Registra acquisto manualmente.
   document.getElementById('pname').value='';
   document.getElementById('pprice').value='';
   document.getElementById('pprice').min='1';
@@ -14352,26 +13682,8 @@ function openBuy(playerIndex=null, forcedPrice=null){
   if(rangeBox){rangeBox.innerHTML='';rangeBox.classList.remove('show');}
   document.getElementById('playerSuggestions').classList.remove('show');
   document.getElementById('buyHint').textContent='';
-
-  enterSubPage('buyModal');
-
-  // Se REGISTRA ESITO arriva da Asta Live, precompila tutto.
-  if(liveIndex!=null && PLAYER_ARCHIVE[liveIndex]){
-    selectArchivePlayer(liveIndex); // imposta nome + ruolo corretto + QI/base
-    const priceEl=document.getElementById('pprice');
-    if(priceEl && carriedPrice!=null){
-      priceEl.value=String(carriedPrice);
-    }
-    updateBuyPreview();
-
-    // Nessuna tastiera/listone automatico: il giocatore è già scelto.
-    const sug=document.getElementById('playerSuggestions');
-    if(sug){sug.classList.remove('show');sug.innerHTML='';}
-    return;
-  }
-
-  // Apertura manuale invariata.
   selectBuyRole('P');
+  enterSubPage('buyModal');
   updateBuyPreview();
   setTimeout(()=>document.getElementById('pname').focus(),150);
 }
@@ -14430,6 +13742,11 @@ function saveBuy(){
   const roleBudgetsBefore={};
   ['P','D','C','A'].forEach(r=>{ const rp=liveRoleBudgetPlan(r,buyer); roleBudgetsBefore[r]={min:rp.min,max:rp.max,avg:rp.avg}; });
 
+  // V70.8.7: se il giocatore selezionato in Asta Live viene registrato
+  // a un avversario, dopo il salvataggio mostra subito 3 alternative.
+  const lostFromAstaLive=(ASTA_LIVE_OUTCOME_SOURCE!=null && pidx===ASTA_LIVE_OUTCOME_SOURCE && buyer!==state.me);
+  const lostSourceIndex=lostFromAstaLive?ASTA_LIVE_OUTCOME_SOURCE:null;
+
   state.purchases.push({
     id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     name,role,price,buyer,ts:Date.now(),
@@ -14451,6 +13768,12 @@ function saveBuy(){
   persist();
   closeBuy();
   render();
+
+  // V70.8.7: resetta sempre il contesto; se l'hai perso, apri il Piano B automatico.
+  ASTA_LIVE_OUTCOME_SOURCE=null;
+  if(lostFromAstaLive && lostSourceIndex!=null){
+    setTimeout(()=>openLostAlternativesPage(lostSourceIndex,name,price,buyer),90);
+  }
 }
 function del(id){if(confirm('Eliminare questo acquisto?')){state.purchases=state.purchases.filter(x=>x.id!==id);persist();render()}}
 let settingsReturnScroll=0;
