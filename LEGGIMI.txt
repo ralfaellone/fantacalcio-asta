@@ -1,4 +1,4 @@
-Asta Fanta V70.8.7
+Asta Fanta V70.8.8
 
 Base: V70.8.6 con Direttore Sportivo V70.8 invariato.
 
@@ -16,4 +16,10 @@ Fix precedenti mantenuti:
 - filtro squadra compatto
 
 Commit:
-V70.8.7 - Aggiunte alternative automatiche dopo giocatore perso mantenendo invariato il D.S. V70.8
+V70.8.8 - Aggiunte alternative automatiche dopo giocatore perso mantenendo invariato il D.S. V70.8
+
+
+V70.8.8: restyling grafico Home. Nessuna modifica a D.S., prezzi, budget o formule.
+
+
+V70.8.8b - Home dashboard reale: layout desktop a due colonne e mobile verticale. Nessuna modifica al D.S. o alle formule.
