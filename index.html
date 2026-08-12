@@ -13276,6 +13276,9 @@ function renderPlayerDetail(index){
   const st=statsFor(p.name);
   const status=playerStatusFor(p.name);
   const ai=aiPlayerAnalysis(index,state.me);
+  // V70.8.10 - La scheda giocatore usa gli stessi PREZZI di Asta Live.
+  // Non cambia alcuna formula: legge il risultato già calibrato dalla stessa funzione.
+  const livePx=cachedCalibratedLivePrices(index) || ai;
   const gm=goalMeta(p.name);
   const base=auctionBasePrice(p);
   const cash=budget(state.me);
@@ -13283,8 +13286,8 @@ function renderPlayerDetail(index){
   const roleHave=roleCount(state.me,p.role);
   const roleMax=LIMITS[p.role]||0;
   const roleMissing=Math.max(0,roleMax-roleHave);
-  const safeNow=Math.max(0,Math.min(ai.maxRec,safeMaxBid(state.me)));
-  const pctIdeal=cash>0?Math.round((ai.ideal/cash)*100):0;
+  const safeNow=Math.max(0,Number(livePx.maxRec)||0);
+  const pctIdeal=cash>0&&Number(livePx.ideal)>0?Math.round((Number(livePx.ideal)/cash)*100):0;
   const alts=bestComparableAlternatives(index,3);
   const favorite=isFavorite(p.name);
   const compared=COMPARE_PLAYERS.includes(index);
@@ -13368,10 +13371,10 @@ function renderPlayerDetail(index){
     <div class="playerDetailSection">
       <h3>💰 Decisione d'asta</h3>
       <div class="playerDecisionGrid">
-        <div class="playerDecisionBox"><span>MIN</span><b>${ai.low}</b><small>Entrata interessante</small></div>
-        <div class="playerDecisionBox"><span>IDEALE</span><b>${ai.ideal}</b><small>Prezzo obiettivo</small></div>
-        <div class="playerDecisionBox"><span>MAX RANGE</span><b>${ai.high}</b><small>Zona alta sostenibile</small></div>
-        <div class="playerDecisionBox"><span>NON OLTRE</span><b>${ai.maxRec}</b><small>Tetto strategico</small></div>
+        <div class="playerDecisionBox"><span>MIN</span><b>${livePx.reserveBlocked?'—':livePx.low}</b><small>Entrata interessante</small></div>
+        <div class="playerDecisionBox"><span>IDEALE</span><b>${livePx.reserveBlocked?'—':livePx.ideal}</b><small>Prezzo obiettivo</small></div>
+        <div class="playerDecisionBox"><span>MAX RANGE</span><b>${livePx.reserveBlocked?'—':livePx.high}</b><small>Zona alta sostenibile</small></div>
+        <div class="playerDecisionBox"><span>NON OLTRE</span><b>${livePx.maxRec}</b><small>Tetto strategico</small></div>
       </div>
       <div class="playerDecisionVerdict"><strong>${ai.verdict}</strong> · Score AI <strong>${ai.score}/99</strong><br>Max sicura oggi <strong>${safeNow}</strong> crediti.</div>
     </div>
@@ -13382,7 +13385,7 @@ function renderPlayerDetail(index){
         <div class="playerDecisionBox"><span>REPARTO ${p.role}</span><b>${roleHave}/${roleMax}</b><small>${playerRosterNeedText(p.role)}</small></div>
         <div class="playerDecisionBox"><span>ROSA TOTALE</span><b>${25-slots}/25</b><small>${slots} posti ancora da completare</small></div>
         <div class="playerDecisionBox"><span>CREDITI</span><b>${cash}</b><small>Budget residuo attuale</small></div>
-        <div class="playerDecisionBox"><span>PESO IDEALE</span><b>${pctIdeal}%</b><small>${ai.ideal} crediti sul budget residuo</small></div>
+        <div class="playerDecisionBox"><span>PESO IDEALE</span><b>${pctIdeal}%</b><small>${livePx.reserveBlocked?'—':livePx.ideal} crediti sul budget residuo</small></div>
       </div>
       <div class="playerDetailNote" style="margin-top:8px">${roleMissing>0?`Questo giocatore copre uno dei <strong>${roleMissing}</strong> slot ancora liberi nel reparto ${p.role}.`:`Il reparto ${p.role} è già completo: valuta l'acquisto solo se coerente con la gestione della tua rosa.`}</div>
     </div>
