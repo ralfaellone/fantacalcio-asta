@@ -1,20 +1,19 @@
-VERSIONE V68.2
-AI mercato progressiva per ruolo e fascia giocatore; reset apprendimento test V68.1 senza cancellare le rose.
+Asta Fanta V70.8.7
 
-ASTA FANTA — VERSIONE IPHONE
+Base: V70.8.6 con Direttore Sportivo V70.8 invariato.
 
-Questa versione non usa Python e non richiede un PC acceso durante l'asta una volta pubblicata online.
-Contiene:
-- index.html
-- manifest.json
-- sw.js
-- icone iPhone
+Novita di questa versione:
+- Alternative automatiche quando un giocatore selezionato in Asta Live viene assegnato a un avversario.
+- Mostra 3 alternative libere dello stesso ruolo, privilegiando QI vicino e poi qualita AI/fit/sostenibilita.
+- Pulsanti Confronta, AI e Asta Live sulle alternative.
 
-Dati configurati:
-- 600 crediti
-- 12 partecipanti
-- 3 P / 8 D / 8 C / 6 A
-- salvataggio automatico sul dispositivo
-- backup esportabile/importabile
+Fix precedenti mantenuti:
+- ultimo slot
+- LIMITE MASSIMO
+- rosa completata 25/25
+- Situazione lega
+- pericolosita avversari
+- filtro squadra compatto
 
-Per installarla come icona su iPhone deve essere pubblicata su un normale hosting HTTPS. Poi in Safari: Condividi > Aggiungi alla schermata Home.
+Commit:
+V70.8.7 - Aggiunte alternative automatiche dopo giocatore perso mantenendo invariato il D.S. V70.8

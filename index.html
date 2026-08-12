@@ -2724,6 +2724,38 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
   padding:7px 9px;
   font-size:10px;
 }
+/* V70.8.7 — Menu giocatori ordinato + filtro squadra compatto (derivato da V73.17) */
+#listone .playersRoleFilters{
+  display:grid;
+  grid-template-columns:1.15fr repeat(4,.78fr) 1.12fr 1.08fr .78fr;
+  gap:5px;
+  overflow:visible;
+  padding:7px 0 5px;
+}
+#listone .playersRoleFilters .filterBtn{
+  width:100%;
+  min-width:0;
+  padding:7px 3px;
+  font-size:9px;
+  white-space:nowrap;
+}
+#listone .teamFilterRow{
+  width:100%;
+  margin-top:2px;
+}
+#listone .teamFilterSelect{
+  width:100%;
+  min-width:0;
+  max-width:none;
+  border:1px solid var(--line);
+  background:#091725;
+  color:var(--text);
+  border-radius:11px;
+  padding:9px 34px 9px 11px;
+  font-size:11px;
+  font-weight:850;
+  outline:none;
+}
 .playersAiBar{
   display:grid;
   grid-template-columns:repeat(4,1fr);
@@ -5261,6 +5293,49 @@ nav button .ico{font-size:19px!important}
 .defenseLive689 span{font-size:6px;font-weight:950;color:#76e2b1}.defenseLive689 b{display:block;margin-top:2px;font-size:7px;color:#d9fff0}
 .defenseLive689 small{display:block;margin-top:2px;font-size:5.5px;color:#86a89a}
 
+
+/* V70.8.4 — Dashboard Situazione lega (isolata dalla V73.13) */
+.leagueSituationBtn{
+  width:100%;margin:10px 0 4px;padding:13px 14px;border:1px solid var(--line);
+  border-radius:16px;background:var(--card);color:var(--text);font-weight:900;font-size:14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer
+}
+#leagueSituationModal{
+  display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);overflow:auto;
+  -webkit-overflow-scrolling:touch;padding:0 0 calc(26px + env(safe-area-inset-bottom))
+}
+#leagueSituationModal.show{display:block}
+.leagueSituationShell{max-width:760px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top)) 14px 24px}
+.leagueSituationHeader{position:sticky;top:0;z-index:2;background:var(--bg);padding:4px 0 10px;display:flex;align-items:center;gap:10px}
+.leagueSituationBack{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:12px;padding:9px 11px;font-weight:900}
+.leagueSituationTitle{font-size:22px;font-weight:950;line-height:1.05}
+.leagueSituationSub{font-size:12px;color:var(--muted);margin-top:2px}
+.leagueSituationSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 12px}
+.leagueSituationKpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.leagueSituationKpi span{display:block;font-size:10px;color:var(--muted);font-weight:850;letter-spacing:.05em}
+.leagueSituationKpi b{display:block;font-size:19px;margin-top:2px}
+.leagueSituationList{display:grid;gap:8px}
+.leagueSituationRow{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:10px 11px}
+.leagueSituationRow.mine{outline:2px solid rgba(85,170,255,.35)}
+/* V70.8.5 — Pericolosità avversari: solo evidenza visiva, nessuna modifica alla logica asta */
+.leagueDangerBadge{display:inline-flex;align-items:center;justify-content:center;margin-top:5px;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:950;letter-spacing:.05em;border:1px solid transparent;white-space:nowrap}
+.leagueDangerBadge.high{background:rgba(239,68,68,.14);border-color:rgba(248,113,113,.45);color:#fca5a5}
+.leagueDangerBadge.medium{background:rgba(245,158,11,.12);border-color:rgba(251,191,36,.38);color:#fcd34d}
+.leagueDangerBadge.low{background:rgba(34,197,94,.10);border-color:rgba(74,222,128,.30);color:#86efac}
+.leagueDangerBadge.complete{background:rgba(148,163,184,.10);border-color:rgba(148,163,184,.25);color:#cbd5e1}
+.leagueDangerLegend{margin:0 0 10px;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.018);font-size:10px;line-height:1.4;color:var(--muted)}
+.leagueDangerLegend b{color:var(--text)}
+.leagueSituationTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.leagueSituationName{font-weight:950;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.leagueSituationMeta{font-size:11px;color:var(--muted);margin-top:2px}
+.leagueSituationBudget{text-align:right;font-weight:950;font-size:18px;white-space:nowrap}
+.leagueSituationBudget small{display:block;font-size:9px;color:var(--muted);font-weight:800}
+.leagueSituationRoles{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}
+.leagueSituationRole{background:var(--soft);border-radius:9px;padding:6px 4px;text-align:center;font-size:10px;color:var(--muted);font-weight:850}
+.leagueSituationRole b{display:block;color:var(--text);font-size:12px;margin-top:1px}
+body.league-situation-open{overflow:hidden!important;height:100dvh!important}
+body.league-situation-open nav{display:none!important}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5271,7 +5346,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -5389,6 +5464,11 @@ nav button .ico{font-size:19px!important}
       <button class="filterBtn" data-filter="TAKEN" onclick="setListoneFilter('TAKEN',this)">Presi</button>
       <button class="filterBtn" data-filter="FAV" onclick="setListoneFilter('FAV',this)">⭐</button>
     </div>
+    <div class="teamFilterRow">
+      <select id="listoneTeamFilter" class="teamFilterSelect" onchange="setListoneTeamFilter(this.value)" aria-label="Filtra per squadra">
+        <option value="ALL">Tutte le squadre</option>
+      </select>
+    </div>
 
     <div class="playersAiBar">
       <button onclick="openBuyNowPage()">🤖<span>Chi compro?</span></button>
@@ -5423,6 +5503,7 @@ nav button .ico{font-size:19px!important}
     </div>
 
     <div id="roseLeagueSummary" class="roseLeagueSummary"></div>
+    <button class="leagueSituationBtn" onclick="openLeagueSituationPage()"><span>📊 Situazione lega</span><span>12 squadre ›</span></button>
   </div>
 
   <div id="managers" class="roseProList"></div>
@@ -5487,6 +5568,22 @@ nav button .ico{font-size:19px!important}
 
 
 
+
+
+<div id="leagueSituationModal" aria-hidden="true">
+  <div class="leagueSituationShell">
+    <div class="leagueSituationHeader">
+      <button class="leagueSituationBack" onclick="closeLeagueSituationPage()">← Indietro</button>
+      <div>
+        <div class="leagueSituationTitle">Situazione lega</div>
+        <div class="leagueSituationSub">Crediti, posti mancanti e reparti di tutti i 12 partecipanti</div>
+      </div>
+    </div>
+    <div id="leagueSituationSummary" class="leagueSituationSummary"></div>
+    <div id="leagueDangerLegend" class="leagueDangerLegend"><b>⚠️ Pericolosità avversari</b> · stima relativa basata su crediti disponibili rispetto ai posti ancora da completare.</div>
+    <div id="leagueSituationList" class="leagueSituationList"></div>
+  </div>
+</div>
 
 <div id="top5LiveModal">
   <div class="top5LiveShell">
@@ -5822,6 +5919,7 @@ INITIAL=Math.max(1,parseInt(state.initialBudget,10)||600);
 let PLAYER_ARCHIVE=loadPlayerArchive();
 let selectedArchivePlayer=null;
 let listoneFilter='ALL';
+let listoneTeamFilter='ALL';
 let PLAYER_STATS=loadPlayerStats();
 let advisorRole='';
 let nextMoveSelectedRole='';
@@ -6280,6 +6378,7 @@ function importOfficialListone(event){
 
       savePlayerArchive(best);
       listoneFilter='ALL';
+      listoneTeamFilter='ALL';
       document.querySelectorAll('.filterBtn').forEach(btn=>btn.classList.toggle('active',btn.dataset.filter==='ALL'));
       const search=document.getElementById('listoneSearch');
       if(search)search.value='';
@@ -7842,34 +7941,40 @@ function renderDashboardControlRaw(){
 
   const move=document.getElementById('dashboardNextMove');
   if(move){
-    const candidates=PLAYER_ARCHIVE
-      .map((p,index)=>buyNowCandidate(index))
-      .filter(Boolean)
-      .sort((a,b)=>b.score-a.score || b.fit-a.fit || b.ai.score-a.ai.score);
-    const x=candidates[0];
+    // V70.8.3 - STATO ROSA COMPLETA (isolato dalla V73.12):
+    // quando la rosa ha raggiunto tutti i 25 slot, non calcolare altri target AI.
+    if(r.length>=total){
+      move.innerHTML='<div class="empty"><b>✅ Rosa completata</b><br>Asta completata: non ci sono altri acquisti da pianificare.</div>';
+    }else{
+      const candidates=PLAYER_ARCHIVE
+        .map((p,index)=>buyNowCandidate(index))
+        .filter(Boolean)
+        .sort((a,b)=>b.score-a.score || b.fit-a.fit || b.ai.score-a.ai.score);
+      const x=candidates[0];
 
-    move.innerHTML=x?`
-      <div class="dashMove dashAiHero">
-        <div style="margin-bottom:6px"><span class="ai2Chip">AI ASTA 2.0 · ${activeFormationPlan().name}</span></div>
-        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-          <div>
-            <div class="dashMoveName">${esc(x.p.name)}</div>
-            <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+      move.innerHTML=x?`
+        <div class="dashMove dashAiHero">
+          <div style="margin-bottom:6px"><span class="ai2Chip">AI ASTA 2.0 · ${activeFormationPlan().name}</span></div>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+            <div>
+              <div class="dashMoveName">${esc(x.p.name)}</div>
+              <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+            </div>
+            <span class="tag good">${x.score}/99</span>
           </div>
-          <span class="tag good">${x.score}/99</span>
-        </div>
-        <div class="dashMoveWhy">${buyNowReason(x)}</div>
-        <div class="dashMoveMetrics">
-          <div class="dashMoveMetric"><span>IDEALE</span><b>${x.px.ideal}</b></div>
-          <div class="dashMoveMetric"><span>RANGE</span><b>${x.px.low}-${x.px.high}</b></div>
-          <div class="dashMoveMetric"><span>NON OLTRE</span><b>${x.px.maxRec}</b></div>
-        </div>
-        <div class="dashMoveActions">
-          <button class="secondary" onclick="openAIForPlayer(${x.index})">🤖 ANALIZZA</button>
-          <button class="primary" style="position:static" onclick="buyFromListone(${x.index})">ASTA</button>
-        </div>
-      </div>`
-      :`<div class="empty">Nessun consiglio disponibile: la rosa potrebbe essere completa.</div>`;
+          <div class="dashMoveWhy">${buyNowReason(x)}</div>
+          <div class="dashMoveMetrics">
+            <div class="dashMoveMetric"><span>IDEALE</span><b>${x.px.ideal}</b></div>
+            <div class="dashMoveMetric"><span>RANGE</span><b>${x.px.low}-${x.px.high}</b></div>
+            <div class="dashMoveMetric"><span>NON OLTRE</span><b>${x.px.maxRec}</b></div>
+          </div>
+          <div class="dashMoveActions">
+            <button class="secondary" onclick="openAIForPlayer(${x.index})">🤖 ANALIZZA</button>
+            <button class="primary" style="position:static" onclick="buyFromListone(${x.index})">ASTA</button>
+          </div>
+        </div>`
+        :`<div class="empty">Nessun consiglio disponibile: la rosa potrebbe essere completa.</div>`;
+    }
   }
 
   try{
@@ -7927,7 +8032,11 @@ function renderDashboardControl(){
   if(team)team.textContent=state.managers[me]||'—';
 
   const move=document.getElementById('dashboardNextMove');
-  if(move && !move.dataset.ready){
+  const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
+  if(move && roster(me).length>=total){
+    move.innerHTML='<div class="empty"><b>✅ Rosa completata</b><br>Asta completata: non ci sono altri acquisti da pianificare.</div>';
+    move.dataset.ready='1';
+  }else if(move && !move.dataset.ready){
     move.innerHTML='<div class="empty" style="padding:12px">🤖 Aggiorno il consiglio AI…</div>';
   }
 
@@ -7941,6 +8050,8 @@ function renderDashboardControl(){
 
 let ASTA_LIVE_PLAYER=-1;
 let ASTA_LIVE_LAST_PRICE=null;
+// V70.8.7 - memorizza se REGISTRA ESITO arriva davvero da Asta Live.
+let ASTA_LIVE_OUTCOME_SOURCE=null;
 
 
 function renderAstaLive(){
@@ -8450,10 +8561,14 @@ function liveSustainableCap(playerIndex,rawMax){
   const baseStop=Math.max(0,Math.min(Number(rawMax)||0,safe));
   if(baseStop<=0)return 0;
 
-  const normalStop=Math.max(0,Math.min(
-    baseStop,
-    adaptiveSlotCap(p.role,baseStop,null)
-  ));
+  // V70.8.1 - FIX ULTIMO SLOT (isolato, senza Piano Operativo V70.9+):
+  // con un solo posto rosa rimasto non esistono altri slot da proteggere.
+  // Il tetto live puo quindi usare tutto il MAX SICURA, sempre entro il valore
+  // strategico del giocatore (rawMax) e i crediti realmente disponibili.
+  const isFinalRosterSlot=remainingRosterSlots(state.me)===1;
+  const normalStop=isFinalRosterSlot
+    ? baseStop
+    : Math.max(0,Math.min(baseStop,adaptiveSlotCap(p.role,baseStop,null)));
   const treasury=treasuryCanBoost(playerIndex);
   let cap=treasury.allow>0
     ? Math.max(normalStop,Math.min(baseStop,normalStop+treasury.allow))
@@ -8474,7 +8589,7 @@ function liveSustainableCap(playerIndex,rawMax){
   const base=auctionBasePrice(p);
   // V70.8: la riserva di completamento è già incorporata nei cap.
   // Evitiamo una seconda penalizzazione automatica che rendeva l'AI troppo conservativa.
-  if(status.level==='bad' && cap>base && dsGlobalBalance().avg<3) cap-=1;
+  if(status.level==='bad' && cap>base && dsGlobalBalance().avg<3 && !isFinalRosterSlot) cap-=1;
 
   const reserveCap=liveReserveProtectedCap(playerIndex);
   cap=Math.min(cap,reserveCap);
@@ -8687,7 +8802,10 @@ function liveAuctionDecision5(playerIndex,price){
     action='LASCIA';level='stop';headline='OLTRE IL LIMITE STRATEGICO';
     why=`A ${bid} cr non conviene più. Il limite AI aggiornato è ${decisionMax} cr.`;
   }else if(bid===decisionMax){
-    action='ULTIMO CREDITO';level='danger';headline='TETTO ASSOLUTO';
+    // V70.8.2 - Etichetta corretta al tetto: "ULTIMO CREDITO" solo quando
+    // resta davvero 1 credito totale; altrimenti il prezzo è semplicemente il
+    // limite massimo strategico del giocatore. Nessuna soglia viene modificata.
+    action=budget(state.me)===1?'ULTIMO CREDITO':'LIMITE MASSIMO';level='danger';headline='TETTO ASSOLUTO';
     why=`${isLastRoleSlot?`Ultimo slot ${p.role}. `:''}Puoi arrivare a ${stop} cr, ma non fare il rilancio successivo.`;
   }else if(treasury.allow>0&&bid>normalStop&&bid<=stop){
     action='SFORA COL TESORETTO';level='treasury';headline='OBIETTIVO STRATEGICO';
@@ -8960,6 +9078,8 @@ function registerAstaLiveOutcome(index){
   const el=document.getElementById('astaLivePrice');
   const price=Math.max(0,parseInt(el?.value,10)||0);
   ASTA_LIVE_LAST_PRICE=price>0?price:null;
+  // V70.8.7: ricorda il giocatore perso solo quando l'esito nasce da Asta Live.
+  ASTA_LIVE_OUTCOME_SOURCE=(Number.isInteger(Number(index)) && Number(index)>=0)?Number(index):null;
   buyFromListone(index);
 }
 function addAstaLiveBid(v){
@@ -9124,6 +9244,77 @@ function renderRosesPage(){
     :'<div class="empty">Nessuna rosa trovata.</div>';
 }
 
+
+// V70.8.5 — Dashboard Situazione lega + pericolosità avversari (isolata dalla V73.14).
+// La pericolosità è solo informativa: NON modifica budget, D.S. AI o decisioni d'asta.
+function renderLeagueSituation(){
+  const list=document.getElementById('leagueSituationList');
+  const summary=document.getElementById('leagueSituationSummary');
+  if(!list||!summary)return;
+
+  const totalSlots=Object.values(LIMITS).reduce((s,n)=>s+n,0);
+  const rows=(state.managers||[]).map((name,i)=>{
+    const count=roster(i).length;
+    const missing=Math.max(0,totalSlots-count);
+    const bud=budget(i);
+    return {name,i,count,missing,budget:bud,spent:spent(i),pressure:missing>0?bud/missing:0};
+  });
+  const totalBudget=rows.reduce((s,x)=>s+x.budget,0);
+  const totalMissing=rows.reduce((s,x)=>s+x.missing,0);
+
+  const activePressures=rows.filter(x=>x.missing>0).map(x=>x.pressure).sort((a,b)=>a-b);
+  const median=activePressures.length
+    ? (activePressures.length%2
+        ? activePressures[(activePressures.length-1)/2]
+        : (activePressures[activePressures.length/2-1]+activePressures[activePressures.length/2])/2)
+    : 0;
+
+  function dangerFor(x){
+    if(x.missing===0)return {key:'complete',label:'ROSA COMPLETA'};
+    if(x.i===state.me)return null;
+    if(!median)return {key:'medium',label:'PERICOLO MEDIO'};
+    const rel=x.pressure/median;
+    if(rel>=1.35)return {key:'high',label:'PERICOLO ALTO'};
+    if(rel<=0.70)return {key:'low',label:'PERICOLO BASSO'};
+    return {key:'medium',label:'PERICOLO MEDIO'};
+  }
+
+  const dangerous=rows.filter(x=>{const d=dangerFor(x);return d&&d.key==='high'}).length;
+  summary.innerHTML=`
+    <div class="leagueSituationKpi"><span>CREDITI RIMASTI</span><b>${totalBudget}</b></div>
+    <div class="leagueSituationKpi"><span>POSTI MANCANTI</span><b>${totalMissing}</b></div>
+    <div class="leagueSituationKpi"><span>PERICOLO ALTO</span><b>${dangerous}</b></div>`;
+
+  list.innerHTML=rows.map(x=>{
+    const danger=dangerFor(x);
+    const badge=x.i===state.me?'':`<span class="leagueDangerBadge ${danger.key}">${danger.label}</span>`;
+    return `
+    <div class="leagueSituationRow ${x.i===state.me?'mine':''}" onclick="closeLeagueSituationPage();openParticipant(${x.i})">
+      <div class="leagueSituationTop">
+        <div style="min-width:0">
+          <div class="leagueSituationName">${esc(x.name)}${x.i===state.me?' · LA MIA ROSA':''}</div>
+          <div class="leagueSituationMeta">${x.count}/${totalSlots} giocatori · ${x.missing===0?'rosa completa':`${x.missing} posti mancanti`} · spesi ${x.spent} cr</div>
+          ${badge}
+        </div>
+        <div class="leagueSituationBudget">${x.budget}<small>crediti</small></div>
+      </div>
+      <div class="leagueSituationRoles">
+        ${['P','D','C','A'].map(r=>`<div class="leagueSituationRole">${r}<b>${roleCount(x.i,r)}/${LIMITS[r]}</b></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+function openLeagueSituationPage(){
+  renderLeagueSituation();
+  const modal=document.getElementById('leagueSituationModal');
+  if(modal){modal.classList.add('show');modal.setAttribute('aria-hidden','false');}
+  document.body.classList.add('league-situation-open');
+}
+function closeLeagueSituationPage(){
+  const modal=document.getElementById('leagueSituationModal');
+  if(modal){modal.classList.remove('show');modal.setAttribute('aria-hidden','true');}
+  document.body.classList.remove('league-situation-open');
+}
 
 function renderMarketContextBars(){
   const s=activeMarketSession();
@@ -9341,6 +9532,26 @@ function toggleFavorite(name,event){
   try{renderDynamicRosterPlan();}catch(e){}
 }
 
+// V70.8.7 — Filtro compatto per squadra nella barra principale.
+function initListoneTeamFilter(){
+  const el=document.getElementById('listoneTeamFilter');
+  if(!el)return;
+  const teams=[...new Set(PLAYER_ARCHIVE.map(p=>String(p.team||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
+  const current=listoneTeamFilter;
+  const signature=teams.join('|');
+  if(el.dataset.signature!==signature){
+    el.innerHTML='<option value="ALL">Tutte le squadre</option>'+teams.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    el.dataset.signature=signature;
+  }
+  if(current!=='ALL' && !teams.includes(current))listoneTeamFilter='ALL';
+  el.value=listoneTeamFilter;
+}
+function setListoneTeamFilter(value){
+  listoneTeamFilter=value||'ALL';
+  resetListoneRenderLimit();
+  renderListone();
+}
+
 function setListoneFilter(filter,btn){
   resetListoneRenderLimit();
   listoneFilter=filter;
@@ -9369,6 +9580,7 @@ function loadMoreListone(){LISTONE_RENDER_LIMIT+=60;renderListone()}
 
 function renderListone(){
   renderArchiveInfo();
+  initListoneTeamFilter();
   updateCompareButton();
   const box=document.getElementById('listonePlayers');
   if(!box) return;
@@ -9386,6 +9598,7 @@ function renderListone(){
     if(listoneFilter==='FREE' && (bought||unavailable)) return false;
     if(listoneFilter==='TAKEN' && !bought) return false;
     if(listoneFilter==='FAV' && !isFavorite(p.name)) return false;
+    if(listoneTeamFilter!=='ALL' && String(p.team)!==listoneTeamFilter) return false;
     return true;
   });
   rows.sort((a,b)=>a.role.localeCompare(b.role)||b.fvm-a.fvm||a.name.localeCompare(b.name));
@@ -10870,6 +11083,82 @@ function bestAlternativesFor(sourceIndex){
     .sort((a,b)=>b.score-a.score || b.compareScore-a.compareScore || b.ai.score-a.ai.score)
     .slice(0,10);
 }
+// V70.8.7 - Alternative automatiche dopo aver perso un giocatore in Asta Live.
+// Stesso ruolo, QI il più vicino possibile e solo giocatori ancora disponibili.
+function automaticLostAlternativesFor(sourceIndex){
+  const source=PLAYER_ARCHIVE[sourceIndex];
+  if(!source)return [];
+  const srcQi=Math.max(1,Number(source.qi)||auctionBasePrice(source)||1);
+  const rows=[];
+
+  for(let index=0;index<PLAYER_ARCHIVE.length;index++){
+    if(index===sourceIndex)continue;
+    const p=PLAYER_ARCHIVE[index];
+    if(!p || p.role!==source.role)continue;
+    if(purchaseForArchivePlayer(p.name)||isUnavailablePlayer(p.name))continue;
+
+    const x=alternativeScore(index,sourceIndex);
+    if(!x)continue;
+    const qi=Math.max(1,Number(p.qi)||auctionBasePrice(p)||1);
+    x.qiGap=Math.abs(qi-srcQi);
+    x.qiValue=qi;
+    rows.push(x);
+  }
+
+  rows.sort((a,b)=>
+    a.qiGap-b.qiGap ||
+    b.score-a.score ||
+    b.compareScore-a.compareScore ||
+    a.ai.ideal-b.ai.ideal
+  );
+  return rows.slice(0,3);
+}
+
+function openLostAlternativesPage(sourceIndex,lostName,lostPrice,buyerIndex){
+  const source=PLAYER_ARCHIVE[sourceIndex];
+  if(!source)return;
+  const rows=automaticLostAlternativesFor(sourceIndex);
+  const body=document.getElementById('alternativesBody');
+  if(!body)return;
+  const buyerName=state.managers[buyerIndex]||'un avversario';
+
+  body.innerHTML=`
+    <div class="altSource">
+      <div class="meta">🔄 ALTERNATIVE AUTOMATICHE</div>
+      <div class="altName">Hai perso ${esc(lostName||source.name)}</div>
+      <div class="playerMetaLine">${source.role} · ${esc(source.team)} · QI ${source.qi}${lostPrice?` · ceduto a ${esc(buyerName)} per ${lostPrice} cr`:''}</div>
+      <div class="altWhy">Le 3 proposte più vicine per <b>ruolo e QI</b>, ordinate anche per qualità AI, sostenibilità e fit con la tua rosa.</div>
+    </div>
+    ${rows.length?rows.map((x,n)=>`
+      <div class="altCard">
+        <div class="altCardTop">
+          <div class="altRank">${n+1}</div>
+          <div style="flex:1">
+            <div class="altName">${esc(x.p.name)}</div>
+            <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+          </div>
+          <span class="tag">${x.score}/99</span>
+        </div>
+        <div class="altMetrics">
+          <div class="altMetric"><span>DIFF. QI</span><b>${x.qiGap===0?'UGUALE':`±${x.qiGap}`}</b></div>
+          <div class="altMetric"><span>IDEALE</span><b>${x.ai.ideal}</b></div>
+          <div class="altMetric"><span>RANGE</span><b>${x.ai.low}-${x.ai.high}</b></div>
+          <div class="altMetric"><span>NON OLTRE</span><b>${x.ai.maxRec}</b></div>
+        </div>
+        <div class="altWhy">${alternativeWhy(x,source)}</div>
+        <div class="altActions">
+          <button class="altCompare" onclick="addAlternativeToCompare(${x.index})">⚖️ CONFRONTA</button>
+          <button class="altAI" onclick="closeAlternativesPage();openAIForPlayer(${x.index})">🤖 AI</button>
+          <button class="altAuction" onclick="closeAlternativesPage();selectAstaLivePlayer(${x.index});showPage('asta')">🔨 ASTA LIVE</button>
+        </div>
+      </div>`).join(''):'<div class="empty">Nessuna alternativa libera disponibile per questo ruolo.</div>'}
+  `;
+
+  document.body.classList.add('alternatives-page-open');
+  document.getElementById('alternativesModal').classList.add('show');
+  body.scrollTop=0;
+}
+
 function alternativeWhy(x,source){
   const bits=[];
   if(x.fit>=75)bits.push('ottimo incastro con la tua rosa');
@@ -12961,6 +13250,8 @@ function closePlayerDetail(){
 
 function buyFromListone(index){
   const p=PLAYER_ARCHIVE[index];
+  // V70.8.7: un ingresso manuale dal Listone non deve ereditare un vecchio esito Asta Live.
+  if(ASTA_LIVE_LAST_PRICE==null)ASTA_LIVE_OUTCOME_SOURCE=null;
   if(!p || alreadyBoughtPlayer(p.name) || isUnavailablePlayer(p.name)) return;
   if(!marketRoleAllowed(p.role)){
     alert(`Asta iniziale: blocco ${initialBlockLabel()}. In questo momento puoi acquistare ${allowedInitialRoleText()}.`);
@@ -13451,6 +13742,11 @@ function saveBuy(){
   const roleBudgetsBefore={};
   ['P','D','C','A'].forEach(r=>{ const rp=liveRoleBudgetPlan(r,buyer); roleBudgetsBefore[r]={min:rp.min,max:rp.max,avg:rp.avg}; });
 
+  // V70.8.7: se il giocatore selezionato in Asta Live viene registrato
+  // a un avversario, dopo il salvataggio mostra subito 3 alternative.
+  const lostFromAstaLive=(ASTA_LIVE_OUTCOME_SOURCE!=null && pidx===ASTA_LIVE_OUTCOME_SOURCE && buyer!==state.me);
+  const lostSourceIndex=lostFromAstaLive?ASTA_LIVE_OUTCOME_SOURCE:null;
+
   state.purchases.push({
     id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     name,role,price,buyer,ts:Date.now(),
@@ -13472,6 +13768,12 @@ function saveBuy(){
   persist();
   closeBuy();
   render();
+
+  // V70.8.7: resetta sempre il contesto; se l'hai perso, apri il Piano B automatico.
+  ASTA_LIVE_OUTCOME_SOURCE=null;
+  if(lostFromAstaLive && lostSourceIndex!=null){
+    setTimeout(()=>openLostAlternativesPage(lostSourceIndex,name,price,buyer),90);
+  }
 }
 function del(id){if(confirm('Eliminare questo acquisto?')){state.purchases=state.purchases.filter(x=>x.id!==id);persist();render()}}
 let settingsReturnScroll=0;
