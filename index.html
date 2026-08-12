@@ -5317,7 +5317,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -9572,11 +9572,11 @@ function astaLiveFastPrices(playerIndex){
       const slotHigh=Math.max(slotTarget,Number(current.high)||slotTarget);
 
       let playerCap;
-      if(quality<38){
+      if(quality<36){
         playerCap=Math.max(base,Math.min(slotLow,hardCap));
-      }else if(quality<46){
-        playerCap=Math.max(base,Math.min(slotTarget,hardCap));
       }else{
+        // V73.5: da 36/99 in su il profilo può usare la fascia alta dello slot,
+        // sempre entro hardCap. Tutto il resto resta invariato.
         playerCap=Math.max(base,Math.min(slotHigh,hardCap));
       }
 
@@ -9702,7 +9702,7 @@ function renderAstaLiveSelected(){
     <div class="astaLiveDecisionCard">
       <div class="astaLiveDecisionHead">
         <div>
-          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.4</div>
+          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.5</div>
           <div class="astaLiveDecisionSub">Decisione immediata · prezzo, budget futuro, qualità e alternative.</div>
         </div>
         <div class="liveMiniScore">${impact.quality}/99</div>
