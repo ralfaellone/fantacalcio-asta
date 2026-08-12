@@ -5288,6 +5288,27 @@ nav button .ico{font-size:19px!important}
 #astaLiveDecision .bidVerdictText{margin-top:6px;color:#aebdcb;font-size:11.5px;line-height:1.3}
 @media(max-width:430px){#astaLiveDecision .astaLiveDecisionCard{padding:13px;border-radius:18px}#astaLiveDecision .astaLiveDecisionTitle{font-size:20px}#astaLiveDecision .astaThresholdGrid{gap:5px}#astaLiveDecision .astaThresholdGrid>div{min-height:57px;padding:8px 2px}#astaLiveDecision .astaThresholdGrid span{font-size:7px;letter-spacing:.4px}#astaLiveDecision .astaThresholdGrid b{font-size:19px}#astaLiveDecision .bidQuick{gap:5px}#astaLiveDecision .bidQuick button{font-size:11px;height:36px}}
 </style>
+
+<style id="v732-live-details">
+.liveMiniScore{min-width:52px;height:38px;padding:0 8px;border-radius:12px;background:#072a29;border:1px solid rgba(52,211,153,.35);color:#6ee7b7;font-size:17px;font-weight:950;display:flex;align-items:center;justify-content:center}
+.liveInfoPanel,.liveImpactPanel,.liveAltPanel{margin-top:12px;padding:12px;border-radius:14px;background:#071827;border:1px solid #1e3a4b}
+.liveImpactPanel{background:rgba(3,78,54,.18);border-color:rgba(52,211,153,.28)}
+.liveImpactPanel.critical{background:rgba(92,18,25,.22);border-color:rgba(248,113,113,.35)}
+.liveInfoTitle{font-size:11px;font-weight:950;letter-spacing:.3px;color:#f8fafc;margin-bottom:7px}
+.liveInfoText{font-size:11px;line-height:1.45;color:#b6c2cf}
+.liveImpactGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px}
+.liveImpactGrid>div{background:#061522;border:1px solid #183448;border-radius:11px;padding:8px}
+.liveImpactGrid span{display:block;font-size:7px;letter-spacing:.6px;color:#8799ab}
+.liveImpactGrid b{display:block;margin-top:4px;font-size:13px;color:#f8fafc}
+.liveAltGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.liveAltGrid button{min-width:0;padding:9px 5px;border-radius:12px;border:1px solid #294356;background:#0a1b2b;color:#fff}
+.liveAltGrid button b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liveAltGrid button span{display:block;margin-top:4px;font-size:7px;line-height:1.25;color:#9fb0c1}
+.liveActions{display:grid;grid-template-columns:1fr 1.15fr;gap:8px;margin-top:12px}
+.liveActions button{position:static!important;height:43px;border-radius:12px;font-size:11px;font-weight:950}
+@media(max-width:430px){.liveAltGrid{grid-template-columns:1fr 1fr 1fr}.liveImpactGrid{gap:5px}.liveActions button{font-size:10px}}
+</style>
+
 </head>
 <body class="splash-active">
 <div id="splashScreen">
@@ -5296,7 +5317,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -9587,6 +9608,42 @@ function astaLiveFastAction(price,px){
   return {action:'LASCIA',cls:'stop'};
 }
 
+function astaLiveFastAlternatives(playerIndex,limit=3){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  if(!p)return [];
+  const cash=Math.max(0,budget(state.me));
+  const slots=Math.max(1,remainingRosterSlots(state.me));
+  const hardCap=Math.max(0,cash-Math.max(0,slots-1));
+  const rows=[];
+  for(let i=0;i<PLAYER_ARCHIVE.length;i++){
+    if(i===playerIndex)continue;
+    const q=PLAYER_ARCHIVE[i];
+    if(!q || q.role!==p.role)continue;
+    if(purchaseForArchivePlayer(q.name)||isUnavailablePlayer(q.name))continue;
+    const base=Math.max(1,auctionBasePrice(q));
+    if(base>hardCap)continue;
+    const quality=typeof dsFastPlayerQuality==='function'?dsFastPlayerQuality(q):50;
+    rows.push({i,p:q,quality,base});
+  }
+  rows.sort((a,b)=>b.quality-a.quality || a.base-b.base);
+  return rows.slice(0,limit);
+}
+
+function astaLiveFastImpact(playerIndex,price){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  const cash=Math.max(0,budget(state.me));
+  const slots=Math.max(1,remainingRosterSlots(state.me));
+  const after=Math.max(0,cash-price);
+  const slotsAfter=Math.max(0,slots-1);
+  const reserveAfter=slotsAfter;
+  const free=Math.max(0,after-reserveAfter);
+  const quality=typeof dsFastPlayerQuality==='function'?dsFastPlayerQuality(p):50;
+  let label='SICURO';
+  if(slotsAfter>0 && after===reserveAfter)label='CRITICO';
+  else if(slotsAfter>0 && free<=2)label='SOTTO PRESSIONE';
+  return {after,slotsAfter,reserveAfter,free,quality,label};
+}
+
 function renderAstaLiveSelected(){
   const selected=document.getElementById('astaLiveSelected');
   const decision=document.getElementById('astaLiveDecision');
@@ -9600,6 +9657,10 @@ function renderAstaLiveSelected(){
 
   const p=PLAYER_ARCHIVE[ASTA_LIVE_PLAYER];
   const px=astaLiveFastPrices(ASTA_LIVE_PLAYER);
+  const initialPrice=Math.max(1,Number(px?.base)||auctionBasePrice(p)||1);
+  const v=astaLiveFastAction(initialPrice,px);
+  const impact=astaLiveFastImpact(ASTA_LIVE_PLAYER,initialPrice);
+  const alts=astaLiveFastAlternatives(ASTA_LIVE_PLAYER,3);
 
   selected.innerHTML=`
     <div class="astaSelectedCard">
@@ -9615,16 +9676,14 @@ function renderAstaLiveSelected(){
     return;
   }
 
-  const initialPrice=Math.max(1,Number(px.base)||1);
-  const v=astaLiveFastAction(initialPrice,px);
-
   decision.innerHTML=`
     <div class="astaLiveDecisionCard">
       <div class="astaLiveDecisionHead">
         <div>
-          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.1</div>
-          <div class="astaLiveDecisionSub">Prezzo consigliato in tempo reale · budget, slot e Piano D.S.</div>
+          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.2</div>
+          <div class="astaLiveDecisionSub">Decisione immediata · prezzo, budget futuro, qualità e alternative.</div>
         </div>
+        <div class="liveMiniScore">${impact.quality}/99</div>
       </div>
 
       <div class="astaThresholdGrid">
@@ -9653,11 +9712,86 @@ function renderAstaLiveSelected(){
       <div id="astaLiveFastVerdict" class="bidVerdict ${v.cls}">
         <div class="bidVerdictTitle">${v.action}</div>
         <div class="bidVerdictText">${px.blocked
-          ? `La base d’asta è superiore al tetto sostenibile con ${budget(state.me)} crediti e ${remainingRosterSlots(state.me)} slot aperti.`
-          : `Prezzo corrente ${initialPrice} cr · obiettivo ${px.ideal} · NON OLTRE ${px.maxRec}.`}</div>
+          ? `La base d’asta supera il tetto sostenibile con ${budget(state.me)} crediti e ${remainingRosterSlots(state.me)} slot aperti.`
+          : `Prezzo ${initialPrice} cr · obiettivo ${px.ideal} · NON OLTRE ${px.maxRec}.`}</div>
+      </div>
+
+      <div id="astaLiveFastDetails">
+        ${astaLiveFastDetailsHTML(ASTA_LIVE_PLAYER,initialPrice)}
       </div>
     </div>`;
 }
+
+function astaLiveFastDetailsHTML(playerIndex,price){
+  const p=PLAYER_ARCHIVE[playerIndex];
+  const px=astaLiveFastPrices(playerIndex);
+  const impact=astaLiveFastImpact(playerIndex,price);
+  const alts=astaLiveFastAlternatives(playerIndex,3);
+
+  const priceState=price<px.low?'AFFARE':
+                   price<=px.ideal?'PREZZO GIUSTO':
+                   price<px.maxRec?'ZONA RILANCIO':
+                   price===px.maxRec?'ULTIMO CREDITO':'OLTRE TETTO';
+
+  return `
+    <div class="liveInfoPanel">
+      <div class="liveInfoTitle">🧠 PERCHÉ</div>
+      <div class="liveInfoText">
+        ${priceState}. ${esc(p.name)} ha qualità stimata <b>${impact.quality}/99</b>.
+        ${px.blocked
+          ? `La QI/base asta (${px.base}) è già superiore al limite sostenibile (${px.maxRec}).`
+          : `Il D.S. considera sostenibile questo profilo fino a <b>${px.maxRec} cr</b> per lo slot corrente.`}
+      </div>
+    </div>
+
+    <div class="liveImpactPanel ${impact.label==='CRITICO'?'critical':''}">
+      <div class="liveInfoTitle">🧠 DOPO QUESTO ACQUISTO</div>
+      <div class="liveImpactGrid">
+        <div><span>BUDGET</span><b>${budget(state.me)} → ${impact.after}</b></div>
+        <div><span>POSTI</span><b>${remainingRosterSlots(state.me)} → ${impact.slotsAfter}</b></div>
+        <div><span>RISERVA MINIMA</span><b>${impact.reserveAfter} cr</b></div>
+        <div><span>BUDGET FUTURO</span><b>${impact.label}</b></div>
+      </div>
+      <div class="liveInfoText">
+        ${impact.slotsAfter
+          ? `Dopo l'acquisto restano ${impact.slotsAfter} slot. Margine libero oltre la riserva minima: <b>${impact.free} cr</b>.`
+          : `Rosa completata dopo questo acquisto.`}
+      </div>
+    </div>
+
+    <div class="liveAltPanel">
+      <div class="liveInfoTitle">🔄 ALTERNATIVE SE MOLLI</div>
+      ${alts.length?`<div class="liveAltGrid">${alts.map(a=>{
+        const ap=astaLiveFastPrices(a.i);
+        return `<button onclick="selectAstaLivePlayer(${a.i})">
+          <b>${esc(a.p.name)}</b>
+          <span>QI ${a.base} · ${a.quality}/99 · NON OLTRE ${ap.maxRec}</span>
+        </button>`;
+      }).join('')}</div>`:
+      `<div class="liveInfoText">Nessuna alternativa sostenibile trovata nella stessa fascia.</div>`}
+    </div>
+
+    <div class="liveActions">
+      <button class="secondary" onclick="openAIForPlayer(${playerIndex})">🤖 ANALISI COMPLETA</button>
+      <button class="primary" onclick="openBuy(${playerIndex})">✅ REGISTRA ESITO</button>
+    </div>`;
+}
+
+function refreshAstaLiveFastDecision(){
+  if(ASTA_LIVE_PLAYER==null||ASTA_LIVE_PLAYER<0)return;
+  const input=document.getElementById('astaLivePrice');
+  const out=document.getElementById('astaLiveFastVerdict');
+  const details=document.getElementById('astaLiveFastDetails');
+  if(!input||!out)return;
+  const px=astaLiveFastPrices(ASTA_LIVE_PLAYER);
+  const price=Math.max(1,Number(input.value)||1);
+  const v=astaLiveFastAction(price,px);
+  out.className=`bidVerdict ${v.cls}`;
+  out.innerHTML=`<div class="bidVerdictTitle">${v.action}</div>
+    <div class="bidVerdictText">Prezzo ${price} cr · obiettivo ${px.ideal} · NON OLTRE ${px.maxRec}.</div>`;
+  if(details)details.innerHTML=astaLiveFastDetailsHTML(ASTA_LIVE_PLAYER,price);
+}
+
 
 function refreshAstaLiveFastDecision(){
   if(ASTA_LIVE_PLAYER==null||ASTA_LIVE_PLAYER<0)return;
