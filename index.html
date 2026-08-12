@@ -5317,7 +5317,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7934,11 +7934,7 @@ function dsFastOperationalPlan(){
       intent:x.spec.intent||'VALORE',
       target,
       low:Math.max(1,Math.floor(target*.75)),
-      // V73.7 - SOLO LOGICA ULTIMO SLOT:
-      // con un solo posto rimasto la fascia non può superare i crediti reali disponibili.
-      high:slots===1
-        ? Math.min(cash,Math.max(target,Math.ceil(target*1.25)))
-        : Math.max(target,Math.ceil(target*1.25))
+      high:Math.max(target,Math.ceil(target*1.25))
     };
   });
 
@@ -7994,7 +7990,7 @@ function renderDynamicRosterPlanFast(){
           <span>FASCIA ${x.low}-${x.high} · ${esc(x.intent)}</span>
         </div>`).join('')}
       </div>
-      <div class="playerMetaLine" style="margin-top:8px">🛡️ ${op.slots===1?'Ultimo slot: nessuna riserva necessaria · tetto massimo '+op.cash+' cr.':'Ricalcolo automatico dopo ogni acquisto · almeno 1 cr protetto per ciascun altro slot.'}</div>
+      <div class="playerMetaLine" style="margin-top:8px">🛡️ Ricalcolo automatico dopo ogni acquisto · almeno 1 cr protetto per ciascun altro slot.</div>
     </div>
   </div>`;
 }
@@ -9057,7 +9053,12 @@ function liveSustainableCap(playerIndex,rawMax){
   if(!p)return 0;
 
   const safe=Math.max(0,safeMaxBid(state.me));
-  const baseStop=Math.max(0,Math.min(Number(rawMax)||0,safe));
+  const dsEnvEarly=dsLiveSlotEnvelope(playerIndex);
+  const isFinalRosterSlotEarly=remainingRosterSlots(state.me)===1;
+  const rawStrategicMax = isFinalRosterSlotEarly && dsEnvEarly
+    ? Math.max(Number(rawMax)||0, Number(dsEnvEarly.ideal)||0)
+    : (Number(rawMax)||0);
+  const baseStop=Math.max(0,Math.min(rawStrategicMax,safe));
   if(baseStop<=0)return 0;
 
   // V71.4 - Il Piano D.S. è la base economica dello slot corrente.
@@ -9075,15 +9076,29 @@ function liveSustainableCap(playerIndex,rawMax){
       Number(a0?.fit)||0
     );
 
+    // V73.9 - FIX ULTIMO SLOT:
+    // quando manca UN SOLO giocatore alla rosa non esistono più slot successivi
+    // da proteggere. Asta Live deve quindi rispettare almeno l'obiettivo economico
+    // deciso dal Piano D.S., senza trasformare 1 cr in "ULTIMO CREDITO" se il
+    // Piano ha ancora 2 cr realmente spendibili.
+    const isFinalRosterSlot = remainingRosterSlots(state.me)===1;
+    const dsTarget = Math.max(1, Number(dsEnv.ideal)||1);
+    const dsHigh = Math.max(dsTarget, Number(dsEnv.maxRec)||dsTarget);
+
     // Profilo adeguato: almeno il target D.S.; profilo forte: può usare la fascia MAX.
-    // La riserva matematica degli slot successivi resta comunque inviolabile sotto.
-    const qualifiesTarget=fitScore>=55 || baseStop>=Number(dsEnv.ideal||0);
+    // Nell'ULTIMO slot il target D.S. è sempre raggiungibile entro il budget reale.
+    const qualifiesTarget=isFinalRosterSlot || fitScore>=55 || baseStop>=dsTarget;
     const qualifiesHigh=fitScore>=72;
 
     if(qualifiesTarget)
-      slotCap=Math.max(slotCap,Math.min(baseStop,Number(dsEnv.ideal)||slotCap));
+      slotCap=Math.max(slotCap,Math.min(safe, isFinalRosterSlot ? dsTarget : Math.min(baseStop,dsTarget)));
     if(qualifiesHigh)
-      slotCap=Math.max(slotCap,Math.min(baseStop,Number(dsEnv.maxRec)||slotCap));
+      slotCap=Math.max(slotCap,Math.min(baseStop,dsHigh));
+
+    // Ultimo slot: il tetto non può essere inferiore al target del Piano,
+    // ma resta SEMPRE limitato ai crediti realmente disponibili.
+    if(isFinalRosterSlot)
+      slotCap=Math.max(slotCap,Math.min(safe,dsTarget));
   }
 
   const normalStop=Math.max(0,Math.min(baseStop,slotCap));
@@ -9706,7 +9721,7 @@ function renderAstaLiveSelected(){
     <div class="astaLiveDecisionCard">
       <div class="astaLiveDecisionHead">
         <div>
-          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.6</div>
+          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.9</div>
           <div class="astaLiveDecisionSub">Decisione immediata · prezzo, budget futuro, qualità e alternative.</div>
         </div>
         <div class="liveMiniScore">${impact.quality}/99</div>
