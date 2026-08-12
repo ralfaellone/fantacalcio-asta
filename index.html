@@ -5317,7 +5317,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.10</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -9568,6 +9568,7 @@ function astaLiveFastPrices(playerIndex){
 
   const cash=Math.max(0,budget(state.me));
   const slots=Math.max(1,remainingRosterSlots(state.me));
+  const isFinalRosterSlot=slots===1;
   const hardCap=Math.max(0,cash-Math.max(0,slots-1));
   const base=Math.max(1,auctionBasePrice(p));
 
@@ -9591,11 +9592,12 @@ function astaLiveFastPrices(playerIndex){
       const slotHigh=Math.max(slotTarget,Number(current.high)||slotTarget);
 
       let playerCap;
-      if(quality<36){
+      if(quality<36 && !isFinalRosterSlot){
         playerCap=Math.max(base,Math.min(slotLow,hardCap));
       }else{
-        // V73.5: da 36/99 in su il profilo può usare la fascia alta dello slot,
-        // sempre entro hardCap. Tutto il resto resta invariato.
+        // V73.10: nell'ULTIMO slot rosa non esistono crediti da proteggere per acquisti successivi.
+        // Anche un profilo di completamento sotto 36/99 può quindi raggiungere il target/fascia
+        // del Piano D.S., sempre e soltanto entro i crediti realmente disponibili (hardCap).
         playerCap=Math.max(base,Math.min(slotHigh,hardCap));
       }
 
@@ -9626,7 +9628,7 @@ function astaLiveFastPrices(playerIndex){
   if(base>hardCap){
     return {
       low:hardCap,ideal:hardCap,high:hardCap,maxRec:hardCap,
-      blocked:true,base,hardCap,quality
+      blocked:true,base,hardCap,quality,finalRosterSlot:isFinalRosterSlot
     };
   }
 
@@ -9635,7 +9637,7 @@ function astaLiveFastPrices(playerIndex){
     ideal:Math.max(1,Math.min(target,maxRec)),
     high:Math.max(1,Math.min(high,maxRec)),
     maxRec:Math.max(1,maxRec),
-    blocked:false,base,hardCap,quality
+    blocked:false,base,hardCap,quality,finalRosterSlot:isFinalRosterSlot
   };
 }
 
@@ -9643,6 +9645,10 @@ function astaLiveFastAction(price,px){
   price=Math.max(0,Number(price)||0);
   if(!px)return {action:'LASCIA',cls:'stop'};
   if(px.blocked || price>px.maxRec)return {action:'LASCIA',cls:'stop'};
+  // V73.10: se l'ultimo slot ha IDEALE coincidente con il tetto reale,
+  // quel prezzo è ancora un acquisto corretto, non un avviso "ULTIMO CREDITO".
+  if(px.finalRosterSlot && price===px.maxRec && price===px.ideal)
+    return {action:'COMPRA',cls:'go'};
   if(price===px.maxRec)return {action:'ULTIMO CREDITO',cls:'wait'};
   if(price<=px.ideal)return {action:'COMPRA',cls:'go'};
   if(price<px.maxRec)return {action:`PUOI RILANCIARE · MAX ${px.maxRec}`,cls:'wait'};
