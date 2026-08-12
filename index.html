@@ -9649,7 +9649,10 @@ function astaLiveFastAction(price,px){
   // quel prezzo è ancora un acquisto corretto, non un avviso "ULTIMO CREDITO".
   if(px.finalRosterSlot && price===px.maxRec && price===px.ideal)
     return {action:'COMPRA',cls:'go'};
-  if(price===px.maxRec)return {action:'ULTIMO CREDITO',cls:'wait'};
+  // V73.11: sola modifica testuale. Se il tetto del giocatore viene raggiunto ma
+  // non siamo davvero all'ultimo credito totale, mostra "LIMITE MASSIMO".
+  // Nessuna soglia o decisione d'asta viene modificata.
+  if(price===px.maxRec)return {action:budget(state.me)===1?'ULTIMO CREDITO':'LIMITE MASSIMO',cls:'wait'};
   if(price<=px.ideal)return {action:'COMPRA',cls:'go'};
   if(price<px.maxRec)return {action:`PUOI RILANCIARE · MAX ${px.maxRec}`,cls:'wait'};
   return {action:'LASCIA',cls:'stop'};
@@ -9778,7 +9781,7 @@ function astaLiveFastDetailsHTML(playerIndex,price){
   const priceState=price<px.low?'AFFARE':
                    price<=px.ideal?'PREZZO GIUSTO':
                    price<px.maxRec?'ZONA RILANCIO':
-                   price===px.maxRec?'ULTIMO CREDITO':'OLTRE TETTO';
+                   price===px.maxRec?(budget(state.me)===1?'ULTIMO CREDITO':'LIMITE MASSIMO'):'OLTRE TETTO';
 
   return `
     <div class="liveInfoPanel">
