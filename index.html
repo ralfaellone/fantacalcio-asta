@@ -2726,6 +2726,7 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
 }
 /* V73.17 — Barra filtri giocatori ordinata su iPhone */
 /* V73.18 — Alternative automatiche dopo giocatore perso in Asta Live */
+/* V73.22 — Ripristino D.S. stabile: valore giocatore in apertura, recupero solo fase finale */
 #listone .playersRoleFilters{
   display:grid;
   grid-template-columns:1.15fr repeat(4,.78fr) 1.12fr 1.08fr .78fr;
@@ -5393,7 +5394,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.21</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.22</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -9258,6 +9259,17 @@ function cachedCalibratedLivePrices(playerIndex){
 function dsLiveSlotEnvelope(playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
   if(!p)return null;
+
+  // V73.22 — RIPRISTINO D.S. STABILE
+  // Il Piano Operativo di RECUPERO non deve sostituire il valore reale del
+  // giocatore all'inizio dell'asta. Entra solo nella gestione finale/critica,
+  // come rete di sicurezza per completare la rosa e per gli ultimi slot.
+  const slots=Math.max(0,remainingRosterSlots(state.me));
+  const cash=Math.max(0,budget(state.me));
+  const avg=slots?cash/slots:cash;
+  const useRecoveryEnvelope=(slots<=5 || avg<=4);
+  if(!useRecoveryEnvelope)return null;
+
   const op=dsOperationalRecoveryPlan();
   const next=roleCount(state.me,p.role)+1;
   const item=(op.items||[]).find(x=>x.role===p.role && x.position===next);
@@ -13438,8 +13450,21 @@ function aiPlayerAnalysisBaseRaw(index,buyerIndex=state.me){
   // above the average-per-slot figure if the player is genuinely top tier.
   const strategicCap=strategyCapForRole(p.role,buyerIndex);
   if(strategicCap>0){
+    // V73.22 — RIPRISTINO D.S. STABILE
+    // Il cap per-slot resta una protezione di rosa, ma in apertura non può
+    // schiacciare TOP/SEMITOP alla sola QI. Il valore del giocatore (FVM/QI,
+    // percentile e mercato a 12) resta il riferimento; il cap diventa davvero
+    // vincolante quando la rosa entra nella seconda metà/fase finale.
+    const rosterDone=roster(buyerIndex).length;
+    const totalOpen=remainingRosterSlots(buyerIndex);
+    const earlyAuction=rosterDone<8 && totalOpen>17;
     const eliteAllowance=elitePct>=.90?1.65:elitePct>=.75?1.40:1.18;
-    maxRec=Math.min(maxRec,Math.round(strategicCap*eliteAllowance));
+    if(!earlyAuction){
+      maxRec=Math.min(maxRec,Math.round(strategicCap*eliteAllowance));
+    }else if(elitePct<.65){
+      // In apertura i profili medi/deboli restano comunque protetti dal piano.
+      maxRec=Math.min(maxRec,Math.round(strategicCap*1.55));
+    }
   }
   maxRec=Math.max(1,Math.min(maxRec,safe,available));
 
