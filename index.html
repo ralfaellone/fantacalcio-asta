@@ -2726,7 +2726,7 @@ body.rival-radar-open #rivalRadarModal{visibility:visible!important;pointer-even
 }
 /* V73.17 — Barra filtri giocatori ordinata su iPhone */
 /* V73.18 — Alternative automatiche dopo giocatore perso in Asta Live */
-/* V73.22 — Ripristino D.S. stabile: valore giocatore in apertura, recupero solo fase finale */
+/* V73.23 — Ripristino D.S. stabile: valore giocatore in apertura, recupero solo fase finale */
 #listone .playersRoleFilters{
   display:grid;
   grid-template-columns:1.15fr repeat(4,.78fr) 1.12fr 1.08fr .78fr;
@@ -5394,7 +5394,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.22</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.23</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -7217,9 +7217,27 @@ function strongRosterTargets(limit=5){
 function dsOperationalRecoveryPlan(){
   const bal=dsGlobalBalance(), cash=bal.cash, slots=bal.totalSlots, critical=bal.critical;
   if(!critical||slots<=0)return {title:'ROSA COMPLETA',items:[],cash};
+
   const role=critical.role, owned=roleCount(state.me,role);
-  const missing=Math.max(0,LIMITS[role]-owned), otherMissing=Math.max(0,slots-missing);
-  const roleCash=Math.max(missing,cash-otherMissing);
+  const missing=Math.max(0,LIMITS[role]-owned);
+  if(!missing)return {title:'ROSA COMPLETA',items:[],cash};
+
+  // V73.23 - FIX BUDGET REPARTO.
+  // Il vecchio recupero usava cash - slot degli altri reparti: a rosa vuota
+  // poteva quindi assegnare 578 cr ai soli portieri. Il Piano Operativo deve
+  // invece partire dal budget strategico REALE del reparto (modulo + acquisti
+  // gia' fatti), mantenendo comunque il vincolo hard di completamento rosa.
+  const roleRow=(strategyData(state.me)||[]).find(x=>x.role===role);
+  const hardCompletion=Math.max(missing, cash-Math.max(0,slots-missing));
+  const plannedRemaining=Math.max(
+    missing,
+    Number(roleRow?.recommendedRemaining)||Number(roleRow?.plan)||missing
+  );
+  const roleCash=Math.max(
+    missing,
+    Math.min(hardCompletion, Number(roleRow?.hardMax)||hardCompletion, plannedRemaining)
+  );
+
   const specs=Array.from({length:missing},(_,i)=>({position:owned+i+1,spec:slotSpec(role,owned+i+1)}));
   const weights=specs.map((x,i)=>{
     const l=String(x.spec?.label||'');
@@ -7230,10 +7248,15 @@ function dsOperationalRecoveryPlan(){
   let alloc=weights.map(w=>1+Math.floor(surplus*w/sum));
   let rem=Math.max(0,roleCash-alloc.reduce((a,b)=>a+b,0));
   for(let i=0;rem>0;i=(i+1)%alloc.length){alloc[i]++;rem--;}
-  const items=specs.map((x,i)=>({role,position:x.position,label:x.spec?.label||'SLOT',intent:x.spec?.intent||'',target:alloc[i],
-    rangeMin:Math.max(1,Math.floor(alloc[i]*.75)),rangeMax:Math.max(alloc[i],Math.min(roleCash-(missing-1),Math.ceil(alloc[i]*1.25)))}));
-  return {title:`RECUPERO ${roleName(role).toUpperCase()}`,role,items,cash,roleCash,
-    note:`Ricalcolo automatico dopo ogni acquisto. Protetto almeno 1 cr per ciascuno degli altri ${Math.max(0,slots-1)} slot.`};
+  const items=specs.map((x,i)=>({
+    role,position:x.position,label:x.spec?.label||'SLOT',intent:x.spec?.intent||'',target:alloc[i],
+    rangeMin:Math.max(1,Math.floor(alloc[i]*.75)),
+    rangeMax:Math.max(alloc[i],Math.min(roleCash-(missing-1),Math.ceil(alloc[i]*1.25)))
+  }));
+  return {
+    title:`RECUPERO ${roleName(role).toUpperCase()}`,role,items,cash,roleCash,
+    note:`Budget reparto ${roleCash} cr dal piano strategico. Protetto almeno 1 cr per ciascuno degli altri ${Math.max(0,slots-1)} slot.`
+  };
 }
 function dsOperationalVerdict(g=strongRosterGlobal()){
   const bal=dsGlobalBalance(),op=dsOperationalRecoveryPlan();
@@ -8798,29 +8821,32 @@ function liveAuctionAI(playerIndex){
   const base=aiPlayerAnalysis(playerIndex,state.me);
   if(!base||!p)return null;
 
-  // V72.8 - FIX MIRATO PROFILI PREFERITI
-  // Adzic/Mastantuono entrano nella gerarchia "preferiti" (stella), Messias no.
-  // Se quella sola gerarchia fallisce, Asta Live deve continuare col motore base
-  // invece di rendere indisponibile tutta l'analisi.
   let hierarchy=null;
   try{
     hierarchy=favoriteLiveHierarchy(playerIndex);
   }catch(err){
-    console.warn('[V72.8] gerarchia preferiti ignorata per',p.name,err);
+    console.warn('[V73.23] gerarchia preferiti ignorata per',p.name,err);
     hierarchy=null;
   }
 
   if(!hierarchy)return enforceAuctionBaseFloor({...base,_favoriteHierarchy:null},p);
-
   const px=hierarchy.me && hierarchy.me._favoritePx;
   if(!px)return enforceAuctionBaseFloor({...base,_favoriteHierarchy:null},p);
 
+  // V73.23 - un obiettivo/preferito puo' alzare la priorita', ma non deve
+  // schiacciare la valutazione economica FVM/QI del D.S. a una fascia artificiale.
+  // Un eventuale MAX inserito MANUALMENTE dall'utente resta invece vincolante.
+  const meta=goalMeta(p.name)||{};
+  const manualMax=Math.max(0,Number(meta.max)||0);
+  let maxRec=Math.max(Number(base.maxRec)||0,Number(hierarchy.liveMax)||0,Number(px.maxRec)||0);
+  if(manualMax>0)maxRec=Math.min(maxRec,manualMax);
+  const ideal=Math.min(maxRec,Math.max(Number(base.ideal)||1,Number(px.ideal)||1));
+  const low=Math.min(ideal,Math.max(1,Number(base.low)||1,Number(px.low)||1));
+  const high=Math.min(maxRec,Math.max(ideal,Number(base.high)||ideal,Number(px.maxRec)||ideal));
+
   return enforceAuctionBaseFloor({
     ...base,
-    low:px.low,
-    ideal:px.ideal,
-    high:Math.max(px.ideal,px.maxRec),
-    maxRec:hierarchy.liveMax,
+    low,ideal,high,maxRec,
     _favoriteHierarchy:hierarchy
   },p);
 }
@@ -9260,7 +9286,7 @@ function dsLiveSlotEnvelope(playerIndex){
   const p=PLAYER_ARCHIVE[playerIndex];
   if(!p)return null;
 
-  // V73.22 — RIPRISTINO D.S. STABILE
+  // V73.23 — RIPRISTINO D.S. STABILE
   // Il Piano Operativo di RECUPERO non deve sostituire il valore reale del
   // giocatore all'inizio dell'asta. Entra solo nella gestione finale/critica,
   // come rete di sicurezza per completare la rosa e per gli ultimi slot.
@@ -13450,7 +13476,7 @@ function aiPlayerAnalysisBaseRaw(index,buyerIndex=state.me){
   // above the average-per-slot figure if the player is genuinely top tier.
   const strategicCap=strategyCapForRole(p.role,buyerIndex);
   if(strategicCap>0){
-    // V73.22 — RIPRISTINO D.S. STABILE
+    // V73.23 — RIPRISTINO D.S. STABILE
     // Il cap per-slot resta una protezione di rosa, ma in apertura non può
     // schiacciare TOP/SEMITOP alla sola QI. Il valore del giocatore (FVM/QI,
     // percentile e mercato a 12) resta il riferimento; il cap diventa davvero
