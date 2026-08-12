@@ -1149,6 +1149,41 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 @media(max-width:390px){.playerDecisionGrid{grid-template-columns:1fr 1fr}.playerDetailQuickActions{grid-template-columns:1fr 1fr 1fr}}
 
 
+/* V70.8.11 - Scheda giocatore compatta mobile (solo UI) */
+.playerImpactStrip{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:7px}
+.playerImpactMini{background:#0b1727;border:1px solid var(--line);border-radius:12px;padding:8px 4px;text-align:center;min-width:0}
+.playerImpactMini span{display:block;color:var(--muted);font-size:8px;font-weight:900;letter-spacing:.35px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.playerImpactMini b{display:block;font-size:16px;margin-top:3px}
+.playerImpactHint{margin-top:7px;background:#0b1727;border:1px solid var(--line);border-radius:12px;padding:8px 10px;color:var(--muted);font-size:10px;line-height:1.3}
+@media(max-width:600px){
+  .playerDetailBody{padding:9px 12px 14px}
+  .playerDetailHero{padding:11px;border-radius:17px}
+  .playerDetailName{font-size:22px}
+  .playerDetailGrid{margin-top:9px;gap:6px}
+  .playerDetailMetric{padding:7px 5px}
+  .playerDetailMetric b{font-size:17px}
+  .playerDetailQuickActions{margin-top:7px;gap:6px}
+  .playerDetailQuickActions button{padding:8px 4px;font-size:9px}
+  .playerDetailSection{margin-top:10px}
+  .playerDetailSection h3{margin-bottom:6px;font-size:14px}
+  .playerDecisionGrid{gap:6px;margin-top:6px}
+  .playerDecisionBox{padding:8px;border-radius:12px}
+  .playerDecisionBox b{font-size:16px;margin-top:3px}
+  .playerDecisionBox small{font-size:9px;margin-top:2px}
+  .playerDecisionVerdict{margin-top:7px;padding:9px 10px;font-size:11px}
+  .playerDetailStats{gap:5px}
+  .playerDetailStat{padding:6px 3px;border-radius:10px}
+  .playerDetailStat b{font-size:15px}
+  .playerDetailNote{padding:9px 10px;font-size:10px;border-radius:12px}
+  .playerAltMiniList{gap:6px}
+  .playerAltMini{padding:8px;border-radius:12px}
+  .playerAltMiniMeta{font-size:9px}
+  .playerAltMiniPrice b{font-size:15px}
+  .playerDetailFooter{padding:8px 12px calc(env(safe-area-inset-bottom) + 8px)}
+  .playerDetailActions button{padding:11px 7px}
+}
+
+
 /* V17 - Strategia Budget AI */
 .strategyLaunch{
   width:100%;margin-top:9px;border:1px solid var(--line);
@@ -5407,7 +5442,7 @@ body.league-situation-open nav{display:none!important}
 @media(max-width:390px){.homeV7088 .dashPremiumCredits{font-size:38px}.homeV7088Section{padding:11px}.homeV7088 .dashPremiumHero{padding:15px 13px 13px}}
 
 
-/* V70.8.10 — Home dashboard reale: layout desktop + mobile, solo presentazione */
+/* V70.8.11 — Scheda giocatore più compatta su iPhone, solo presentazione */
 .homeV7088b{width:100%;box-sizing:border-box}
 .homeV7088bGrid{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 .homeV7088bMain,.homeV7088bSide{min-width:0}
@@ -5458,7 +5493,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.10</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.11</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -13276,7 +13311,7 @@ function renderPlayerDetail(index){
   const st=statsFor(p.name);
   const status=playerStatusFor(p.name);
   const ai=aiPlayerAnalysis(index,state.me);
-  // V70.8.10 - La scheda giocatore usa gli stessi PREZZI di Asta Live.
+  // V70.8.11 - Stessi prezzi di Asta Live; modifica solo grafica/compattezza scheda.
   // Non cambia alcuna formula: legge il risultato già calibrato dalla stessa funzione.
   const livePx=cachedCalibratedLivePrices(index) || ai;
   const gm=goalMeta(p.name);
@@ -13381,13 +13416,13 @@ function renderPlayerDetail(index){
 
     <div class="playerDetailSection">
       <h3>🧩 Impatto sulla tua rosa</h3>
-      <div class="playerDecisionGrid">
-        <div class="playerDecisionBox"><span>REPARTO ${p.role}</span><b>${roleHave}/${roleMax}</b><small>${playerRosterNeedText(p.role)}</small></div>
-        <div class="playerDecisionBox"><span>ROSA TOTALE</span><b>${25-slots}/25</b><small>${slots} posti ancora da completare</small></div>
-        <div class="playerDecisionBox"><span>CREDITI</span><b>${cash}</b><small>Budget residuo attuale</small></div>
-        <div class="playerDecisionBox"><span>PESO IDEALE</span><b>${pctIdeal}%</b><small>${livePx.reserveBlocked?'—':livePx.ideal} crediti sul budget residuo</small></div>
+      <div class="playerImpactStrip">
+        <div class="playerImpactMini"><span>${p.role}</span><b>${roleHave}/${roleMax}</b></div>
+        <div class="playerImpactMini"><span>ROSA</span><b>${25-slots}/25</b></div>
+        <div class="playerImpactMini"><span>CREDITI</span><b>${cash}</b></div>
+        <div class="playerImpactMini"><span>PESO</span><b>${pctIdeal}%</b></div>
       </div>
-      <div class="playerDetailNote" style="margin-top:8px">${roleMissing>0?`Questo giocatore copre uno dei <strong>${roleMissing}</strong> slot ancora liberi nel reparto ${p.role}.`:`Il reparto ${p.role} è già completo: valuta l'acquisto solo se coerente con la gestione della tua rosa.`}</div>
+      <div class="playerImpactHint">${roleMissing>0?`Mancano <strong>${roleMissing}</strong> slot ${p.role} · ideale ${livePx.reserveBlocked?'—':livePx.ideal} cr.`:`Reparto ${p.role} completo · ideale ${livePx.reserveBlocked?'—':livePx.ideal} cr.`}</div>
     </div>
 
     ${statBlock}
