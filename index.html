@@ -5296,7 +5296,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -6427,9 +6427,7 @@ function dsJump(id,btn){
   }
 
   // 3. Lascia respirare l'interfaccia, POI calcola solo la tab richiesta.
-  requestAnimationFrame(()=>{
-    setTimeout(()=>dsRenderSelected(id,token),35);
-  });
+  requestAnimationFrame(()=>dsRenderSelected(id,token));
 }
 
 function homePlayerMatches(){
@@ -7736,24 +7734,43 @@ function dsFastPlayerQuality(p){
 function dsFastPrice(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p)return {low:1,ideal:1,high:1,maxRec:1};
-  const key='px|'+dsFastStateKey()+'|'+index;
+  const key='px731|'+dsFastStateKey()+'|'+index;
   if(DS_FAST_CACHE.has(key))return DS_FAST_CACHE.get(key);
 
-  let px=dsFastSafe(()=>cachedCalibratedLivePrices(index),null);
-  if(!px){
-    const qi=Math.max(1,auctionBasePrice(p));
-    const safe=Math.max(1,safeMaxBid(state.me));
-    const maxRec=Math.max(1,Math.min(qi,safe));
-    px={low:Math.min(qi,maxRec),ideal:Math.min(qi,maxRec),high:maxRec,maxRec};
+  // V73.1 - IMPORTANTISSIMO:
+  // Il D.S. NON deve più richiamare cachedCalibratedLivePrices(), cioè il vecchio
+  // motore pesante che causava il blocco su "Calcolo forza rosa...".
+  // Usa lo stesso motore FAST di Asta Live V73.0.
+  let px=null;
+  try{
+    px=astaLiveFastPrices(index);
+  }catch(err){
+    console.warn('[V73.1] dsFastPrice fallback',p.name,err);
   }
-  // V72.2: SINGLE SOURCE OF TRUTH. Never recalculate DS prices here:
-  // copy the exact cached Asta Live values used by the player AI page.
-  const blocked=Boolean(px.reserveBlocked)||Number(px.maxRec)===0;
+
+  if(!px){
+    const cash=Math.max(0,budget(state.me));
+    const slots=Math.max(1,remainingRosterSlots(state.me));
+    const hardCap=Math.max(0,cash-Math.max(0,slots-1));
+    const base=Math.max(1,auctionBasePrice(p));
+    if(base>hardCap){
+      px={low:hardCap,ideal:hardCap,high:hardCap,maxRec:hardCap,blocked:true};
+    }else{
+      px={low:base,ideal:base,high:base,maxRec:Math.max(base,hardCap),blocked:false};
+    }
+  }
+
+  const blocked=Boolean(px.blocked)||Boolean(px.reserveBlocked)||Number(px.maxRec)===0;
   let low=blocked?Math.max(0,Number(px.low)||0):Math.max(1,Number(px.low)||1);
   let ideal=blocked?Math.max(0,Number(px.ideal)||0):Math.max(low,Number(px.ideal)||low);
   let high=blocked?Math.max(0,Number(px.high)||0):Math.max(ideal,Number(px.high)||ideal);
   let maxRec=blocked?Math.max(0,Number(px.maxRec)||0):Math.max(high,Number(px.maxRec)||high);
-  if(maxRec>0){ high=Math.min(high,maxRec); ideal=Math.min(ideal,high); low=Math.min(low,ideal); }
+  if(maxRec>0){
+    high=Math.min(high,maxRec);
+    ideal=Math.min(ideal,high);
+    low=Math.min(low,ideal);
+  }
+
   const out={...px,low,ideal,high,maxRec,reserveBlocked:blocked};
   DS_FAST_CACHE.set(key,out);
   return out;
@@ -9605,7 +9622,7 @@ function renderAstaLiveSelected(){
     <div class="astaLiveDecisionCard">
       <div class="astaLiveDecisionHead">
         <div>
-          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.0</div>
+          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.1</div>
           <div class="astaLiveDecisionSub">Prezzo consigliato in tempo reale · budget, slot e Piano D.S.</div>
         </div>
       </div>
@@ -9947,7 +9964,7 @@ function render(){
       if(DS_VIEW_CACHE[tabId])box.innerHTML=DS_VIEW_CACHE[tabId];
       else box.innerHTML=dsCheapPlaceholder(tabId);
     }
-    requestAnimationFrame(()=>setTimeout(()=>dsRenderSelected(tabId,token),35));
+    requestAnimationFrame(()=>dsRenderSelected(tabId,token));
   }else if(id==='more'){
     renderMarketSeasonPanel();
     renderHistory();
