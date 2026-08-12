@@ -5317,7 +5317,7 @@ nav button .ico{font-size:19px!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V73.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active">
   <div id="dashPremiumHero" class="dashPremiumHero"></div>
@@ -9552,41 +9552,72 @@ function astaLiveFastPrices(playerIndex){
   const hardCap=Math.max(0,cash-Math.max(0,slots-1));
   const base=Math.max(1,auctionBasePrice(p));
 
-  // Use D.S. current slot plan, already proven fast/stable.
+  // V73.3 - PLAYER SPECIFIC CAP
+  // Manteniamo IDENTICO il motore FAST e il Piano D.S.; cambia solo il tetto
+  // del singolo giocatore. La qualità incorpora già QI, FVM e statistiche reali.
+  let quality=50;
+  try{
+    quality=typeof dsFastPlayerQuality==='function'?dsFastPlayerQuality(p):50;
+  }catch(_e){quality=50;}
+
   let target=Math.min(base,hardCap);
-  let low=target, high=target, maxRec=hardCap;
+  let low=target, high=target, maxRec=target;
 
   try{
     const op=typeof dsFastOperationalPlan==='function'?dsFastOperationalPlan():null;
     const current=op&&op.items&&op.items[0];
+
     if(current && current.role===p.role){
-      const quality=typeof dsFastPlayerQuality==='function'?dsFastPlayerQuality(p):50;
       const slotTarget=Math.max(1,Number(current.target)||1);
       const slotLow=Math.max(1,Number(current.low)||slotTarget);
       const slotHigh=Math.max(slotTarget,Number(current.high)||slotTarget);
 
-      // Weak/value profiles stay near low end; stronger profiles may reach high end.
-      if(quality>=70) target=slotHigh;
-      else if(quality>=58) target=slotTarget;
-      else target=slotLow;
+      // Il budget dello slot è un LIMITE, non più il prezzo automatico di tutti.
+      // Fasce player-specific:
+      // <48  = profilo economico/debole
+      // 48-51 = valore/rotazione
+      // 52-59 = buon equilibrio
+      // 60+   = upgrade qualità, può usare tutta la fascia alta del D.S.
+      let playerCap;
+      if(quality<48){
+        playerCap=Math.max(base,Math.min(slotLow,2));
+      }else if(quality<52){
+        playerCap=Math.max(base,slotLow);
+      }else if(quality<60){
+        playerCap=Math.max(base,Math.min(slotTarget,slotHigh));
+      }else{
+        playerCap=Math.max(base,slotHigh);
+      }
 
-      target=Math.max(base,Math.min(target,hardCap));
-      low=Math.max(base,Math.min(slotLow,target));
-      high=Math.max(target,Math.min(slotHigh,hardCap));
-      maxRec=Math.max(target,Math.min(hardCap,high));
+      maxRec=Math.max(base,Math.min(hardCap,playerCap));
+
+      // Costruiamo una fascia leggibile e coerente col tetto individuale.
+      if(maxRec<=base){
+        low=ideal=high=maxRec;
+      }else{
+        const idealCandidate=Math.max(base,maxRec-1);
+        target=Math.min(maxRec,idealCandidate);
+        low=Math.max(base,Math.min(target,Math.max(1,target-1)));
+        high=maxRec;
+      }
+      target=Math.max(base,Math.min(target,maxRec));
     }else{
-      target=Math.max(base,Math.min(base,hardCap));
-      low=target; high=target; maxRec=Math.max(target,hardCap);
+      // Nessun piano specifico: comportamento conservativo e player-specific.
+      const qualityExtra=quality>=60?2:quality>=52?1:0;
+      maxRec=Math.max(base,Math.min(hardCap,base+qualityExtra));
+      target=Math.max(base,Math.min(maxRec,maxRec>base?maxRec-1:maxRec));
+      low=Math.max(base,Math.min(target,maxRec));
+      high=maxRec;
     }
   }catch(err){
-    console.warn('[V72.9] piano D.S. fallback',err);
-    target=Math.max(base,Math.min(base,hardCap));
-    low=target; high=target; maxRec=Math.max(target,Math.min(hardCap,base));
+    console.warn('[V73.3] piano D.S. fallback',err);
+    maxRec=Math.max(base,Math.min(hardCap,base));
+    target=low=high=maxRec;
   }
 
-  // If base price is above what is mathematically sustainable, keep the true sustainable cap.
+  // La riserva matematica resta inviolabile.
   if(base>hardCap){
-    return {low:hardCap,ideal:hardCap,high:hardCap,maxRec:hardCap,blocked:true,base,hardCap};
+    return {low:hardCap,ideal:hardCap,high:hardCap,maxRec:hardCap,blocked:true,base,hardCap,quality};
   }
 
   return {
@@ -9594,7 +9625,7 @@ function astaLiveFastPrices(playerIndex){
     ideal:Math.max(1,Math.min(target,maxRec)),
     high:Math.max(1,Math.min(high,maxRec)),
     maxRec:Math.max(1,maxRec),
-    blocked:false,base,hardCap
+    blocked:false,base,hardCap,quality
   };
 }
 
@@ -9680,7 +9711,7 @@ function renderAstaLiveSelected(){
     <div class="astaLiveDecisionCard">
       <div class="astaLiveDecisionHead">
         <div>
-          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.2</div>
+          <div class="astaLiveDecisionTitle">🤖 Asta Live AI 10.3</div>
           <div class="astaLiveDecisionSub">Decisione immediata · prezzo, budget futuro, qualità e alternative.</div>
         </div>
         <div class="liveMiniScore">${impact.quality}/99</div>
