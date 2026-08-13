@@ -5703,6 +5703,385 @@ body.league-situation-open nav{display:none!important}
 .astaOutcomePriority{margin-top:7px;padding:8px;border-radius:11px;background:rgba(57,217,138,.045);border:1px solid rgba(57,217,138,.15);display:flex;justify-content:space-between;align-items:center;gap:8px}
 .astaOutcomePriority span{font-size:8px;color:var(--muted);font-weight:900}.astaOutcomePriority b{font-size:12px}.astaOutcomePriority strong{font-size:10px;color:#67e8a5;white-space:nowrap}
 @media(max-width:420px){.astaOutcomeDetailGrid{gap:4px}.astaOutcomeDetail{padding:6px 3px}.astaOutcomeDetail b{font-size:11px}}
+
+/* V70.9.0 — UI Refresh generale. SOLO grafica: nessuna formula o logica D.S. modificata. */
+:root{
+  --bg:#06101c;
+  --card:#0d1a2b;
+  --card2:#12233a;
+  --text:#f6f8fc;
+  --muted:#8fa3bb;
+  --accent:#f4c430;
+  --ok:#42d995;
+  --danger:#ff7272;
+  --line:rgba(145,168,198,.16);
+  --soft:#091624;
+  --border:rgba(145,168,198,.16);
+}
+html,body{
+  background:
+    radial-gradient(circle at 50% -12%,rgba(43,91,145,.13),transparent 32%),
+    var(--bg);
+}
+body{
+  padding-left:13px;
+  padding-right:13px;
+  letter-spacing:-.01em;
+}
+.top{
+  margin:5px 1px 13px;
+  padding:2px 0;
+}
+.title{
+  font-size:25px;
+  letter-spacing:-.85px;
+}
+.sub{
+  font-size:10px;
+  color:#7f94ad;
+  margin-top:3px;
+}
+.pill{
+  background:linear-gradient(180deg,#f7d34d,#eabf22);
+  box-shadow:0 7px 20px rgba(244,196,48,.13);
+  padding:8px 10px;
+  border-radius:13px;
+  font-size:12px;
+}
+.topSettings{
+  background:rgba(255,255,255,.035);
+  border-color:rgba(145,168,198,.17);
+  box-shadow:none;
+}
+.card,
+.item,
+.liveBox,
+.detailHero,
+.aiCard,
+.advisorCard,
+.strategyCard,
+.auditCard,
+.nextMoveCard{
+  border-color:rgba(145,168,198,.14);
+  box-shadow:0 9px 24px rgba(0,0,0,.13);
+}
+.card{
+  background:linear-gradient(155deg,rgba(18,35,58,.96),rgba(10,24,40,.98));
+  border-radius:18px;
+}
+.section{margin-top:14px}
+.section h2{
+  font-size:15px;
+  letter-spacing:-.2px;
+  margin-bottom:8px;
+}
+.primary{
+  border-radius:14px;
+  padding:13px 12px;
+  font-size:15px;
+  box-shadow:0 7px 20px rgba(244,196,48,.09);
+}
+.secondary{
+  border-radius:14px;
+  padding:11px 10px;
+  background:rgba(255,255,255,.035);
+}
+.item{
+  border-radius:14px;
+  padding:10px 11px;
+  background:rgba(13,27,45,.88);
+}
+.item .name{font-size:13px}
+.item .meta{font-size:10px}
+.price{font-size:16px}
+.rolebar{gap:6px;margin:9px 0}
+.role{
+  padding:8px 3px;
+  border-radius:12px;
+  background:rgba(7,20,34,.86);
+  border-color:rgba(145,168,198,.13);
+}
+.role b{font-size:15px}
+.role span{font-size:8px}
+nav{
+  padding-top:6px;
+  background:rgba(5,14,25,.91);
+  border-top-color:rgba(145,168,198,.12);
+  box-shadow:0 -12px 28px rgba(0,0,0,.18);
+}
+nav button{
+  padding:7px 2px 5px;
+  border-radius:12px;
+  font-size:9px;
+}
+nav button .ico{font-size:19px;margin-bottom:2px}
+nav button.active{
+  background:rgba(244,196,48,.095);
+  color:#f9dd76;
+}
+.modal{background:rgba(0,0,0,.7)}
+.sheet{
+  background:#091522;
+  border-top-color:rgba(145,168,198,.13);
+  border-radius:23px 23px 0 0;
+}
+.field input,.field select{
+  border-radius:13px;
+  background:#071321;
+  border-color:rgba(145,168,198,.15);
+  padding:12px;
+}
+.tag{
+  background:rgba(255,255,255,.03);
+  border-color:rgba(145,168,198,.13);
+  border-radius:999px;
+  font-size:9px;
+  padding:4px 7px;
+}
+
+/* Home: meno box, più gerarchia */
+.homeV7088Topline{margin-bottom:6px}
+.homeV7088 .dashPremiumHero{
+  border-radius:20px;
+  padding:15px 14px 13px;
+  box-shadow:0 15px 35px rgba(0,0,0,.20);
+}
+.homeV7088 .dashPremiumCredits{font-size:40px}
+.homeV7088Section{
+  padding:11px;
+  border-radius:16px;
+  background:rgba(11,25,42,.72);
+  border-color:rgba(145,168,198,.12);
+  box-shadow:none;
+}
+.homeV7088Ai{
+  background:linear-gradient(145deg,rgba(11,31,37,.78),rgba(9,22,37,.85));
+  border-color:rgba(66,217,149,.18);
+}
+.homeV7088 .dsQuickBar{
+  border-radius:15px;
+  box-shadow:none;
+  min-height:56px;
+  padding:9px 10px;
+}
+
+/* Listone */
+.listoneToolbar{
+  background:rgba(6,16,28,.94);
+  backdrop-filter:blur(18px);
+  padding-bottom:8px;
+}
+.listoneSearch{
+  border-radius:14px;
+  background:#071321;
+  border-color:rgba(145,168,198,.14);
+  padding:12px;
+}
+.listoneFilters{gap:5px;padding:7px 0 2px}
+.filterBtn{
+  border-radius:999px;
+  padding:7px 10px;
+  font-size:10px;
+  background:rgba(255,255,255,.025);
+  border-color:rgba(145,168,198,.13);
+}
+.filterBtn.active{
+  box-shadow:0 5px 16px rgba(244,196,48,.10);
+}
+.playerCard{
+  border-radius:14px;
+  padding:10px 11px;
+  background:rgba(13,27,45,.82);
+  border-color:rgba(145,168,198,.12);
+}
+.playerName{font-size:13px}
+.playerInfo{font-size:9px}
+.playerFvm{font-size:15px}
+
+/* Asta Live */
+.astaSelectedCard,
+.astaDecision{
+  border-radius:17px!important;
+  box-shadow:none!important;
+}
+.astaDecision{
+  background:linear-gradient(155deg,rgba(15,31,51,.96),rgba(8,20,34,.98))!important;
+  border-color:rgba(145,168,198,.14)!important;
+}
+.astaDecisionHead{margin-bottom:8px!important}
+.astaDecisionTitle{font-size:14px!important}
+.astaDecisionText{font-size:9px!important;line-height:1.35}
+.astaAiGrid{gap:5px!important}
+.astaAiMetric{
+  border-radius:11px!important;
+  padding:7px 4px!important;
+  background:rgba(4,14,25,.55)!important;
+  border-color:rgba(145,168,198,.11)!important;
+}
+.astaAiMetric span{font-size:7px!important}
+.astaAiMetric b{font-size:16px!important}
+.astaLiveQuickContext{
+  gap:5px!important;
+  margin-top:7px!important;
+}
+.astaLiveQuickContext>div{
+  border-radius:10px!important;
+  padding:6px 4px!important;
+  background:rgba(255,255,255,.025)!important;
+}
+.astaLiveQuickContext span{font-size:7px!important}
+.astaLiveQuickContext b{font-size:12px!important}
+.astaLivePriceLabel{margin-top:9px!important}
+.astaPriceInput{
+  border-radius:16px!important;
+  background:rgba(3,12,22,.78)!important;
+  border-color:rgba(244,196,48,.24)!important;
+  box-shadow:inset 0 0 0 1px rgba(244,196,48,.035);
+}
+.astaBidQuick{gap:5px!important}
+.astaBidQuick button{
+  border-radius:10px!important;
+  padding:8px 4px!important;
+  background:rgba(255,255,255,.035)!important;
+  border-color:rgba(145,168,198,.13)!important;
+}
+.astaLiveSmartBar{margin-top:9px!important}
+.astaLiveDecisionBadge{
+  border-radius:12px!important;
+  box-shadow:none!important;
+}
+.astaQuickSwitch{
+  border-radius:12px;
+  background:rgba(255,255,255,.018);
+  border-color:rgba(145,168,198,.12);
+}
+.astaQuickAlt{
+  background:rgba(255,255,255,.025)!important;
+  border-color:rgba(145,168,198,.11)!important;
+}
+.astaOutcomePanel{
+  border-radius:13px;
+  background:rgba(10,24,40,.92);
+  box-shadow:none;
+}
+.astaLeagueLive{background:rgba(77,163,255,.025)}
+.astaLiveDecisionActions button,
+.astaOutcomeActions button{
+  border-radius:12px!important;
+}
+
+/* Rosa */
+.rosterAdvCard,
+.rosterAdvRole,
+.rosterPlanBox{
+  box-shadow:none!important;
+}
+.rosterAdvCard{
+  border-radius:13px!important;
+  background:rgba(255,255,255,.025)!important;
+}
+.rosterAdvRole{
+  border-radius:12px!important;
+  background:rgba(7,20,34,.72)!important;
+}
+.rosterPlanBox{
+  border-radius:13px;
+  background:rgba(12,29,48,.78);
+}
+
+/* Situazione lega */
+.leagueSituationHeader{
+  background:rgba(6,16,28,.96);
+  backdrop-filter:blur(18px);
+}
+.leagueSituationBack{
+  border-radius:12px;
+  background:rgba(255,255,255,.035);
+}
+.leagueSituationTitle{
+  font-size:20px;
+  letter-spacing:-.5px;
+}
+.leagueSituationSummary{gap:6px}
+.leagueSituationKpi{
+  border-radius:12px;
+  padding:8px 5px;
+  background:rgba(255,255,255,.025);
+  border-color:rgba(145,168,198,.12);
+}
+.leagueSituationKpi b{font-size:17px}
+.leagueThreatHero{
+  border-radius:13px;
+  box-shadow:none;
+}
+.leagueSituationList{gap:6px}
+.leagueSituationRow{
+  border-radius:13px;
+  padding:9px 10px;
+  background:rgba(13,27,45,.78);
+  border-color:rgba(145,168,198,.11);
+}
+.leagueSituationRole{
+  background:rgba(255,255,255,.025);
+  border-radius:8px;
+}
+
+/* Dettaglio giocatore e modali interni */
+.playerDetailHero{
+  border-radius:17px;
+  box-shadow:none;
+}
+.playerDecisionBox,
+.playerAltMini,
+.playerDetailNote,
+.playerDetailStat{
+  background:rgba(255,255,255,.025);
+  border-color:rgba(145,168,198,.11);
+}
+.playerDecisionBox{border-radius:12px}
+.playerAltMini{border-radius:12px}
+.playerDetailFooter{
+  background:rgba(5,14,25,.95);
+  border-top-color:rgba(145,168,198,.11);
+}
+
+/* Cronologia e partecipanti */
+.historyTools input,.historyTools select{
+  border-radius:12px;
+  background:#071321;
+  border-color:rgba(145,168,198,.13);
+}
+.managerCard{
+  background:rgba(13,27,45,.80)!important;
+  border-color:rgba(145,168,198,.11)!important;
+}
+
+/* Micro-interazioni */
+button,.playerCard,.managerCard,.item{
+  transition:transform .12s ease,filter .12s ease,border-color .12s ease;
+}
+button:active,.playerCard:active,.managerCard:active{
+  transform:scale(.985);
+}
+button:focus-visible,input:focus-visible,select:focus-visible{
+  outline:2px solid rgba(244,196,48,.55);
+  outline-offset:2px;
+}
+
+@media(max-width:420px){
+  body{padding-left:11px;padding-right:11px}
+  .top{margin-bottom:11px}
+  .title{font-size:23px}
+  .pill{font-size:11px;padding:7px 9px}
+  .homeV7088 .dashPremiumHero{padding:14px 13px 12px}
+  .homeV7088 .dashPremiumCredits{font-size:37px}
+  .section{margin-top:12px}
+  .section h2{font-size:14px}
+  .astaSelectedName{font-size:18px!important}
+  .astaPriceInput{font-size:35px!important}
+  .leagueSituationShell{padding-left:11px;padding-right:11px}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5713,7 +6092,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.23</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
