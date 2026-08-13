@@ -5561,6 +5561,14 @@ body.league-situation-open nav{display:none!important}
 }
 
 
+
+/* V70.8.19 — Esito rapido Asta Live. Solo flusso UI, D.S. invariato. */
+.astaQuickOutcome{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.astaQuickOutcome button{min-height:44px;border-radius:12px;font-size:11px;font-weight:950}
+.astaQuickMine{background:linear-gradient(180deg,#0e6b45,#08462f);border:1px solid rgba(57,217,138,.55);color:#eafff5;box-shadow:0 8px 20px rgba(57,217,138,.10)}
+.astaQuickOther{background:linear-gradient(180deg,#17314d,#10243a);border:1px solid rgba(77,163,255,.38);color:#eef6ff}
+@media(max-width:390px){.astaQuickOutcome button{min-height:42px;font-size:10px}}
+
 /* V70.8.14 — Rosa avanzata: riepilogo economico solo UI, nessuna modifica al D.S. */
 .rosterAdvanced{margin-top:10px;display:grid;gap:8px}
 .rosterAdvancedTop{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -5615,7 +5623,7 @@ body.league-situation-open nav{display:none!important}
   .astaQuickAlt b{font-size:10px}
 }
 
-/* V70.8.18c - Riordinate alternative Asta Live dopo decisione/AFFARE. D.S. invariato. */
+/* V70.8.19 - Riordinate alternative Asta Live dopo decisione/AFFARE. D.S. invariato. */
 .astaOutcomePanel{display:none;margin-top:7px;padding:10px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,rgba(15,31,50,.96),rgba(8,20,34,.96));box-shadow:0 8px 24px rgba(0,0,0,.16)}
 .astaOutcomePanel.show{display:block}
 .astaOutcomePanel.won{border-color:rgba(57,217,138,.34)}
@@ -5645,7 +5653,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.18c</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.19</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -9535,6 +9543,10 @@ function renderAstaLiveSelected(){
       <div id="astaLiveRivalLazy"><div class="playerMetaLine" style="padding:10px 0">👥 Pressione avversari in caricamento…</div></div>
 
 
+      <div class="astaQuickOutcome">
+        <button class="astaQuickMine" onclick="quickAstaWon(${ASTA_LIVE_PLAYER})">✅ PRESO DA ME</button>
+        <button class="astaQuickOther" onclick="quickAstaLost(${ASTA_LIVE_PLAYER})">👥 PRESO DA ALTRI</button>
+      </div>
       <div class="astaLiveDecisionActions">
         <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">🤖 ANALISI COMPLETA</button>
         <button class="primary astaRegisterOutcome" style="position:static" onclick="registerAstaLiveOutcome(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
@@ -9553,6 +9565,31 @@ function registerAstaLiveOutcome(index){
   // V70.8.7: ricorda il giocatore perso solo quando l'esito nasce da Asta Live.
   ASTA_LIVE_OUTCOME_SOURCE=(Number.isInteger(Number(index)) && Number(index)>=0)?Number(index):null;
   buyFromListone(index);
+}
+
+function quickAstaPrepareOutcome(index,buyerIndex,autoSave){
+  const el=document.getElementById('astaLivePrice');
+  const price=Math.max(0,parseInt(el?.value,10)||0);
+  if(!price){alert('Inserisci prima il prezzo finale.');return;}
+  ASTA_LIVE_LAST_PRICE=price;
+  ASTA_LIVE_OUTCOME_SOURCE=(Number.isInteger(Number(index)) && Number(index)>=0)?Number(index):null;
+  buyFromListone(index);
+  setTimeout(()=>{
+    const buyer=document.getElementById('pbuyer');
+    if(buyer && Number.isInteger(Number(buyerIndex))){
+      buyer.value=String(buyerIndex);
+      updateBuyPreview();
+    }
+    if(autoSave) saveBuy();
+    else if(buyer){ buyer.focus(); }
+  },40);
+}
+function quickAstaWon(index){
+  quickAstaPrepareOutcome(index,state.me,true);
+}
+function quickAstaLost(index){
+  const firstOther=state.managers.findIndex((_,i)=>i!==state.me);
+  quickAstaPrepareOutcome(index,firstOther,false);
 }
 function addAstaLiveBid(v){
   const el=document.getElementById('astaLivePrice');if(!el)return;
