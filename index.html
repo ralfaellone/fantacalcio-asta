@@ -5562,7 +5562,7 @@ body.league-situation-open nav{display:none!important}
 
 
 
-/* V70.8.20 — Esito rapido Asta Live. Solo flusso UI, D.S. invariato. */
+/* V70.8.21 — Esito rapido Asta Live. Solo flusso UI, D.S. invariato. */
 .astaQuickOutcome{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
 .astaQuickOutcome button{min-height:44px;border-radius:12px;font-size:11px;font-weight:950}
 .astaQuickMine{background:linear-gradient(180deg,#0e6b45,#08462f);border:1px solid rgba(57,217,138,.55);color:#eafff5;box-shadow:0 8px 20px rgba(57,217,138,.10)}
@@ -5625,7 +5625,7 @@ body.league-situation-open nav{display:none!important}
   .astaQuickAlt b{font-size:10px}
 }
 
-/* V70.8.20 - Riordinate alternative Asta Live dopo decisione/AFFARE. D.S. invariato. */
+/* V70.8.21 - Riordinate alternative Asta Live dopo decisione/AFFARE. D.S. invariato. */
 .astaOutcomePanel{display:none;margin-top:7px;padding:10px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,rgba(15,31,50,.96),rgba(8,20,34,.96));box-shadow:0 8px 24px rgba(0,0,0,.16)}
 .astaOutcomePanel.show{display:block}
 .astaOutcomePanel.won{border-color:rgba(57,217,138,.34)}
@@ -5644,7 +5644,7 @@ body.league-situation-open nav{display:none!important}
 .astaOutcomeNextPrice{font-size:10px;font-weight:950;white-space:nowrap}
 .astaOutcomeActions{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:7px}
 .astaOutcomeActions button{min-height:38px;padding:8px 9px;border-radius:10px;font-size:10px;font-weight:950}
-/* V70.8.20 - Prossimo obiettivo intelligente dopo esito. Solo UI/lettura D.S. */
+/* V70.8.21 - Prossimo obiettivo intelligente dopo esito. Solo UI/lettura D.S. */
 .astaNextTargetsTitle{margin-top:9px;font-size:9px;font-weight:950;letter-spacing:.7px;color:var(--muted)}
 .astaNextTargetsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
 .astaNextTargetCard{padding:8px 6px!important;min-height:112px;border-radius:11px!important;text-align:left!important;display:flex;flex-direction:column;gap:4px;background:rgba(255,255,255,.035)!important;border:1px solid rgba(120,160,210,.18)!important;color:var(--text)!important}
@@ -5656,6 +5656,18 @@ body.league-situation-open nav{display:none!important}
 .astaNextTargetCard strong{font-size:10px;color:var(--text)}
 .astaNextTargetCard em{font-style:normal;font-size:8px;font-weight:950;color:#ffd166;margin-top:2px}
 @media(max-width:420px){.astaOutcomePanel{padding:8px}.astaOutcomeStats{gap:4px}.astaOutcomeStat{padding:6px 3px}.astaOutcomeActions{grid-template-columns:1fr auto}}
+/* V70.8.21 - Riepilogo post-esito più completo. Solo UI/lettura dati; D.S. invariato. */
+.astaOutcomeDetailGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:7px}
+.astaOutcomeDetail{padding:7px 4px;border-radius:10px;background:rgba(255,255,255,.035);text-align:center;border:1px solid rgba(120,160,210,.10)}
+.astaOutcomeDetail span{display:block;font-size:7px;color:var(--muted);font-weight:900;letter-spacing:.2px}
+.astaOutcomeDetail b{display:block;font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.astaOutcomeDetail.good b{color:#67e8a5}.astaOutcomeDetail.warn b{color:#ffd166}
+.astaOutcomeRival{margin-top:7px;padding:8px;border-radius:11px;background:rgba(255,177,66,.055);border:1px solid rgba(255,177,66,.18)}
+.astaOutcomeRivalTitle{font-size:9px;font-weight:950;color:#ffd166;letter-spacing:.35px}
+.astaOutcomeRivalText{font-size:9px;color:var(--muted);margin-top:3px;line-height:1.35}
+.astaOutcomePriority{margin-top:7px;padding:8px;border-radius:11px;background:rgba(57,217,138,.045);border:1px solid rgba(57,217,138,.15);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.astaOutcomePriority span{font-size:8px;color:var(--muted);font-weight:900}.astaOutcomePriority b{font-size:12px}.astaOutcomePriority strong{font-size:10px;color:#67e8a5;white-space:nowrap}
+@media(max-width:420px){.astaOutcomeDetailGrid{gap:4px}.astaOutcomeDetail{padding:6px 3px}.astaOutcomeDetail b{font-size:11px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5666,7 +5678,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.20</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.21</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -8491,9 +8503,21 @@ function renderAstaOutcomePanel(){
   if(!o){box.className='astaOutcomePanel';box.innerHTML='';return;}
   const me=state.me, cash=budget(me), slots=remainingRosterSlots(me), role=astaLivePriorityRole();
   const nextTargets=astaLiveNextTargets(o);
-  const next=nextTargets[0]||null;
   const plan=role?liveRoleBudgetPlan(role,me):null;
   const won=o.type==='won';
+  const sourcePlayer=Number.isInteger(Number(o.sourceIndex))&&Number(o.sourceIndex)>=0?PLAYER_ARCHIVE[Number(o.sourceIndex)]:null;
+  const boughtRole=sourcePlayer?.role||'';
+  const boughtRoleCount=boughtRole?roleCount(me,boughtRole):0;
+  const boughtRoleTarget=boughtRole?(LIMITS[boughtRole]||0):0;
+  const myRolePurchases=boughtRole?state.purchases.filter(x=>x.buyer===me&&x.role===boughtRole):[];
+  const myRoleSpent=myRolePurchases.reduce((sum,x)=>sum+(Number(x.price)||0),0);
+  const myRoleAvg=myRolePurchases.length?Math.round((myRoleSpent/myRolePurchases.length)*10)/10:0;
+  const buyerValid=!won && Number.isInteger(Number(o.buyer)) && Number(o.buyer)>=0;
+  const rival=buyerValid?Number(o.buyer):null;
+  const rivalCash=buyerValid?budget(rival):null;
+  const rivalSlots=buyerValid?remainingRosterSlots(rival):null;
+  const rivalPressure=buyerValid&&rivalSlots>0?Math.round((rivalCash/rivalSlots)*10)/10:(buyerValid?0:null);
+  const priorityName=role?roleName(role):'—';
   box.className='astaOutcomePanel show '+(won?'won':'lost');
   box.innerHTML=`
     <div class="astaOutcomeTop">
@@ -8505,8 +8529,16 @@ function renderAstaOutcomePanel(){
       <div class="astaOutcomeStat"><span>SLOT</span><b>${slots}</b></div>
       <div class="astaOutcomeStat"><span>PRIORITÀ</span><b>${role?esc(role):'—'}</b></div>
     </div>
+    ${won&&boughtRole?`<div class="astaOutcomeDetailGrid">
+      <div class="astaOutcomeDetail good"><span>${esc(boughtRole)} IN ROSA</span><b>${boughtRoleCount}/${boughtRoleTarget}</b></div>
+      <div class="astaOutcomeDetail"><span>SPESA ${esc(boughtRole)}</span><b>${myRoleSpent} cr</b></div>
+      <div class="astaOutcomeDetail"><span>MEDIA ${esc(boughtRole)}</span><b>${myRoleAvg} cr</b></div>
+      <div class="astaOutcomeDetail ${boughtRoleCount>=boughtRoleTarget?'good':'warn'}"><span>DA PRENDERE</span><b>${Math.max(0,boughtRoleTarget-boughtRoleCount)}</b></div>
+    </div>`:''}
+    ${won?`<div class="astaOutcomePriority"><div><span>PROSSIMA PRIORITÀ D.S.</span><b>${esc(priorityName)}</b></div><strong>${role&&plan?`${plan.missing} slot · media ${plan.avg}`:(slots===0?'ROSA COMPLETA':'AGGIORNATA')}</strong></div>`:''}
+    ${buyerValid?`<div class="astaOutcomeRival"><div class="astaOutcomeRivalTitle">👥 AVVERSARIO AGGIORNATO · ${esc(state.managers[rival]||'Rivale')}</div><div class="astaOutcomeRivalText">Restano <b>${rivalCash} crediti</b> per <b>${rivalSlots} slot</b>${rivalSlots>0?` · pressione economica <b>${rivalPressure} cr/slot</b>`:' · rosa completata'}. La situazione lega è stata aggiornata con questo acquisto.</div></div>`:''}
     ${role&&plan?`<div class="astaOutcomeNext"><div><div class="astaOutcomeNextName">Piano ${esc(roleName(role))}</div><div class="astaOutcomeNextMeta">${plan.missing} slot mancanti · fascia reparto ${plan.min}-${plan.max} cr</div></div><div class="astaOutcomeNextPrice">MEDIA ${plan.avg}</div></div>`:''}
-    ${nextTargets.length?`<div class="astaNextTargetsTitle">🎯 PROSSIMO OBIETTIVO D.S.</div><div class="astaNextTargetsGrid">${nextTargets.map((x,i)=>`<button class="astaNextTargetCard ${i===0?'best':''}" onclick="chooseAstaLiveNextTarget(${x.index})"><span class="astaNextTargetRank">${i===0?'CONSIGLIATO':'ALTERNATIVA '+i}</span><b>${esc(x.p.name)}</b><small>${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi}</small><div><span>IDEALE <strong>${x.ideal}</strong></span><span>MAX <strong>${x.max}</strong></span></div><em>APRI IN ASTA LIVE</em></button>`).join('')}</div>`:`<div class="astaOutcomeNext"><div><div class="astaOutcomeNextName">${slots===0?'Rosa completata':'Nessun obiettivo sostenibile ora'}</div><div class="astaOutcomeNextMeta">${slots===0?'Asta completata.':'Il D.S. sta proteggendo il budget residuo.'}</div></div></div>`}
+    ${nextTargets.length?`<div class="astaNextTargetsTitle">🎯 ${won?'PROSSIMO OBIETTIVO D.S.':'MIGLIOR SOSTITUTO + ALTERNATIVE'}</div><div class="astaNextTargetsGrid">${nextTargets.map((x,i)=>`<button class="astaNextTargetCard ${i===0?'best':''}" onclick="chooseAstaLiveNextTarget(${x.index})"><span class="astaNextTargetRank">${i===0?(won?'CONSIGLIATO':'MIGLIOR SOSTITUTO'):'ALTERNATIVA '+i}</span><b>${esc(x.p.name)}</b><small>${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi}</small><div><span>IDEALE <strong>${x.ideal}</strong></span><span>MAX <strong>${x.max}</strong></span></div><em>APRI IN ASTA LIVE</em></button>`).join('')}</div>`:`<div class="astaOutcomeNext"><div><div class="astaOutcomeNextName">${slots===0?'Rosa completata':'Nessun obiettivo sostenibile ora'}</div><div class="astaOutcomeNextMeta">${slots===0?'Asta completata.':'Il D.S. sta proteggendo il budget residuo.'}</div></div></div>`}
     <div class="astaOutcomeActions">
       <button class="secondary" onclick="dismissAstaLiveOutcome()">CHIUDI</button>
     </div>`;
