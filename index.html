@@ -5562,11 +5562,13 @@ body.league-situation-open nav{display:none!important}
 
 
 
-/* V70.8.19 — Esito rapido Asta Live. Solo flusso UI, D.S. invariato. */
+/* V70.8.19b — Esito rapido Asta Live. Solo flusso UI, D.S. invariato. */
 .astaQuickOutcome{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
 .astaQuickOutcome button{min-height:44px;border-radius:12px;font-size:11px;font-weight:950}
 .astaQuickMine{background:linear-gradient(180deg,#0e6b45,#08462f);border:1px solid rgba(57,217,138,.55);color:#eafff5;box-shadow:0 8px 20px rgba(57,217,138,.10)}
 .astaQuickOther{background:linear-gradient(180deg,#17314d,#10243a);border:1px solid rgba(77,163,255,.38);color:#eef6ff}
+.astaLiveDecisionActionsSingle{grid-template-columns:1fr;margin-top:7px}
+.astaLiveDecisionActionsSingle button{width:100%}
 @media(max-width:390px){.astaQuickOutcome button{min-height:42px;font-size:10px}}
 
 /* V70.8.14 — Rosa avanzata: riepilogo economico solo UI, nessuna modifica al D.S. */
@@ -5623,7 +5625,7 @@ body.league-situation-open nav{display:none!important}
   .astaQuickAlt b{font-size:10px}
 }
 
-/* V70.8.19 - Riordinate alternative Asta Live dopo decisione/AFFARE. D.S. invariato. */
+/* V70.8.19b - Riordinate alternative Asta Live dopo decisione/AFFARE. D.S. invariato. */
 .astaOutcomePanel{display:none;margin-top:7px;padding:10px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,rgba(15,31,50,.96),rgba(8,20,34,.96));box-shadow:0 8px 24px rgba(0,0,0,.16)}
 .astaOutcomePanel.show{display:block}
 .astaOutcomePanel.won{border-color:rgba(57,217,138,.34)}
@@ -5653,7 +5655,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.19</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.19b</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -9536,21 +9538,19 @@ function renderAstaLiveSelected(){
       <div id="astaLiveDelta" class="astaLiveDelta">L'AI aggiorna la decisione mentre rilanci.</div>
       <div id="astaLiveVerdict" class="astaVerdict">Inserisci il prezzo attuale per sapere se rilanciare.</div>
 
+      <div class="astaQuickOutcome">
+        <button class="astaQuickMine" onclick="quickAstaWon(${ASTA_LIVE_PLAYER})">✅ PRESO DA ME</button>
+        <button class="astaQuickOther" onclick="quickAstaLost(${ASTA_LIVE_PLAYER})">👥 PRESO DA ALTRI</button>
+      </div>
+      <div class="astaLiveDecisionActions astaLiveDecisionActionsSingle">
+        <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">🤖 ANALISI COMPLETA</button>
+      </div>
+
       <div id="astaLiveQuickSwitchHost">${renderAstaLiveQuickSwitch(ASTA_LIVE_PLAYER,auctionBasePrice(p))}</div>
 
       <div id="astaLiveSimLazy"><div class="playerMetaLine" style="padding:10px 0">🧠 Analisi acquisto in caricamento…</div></div>
 
       <div id="astaLiveRivalLazy"><div class="playerMetaLine" style="padding:10px 0">👥 Pressione avversari in caricamento…</div></div>
-
-
-      <div class="astaQuickOutcome">
-        <button class="astaQuickMine" onclick="quickAstaWon(${ASTA_LIVE_PLAYER})">✅ PRESO DA ME</button>
-        <button class="astaQuickOther" onclick="quickAstaLost(${ASTA_LIVE_PLAYER})">👥 PRESO DA ALTRI</button>
-      </div>
-      <div class="astaLiveDecisionActions">
-        <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">🤖 ANALISI COMPLETA</button>
-        <button class="primary astaRegisterOutcome" style="position:static" onclick="registerAstaLiveOutcome(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
-      </div>
     </div>`;
   // Prima mostra subito la scheda base, poi carica i moduli pesanti.
   requestAnimationFrame(()=>{
