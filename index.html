@@ -5559,6 +5559,17 @@ body.league-situation-open nav{display:none!important}
   .rosterAdvRoles{gap:5px}.rosterAdvRole{padding:7px 4px}
   .rosterAdvRoleValue{font-size:15px}.rosterAdvRoleMeta{font-size:8px}
 }
+
+/* V70.8.15 — Rosa: piano residuo per reparto, solo lettura delle funzioni D.S. esistenti */
+.rosterPlanStrip{display:grid;grid-template-columns:1.15fr .85fr;gap:7px;margin-top:2px}
+.rosterPlanBox{background:linear-gradient(145deg,#10243c,#091523);border:1px solid rgba(244,196,48,.22);border-radius:14px;padding:9px 10px}
+.rosterPlanBox span{display:block;color:var(--muted);font-size:8.5px;font-weight:850;letter-spacing:.5px;text-transform:uppercase}
+.rosterPlanBox b{display:block;font-size:15px;margin-top:3px}
+.rosterPlanBox small{display:block;color:var(--muted);font-size:8.5px;line-height:1.3;margin-top:2px}
+.rosterPlanTag{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:4px 7px;border-radius:999px;border:1px solid rgba(244,196,48,.30);color:var(--accent);font-size:8px;font-weight:900}
+.rosterAdvRolePlan{margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.06);font-size:8px;color:#b9c6d8;line-height:1.25}
+.rosterAdvRolePlan b{color:var(--text);font-size:9px}
+@media(max-width:390px){.rosterPlanStrip{grid-template-columns:1fr 1fr;gap:5px}.rosterPlanBox{padding:8px 7px}.rosterPlanBox b{font-size:13px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5569,7 +5580,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.14</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.15</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -13749,28 +13760,42 @@ function openParticipant(i){
     const avg=total>0?(s/total):0;
     const slotsLeft=Math.max(0,25-total);
     const safeForFuture=Math.max(0,b-slotsLeft);
-    const roleCards=['P','D','C','A'].map(role=>{
+    const roleData=['P','D','C','A'].map(role=>{
       const rr=r.filter(x=>x.role===role);
       const roleSpent=rr.reduce((sum,x)=>sum+Number(x.price||0),0);
       const roleAvg=rr.length?roleSpent/rr.length:0;
       const filled=roleCount(i,role);
       const limit=LIMITS[role];
+      const missing=Math.max(0,limit-filled);
       const pctRole=Math.min(100,(filled/limit)*100);
-      return `<div class="rosterAdvRole">
-        <div class="rosterAdvRoleHead"><b>${role}</b><span>${filled}/${limit}</span></div>
-        <div class="rosterAdvRoleValue">${roleSpent} cr</div>
-        <div class="rosterAdvRoleMeta">media ${roleAvg?roleAvg.toFixed(1):'0'} · mancano ${Math.max(0,limit-filled)}</div>
-        <div class="rosterAdvProgress"><i style="width:${pctRole}%"></i></div>
-      </div>`;
-    }).join('');
+      const plan=liveRoleBudgetPlan(role,i);
+      const stage=missing===0?'COMPLETO':filled===0?'DA AVVIARE':missing<=Math.max(1,Math.ceil(limit*.25))?'CHIUSURA':'IN CORSO';
+      return {role,roleSpent,roleAvg,filled,limit,missing,pctRole,plan,stage};
+    });
+    const priority=roleData.filter(x=>x.missing>0).sort((a,b)=>{
+      const au=(a.missing/a.limit)*({P:1.15,D:1.05,C:1.10,A:1.20}[a.role]||1);
+      const bu=(b.missing/b.limit)*({P:1.15,D:1.05,C:1.10,A:1.20}[b.role]||1);
+      return bu-au;
+    })[0]||null;
+    const roleCards=roleData.map(x=>`<div class="rosterAdvRole">
+        <div class="rosterAdvRoleHead"><b>${x.role}</b><span>${x.filled}/${x.limit}</span></div>
+        <div class="rosterAdvRoleValue">${x.roleSpent} cr</div>
+        <div class="rosterAdvRoleMeta">media ${x.roleAvg?x.roleAvg.toFixed(1):'0'} · mancano ${x.missing}</div>
+        <div class="rosterAdvProgress"><i style="width:${x.pctRole}%"></i></div>
+        <div class="rosterAdvRolePlan">${x.missing===0?'<b>Reparto completo</b>':`piano residuo <b>${x.plan.min}-${x.plan.max} cr</b><br>media prossimi ≈ <b>${x.plan.avg} cr</b>`}</div>
+      </div>`).join('');
     return `<div class="rosterAdvanced">
       <div class="rosterAdvancedTop">
         <div class="rosterAdvCard"><span>Media acquisto</span><b>${avg?avg.toFixed(1):'0'} cr</b></div>
         <div class="rosterAdvCard"><span>Slot mancanti</span><b>${slotsLeft}</b></div>
         <div class="rosterAdvCard"><span>Spendibili extra</span><b>${safeForFuture} cr</b></div>
       </div>
+      <div class="rosterPlanStrip">
+        <div class="rosterPlanBox"><span>Prossimo reparto da completare</span><b>${priority?`${roleName(priority.role)} · ${priority.missing} slot`:'Rosa completa'}</b><small>${priority?`Piano residuo ${priority.plan.min}-${priority.plan.max} cr · media ${priority.plan.avg} cr`:'Nessun acquisto necessario'}</small>${priority?`<em class="rosterPlanTag">${priority.stage}</em>`:''}</div>
+        <div class="rosterPlanBox"><span>Budget protetto</span><b>${Math.max(0,slotsLeft)} cr</b><small>Minimo da conservare per coprire gli slot ancora vuoti.</small></div>
+      </div>
       <div class="rosterAdvRoles">${roleCards}</div>
-      <div class="rosterAdvancedNote">💡 “Spendibili extra” = crediti residui oltre al minimo di 1 credito necessario per ogni slot ancora vuoto. È un riepilogo contabile, non modifica i tetti del D.S.</div>
+      <div class="rosterAdvancedNote">💡 Il “piano residuo” legge il budget reparto già usato dal D.S. e serve solo come riepilogo. Non modifica tetti, prezzi o decisioni Asta Live.</div>
     </div>`;
   })():'';
 
