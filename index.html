@@ -5400,7 +5400,7 @@ body.league-situation-open nav{display:none!important}
 
 
 
-/* V70.8.12 — Situazione lega avanzata: solo analisi visiva, nessun impatto sul D.S. */
+/* V70.8.13 — Situazione lega avanzata: solo analisi visiva, nessun impatto sul D.S. */
 .leagueThreatHero{margin:0 0 10px;padding:11px 12px;border-radius:15px;background:linear-gradient(145deg,rgba(239,68,68,.10),rgba(12,27,45,.96));border:1px solid rgba(248,113,113,.22)}
 .leagueThreatHeroTop{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .leagueThreatHeroLabel{font-size:8px;font-weight:950;letter-spacing:.08em;color:#fca5a5}
@@ -5498,6 +5498,44 @@ body.league-situation-open nav{display:none!important}
   .homeV7088b .homeV7088RecentSection{margin-top:12px}
 }
 
+
+
+/* V70.8.13 — Asta Live più leggibile: solo UI, nessuna modifica alle formule D.S. */
+.astaDecision{padding-bottom:8px}
+.astaDecisionHead{padding-bottom:8px;border-bottom:1px solid rgba(142,164,189,.12)}
+.astaAiGrid{gap:6px;margin-top:10px}
+.astaAiMetric{padding:8px 5px;border-radius:11px;background:linear-gradient(180deg,#0b1b2e,#081321);border:1px solid rgba(142,164,189,.13)}
+.astaAiMetric span{font-size:7px;letter-spacing:.035em}
+.astaAiMetric b{font-size:18px;margin-top:2px}
+.astaAiMetric:last-of-type{border-color:rgba(248,113,113,.25);background:linear-gradient(180deg,rgba(127,29,29,.14),#081321)}
+.astaLiveQuickContext{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:9px 0 7px}
+.astaLiveQuickContext>div{background:rgba(77,163,255,.055);border:1px solid rgba(77,163,255,.14);border-radius:10px;padding:6px 4px;text-align:center}
+.astaLiveQuickContext span{display:block;font-size:7px;color:var(--muted);font-weight:900;letter-spacing:.04em}
+.astaLiveQuickContext b{display:block;font-size:12px;margin-top:2px}
+.astaLivePriceLabel{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin:8px 2px 5px}
+.astaLivePriceLabel span{font-size:9px;font-weight:950;letter-spacing:.06em;color:#c9ddf5}
+.astaLivePriceLabel small{font-size:8px;color:var(--muted)}
+.astaPriceInput{font-size:28px!important;font-weight:950!important;text-align:center!important;min-height:52px!important;border-width:2px!important;border-color:rgba(77,163,255,.38)!important;background:linear-gradient(180deg,#0d2036,#071522)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.015)}
+.astaPriceInput:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px rgba(77,163,255,.10)!important}
+.astaBidQuick{gap:5px;margin-top:6px}
+.astaBidQuick button{min-height:34px;font-size:10px;font-weight:950}
+.astaLiveDecisionBadge{font-size:15px!important;font-weight:1000!important;letter-spacing:.045em!important;padding:10px 11px!important;margin-top:10px!important;border-width:2px!important}
+.astaLiveDecisionBadge.go{box-shadow:0 0 0 2px rgba(57,217,138,.06),0 8px 20px rgba(57,217,138,.08)}
+.astaLiveDecisionBadge.stop{box-shadow:0 0 0 2px rgba(255,107,107,.06),0 8px 20px rgba(255,107,107,.08)}
+.astaLiveDelta{text-align:center;font-size:10px!important;padding:5px 2px!important;font-weight:800}
+.astaVerdict{border-radius:13px!important;padding:10px 11px!important;line-height:1.35!important;font-size:11px!important}
+.astaLiveDecisionActions{position:sticky;bottom:0;z-index:12;background:linear-gradient(180deg,rgba(6,14,24,0),rgba(6,14,24,.97) 25%);padding-top:14px;margin-top:8px;gap:7px}
+.astaLiveDecisionActions button{min-height:45px;font-size:11px;font-weight:950}
+.astaLiveDecisionActions .astaRegisterOutcome{border:1px solid rgba(57,217,138,.35);box-shadow:0 8px 22px rgba(57,217,138,.10)}
+@media(max-width:390px){
+  .astaLiveTop{padding-bottom:6px}.astaLiveKpis{margin-top:6px}.astaLiveKpi{padding:5px 2px}
+  .astaSelectedCard{padding:7px 9px}.astaSelectedMeta{font-size:7.5px}
+  .astaDecisionHead{gap:5px}.astaDecisionTitle{font-size:13px}.astaDecisionText{font-size:8px;line-height:1.3}
+  .astaAiGrid{margin-top:8px}.astaAiMetric{padding:7px 3px}.astaAiMetric b{font-size:16px}
+  .astaLiveQuickContext{margin:7px 0 5px}.astaPriceInput{min-height:48px!important;font-size:26px!important}
+  .astaLiveSmartBar{margin-top:7px}.astaLiveDecisionBadge{margin-top:8px!important;padding:9px 10px!important}
+  .astaVerdict{padding:9px 10px!important}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5508,7 +5546,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.12</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.13</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -9203,6 +9241,13 @@ function renderAstaLiveSelected(){
         ${p.role==='P' && a.keeperBlockPossible ? `<div class="astaAiKeeperProtect" style="grid-column:1/-1;font-size:11px;color:var(--muted);padding-top:6px">🧤 BLOCCO ${esc(a.keeperBlockTeam||p.team)} · riserva P2/P3: <b>${a.keeperBlockReserve} cr</b> (QI ${esc((a.keeperBlockBases||[]).join(' + '))}) · MAX P1 protetto: <b>${absoluteCap} cr</b></div>` : ''}
       </div>
 
+      <div class="astaLiveQuickContext">
+        <div><span>BUDGET</span><b>${budget(state.me)} cr</b></div>
+        <div><span>${p.role} IN ROSA</span><b>${roleCount(state.me,p.role)}/${LIMITS[p.role]}</b></div>
+        <div><span>SLOT TOTALI</span><b>${remainingRosterSlots(state.me)}</b></div>
+      </div>
+
+      <div class="astaLivePriceLabel"><span>PREZZO ATTUALE</span><small>Modificalo mentre rilanci</small></div>
       <input id="astaLivePrice" class="astaPriceInput" type="number" min="${auctionBasePrice(p)}" inputmode="numeric"
         value="${auctionBasePrice(p)}" placeholder="Base ${auctionBasePrice(p)}" oninput="evaluateAstaLiveBid()">
 
@@ -9234,7 +9279,7 @@ function renderAstaLiveSelected(){
 
       <div class="astaLiveDecisionActions">
         <button class="secondary" onclick="openAIForPlayer(${ASTA_LIVE_PLAYER})">🤖 ANALISI COMPLETA</button>
-        <button class="primary" style="position:static" onclick="registerAstaLiveOutcome(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
+        <button class="primary astaRegisterOutcome" style="position:static" onclick="registerAstaLiveOutcome(${ASTA_LIVE_PLAYER})">✅ REGISTRA ESITO</button>
       </div>
     </div>`;
   // Prima mostra subito la scheda base, poi carica i moduli pesanti.
