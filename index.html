@@ -5355,6 +5355,29 @@ nav button .ico{font-size:19px!important}
 .defenseLive689 small{display:block;margin-top:2px;font-size:5.5px;color:#86a89a}
 
 
+
+/* V70.8.16 — Home: Priorità asta adesso. Solo lettura dati già calcolati, nessuna modifica al D.S. */
+.auctionNowCard{margin:0;padding:14px;border-radius:20px;background:linear-gradient(145deg,rgba(20,36,58,.96),rgba(8,19,33,.96));border:1px solid rgba(244,196,48,.18);box-shadow:0 12px 32px rgba(0,0,0,.16)}
+.auctionNowTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
+.auctionNowKicker{font-size:8px;font-weight:950;letter-spacing:.12em;color:var(--accent)}
+.auctionNowTitle{font-size:18px;font-weight:950;margin-top:2px}
+.auctionNowRole{border:1px solid rgba(244,196,48,.25);background:rgba(244,196,48,.08);color:var(--accent);border-radius:999px;padding:6px 9px;font-size:10px;font-weight:950;white-space:nowrap}
+.auctionNowStats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.auctionNowStat{padding:9px 7px;border-radius:12px;background:rgba(5,17,31,.55);border:1px solid rgba(142,164,189,.10);text-align:center}
+.auctionNowStat span{display:block;color:var(--muted);font-size:8px;font-weight:900;letter-spacing:.05em}
+.auctionNowStat b{display:block;font-size:16px;margin-top:2px}
+.auctionNowTargets{display:grid;gap:6px}
+.auctionNowTarget{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 9px;border-radius:12px;background:rgba(5,17,31,.45);border:1px solid rgba(142,164,189,.10)}
+.auctionNowTargetMain{min-width:0}
+.auctionNowTargetName{font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.auctionNowTargetMeta{font-size:9px;color:var(--muted);margin-top:2px}
+.auctionNowTargetPrice{font-size:12px;font-weight:950;white-space:nowrap}
+.auctionNowThreat{margin-top:8px;padding:8px 9px;border-radius:12px;background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.14);font-size:10px;color:var(--muted)}
+.auctionNowThreat b{color:var(--text)}
+.auctionNowActions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
+.auctionNowActions button{padding:9px 6px;border-radius:11px;font-size:10px;font-weight:950}
+@media(max-width:420px){.auctionNowCard{padding:11px}.auctionNowTitle{font-size:16px}.auctionNowStat{padding:8px 5px}.auctionNowStat b{font-size:14px}.auctionNowTarget{padding:7px 8px}}
+
 /* V70.8.4 — Dashboard Situazione lega (isolata dalla V73.13) */
 .leagueSituationBtn{
   width:100%;margin:10px 0 4px;padding:13px 14px;border:1px solid var(--line);
@@ -5560,7 +5583,7 @@ body.league-situation-open nav{display:none!important}
   .rosterAdvRoleValue{font-size:15px}.rosterAdvRoleMeta{font-size:8px}
 }
 
-/* V70.8.15 — Rosa: piano residuo per reparto, solo lettura delle funzioni D.S. esistenti */
+/* V70.8.16 — Rosa: piano residuo per reparto, solo lettura delle funzioni D.S. esistenti */
 .rosterPlanStrip{display:grid;grid-template-columns:1.15fr .85fr;gap:7px;margin-top:2px}
 .rosterPlanBox{background:linear-gradient(145deg,#10243c,#091523);border:1px solid rgba(244,196,48,.22);border-radius:14px;padding:9px 10px}
 .rosterPlanBox span{display:block;color:var(--muted);font-size:8.5px;font-weight:850;letter-spacing:.5px;text-transform:uppercase}
@@ -5580,7 +5603,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.15</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.16</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -5589,6 +5612,8 @@ body.league-situation-open nav{display:none!important}
     <div class="homeV7088bMain">
       <div id="dashPremiumHero" class="dashPremiumHero"></div>
       <div id="dashboardMarketContext" class="marketContextBar"></div>
+
+      <div id="dashboardAuctionNow" class="auctionNowCard"></div>
 
       <div class="homeV7088Section homeV7088Ai">
         <div class="homeV7088Heading">
@@ -8154,8 +8179,65 @@ function renderDirectorSportivoAI(){
     </div>`;
 }
 
+
+function renderHomeAuctionNow(){
+  const box=document.getElementById('dashboardAuctionNow');
+  if(!box)return;
+  const me=state.me;
+  const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
+  if(roster(me).length>=total){
+    box.innerHTML=`<div class="auctionNowTop"><div><div class="auctionNowKicker">PRIORITÀ ASTA ADESSO</div><div class="auctionNowTitle">✅ Rosa completata</div></div><span class="auctionNowRole">25/25</span></div>`;
+    return;
+  }
+
+  const openRoles=(isInitialMarket()?initialBlockRoles():['P','D','C','A']).filter(r=>roleCount(me,r)<LIMITS[r]);
+  const priorityRole=isInitialMarket()
+    ? (initialBlockPriorityRole()||openRoles[0])
+    : openRoles.map(r=>({r,urg:roleUrgencyScore(r,me),plan:liveRoleBudgetPlan(r,me)}))
+        .sort((a,b)=>b.urg-a.urg || b.plan.max-a.plan.max)[0]?.r;
+
+  if(!priorityRole){box.innerHTML='';return;}
+  const plan=liveRoleBudgetPlan(priorityRole,me);
+  const candidates=PLAYER_ARCHIVE
+    .map((p,index)=>buyNowCandidate(index))
+    .filter(Boolean)
+    .filter(x=>x.p.role===priorityRole && Number(x.px?.ideal||0)<=safeMaxBid(me))
+    .sort((a,b)=>b.score-a.score || b.fit-a.fit || b.ai.score-a.ai.score)
+    .slice(0,3);
+
+  const totalSlots=Object.values(LIMITS).reduce((a,b)=>a+b,0);
+  const rivals=(state.managers||[]).map((name,i)=>{
+    if(i===me)return null;
+    const missing=Math.max(0,totalSlots-roster(i).length);
+    const cash=budget(i);
+    const pressure=missing>0?cash/missing:0;
+    return {name,i,missing,cash,pressure};
+  }).filter(Boolean).filter(x=>x.missing>0).sort((a,b)=>b.pressure-a.pressure || b.cash-a.cash);
+  const threat=rivals[0]||null;
+
+  box.innerHTML=`
+    <div class="auctionNowTop">
+      <div><div class="auctionNowKicker">PRIORITÀ ASTA ADESSO</div><div class="auctionNowTitle">${esc(roleName(priorityRole))}</div></div>
+      <span class="auctionNowRole">${roleCount(me,priorityRole)}/${LIMITS[priorityRole]}</span>
+    </div>
+    <div class="auctionNowStats">
+      <div class="auctionNowStat"><span>BUDGET REPARTO</span><b>${plan.min}-${plan.max}</b></div>
+      <div class="auctionNowStat"><span>MEDIA / SLOT</span><b>${plan.avg}</b></div>
+      <div class="auctionNowStat"><span>SLOT MANCANTI</span><b>${plan.missing}</b></div>
+    </div>
+    <div class="auctionNowTargets">
+      ${candidates.length?candidates.map((x,i)=>`<div class="auctionNowTarget" onclick="openPlayerDetail(${x.index})"><div class="auctionNowTargetMain"><div class="auctionNowTargetName">#${i+1} ${esc(x.p.name)}</div><div class="auctionNowTargetMeta">${esc(x.p.team)} · QI ${x.p.qi} · AI ${x.score}/99</div></div><div class="auctionNowTargetPrice">IDEALE ${x.px.ideal}</div></div>`).join(''):`<div class="auctionNowTarget"><div class="auctionNowTargetMain"><div class="auctionNowTargetName">Nessun profilo sostenibile ora</div><div class="auctionNowTargetMeta">Il D.S. sta proteggendo il budget residuo.</div></div></div>`}
+    </div>
+    ${threat?`<div class="auctionNowThreat">⚠️ Avversario da tenere d’occhio: <b>${esc(threat.name)}</b> · ${threat.cash} cr · ${threat.pressure.toFixed(1)} cr/slot</div>`:''}
+    <div class="auctionNowActions">
+      <button class="secondary" onclick="openLeagueSituationPage()">📊 SITUAZIONE LEGA</button>
+      <button class="primary" style="position:static" onclick="openBuyNowPage()">🤖 CHI COMPRO?</button>
+    </div>`;
+}
+
 function renderDashboardControlRaw(){
   renderPremiumDashboardHero();
+  renderHomeAuctionNow();
   const me=state.me;
   const team=document.getElementById('dashboardTeamName');
   if(!team)return;
