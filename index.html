@@ -5562,7 +5562,7 @@ body.league-situation-open nav{display:none!important}
 
 
 
-/* V70.8.21b — Portieri avversari registrabili anche con blocco P attivo sulla mia rosa. D.S. invariato. */
+/* V70.8.22 — Portieri avversari registrabili anche con blocco P attivo sulla mia rosa. D.S. invariato. */
 .astaQuickOutcome{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
 .astaQuickOutcome button{min-height:44px;border-radius:12px;font-size:11px;font-weight:950}
 .astaQuickMine{background:linear-gradient(180deg,#0e6b45,#08462f);border:1px solid rgba(57,217,138,.55);color:#eafff5;box-shadow:0 8px 20px rgba(57,217,138,.10)}
@@ -5656,6 +5656,24 @@ body.league-situation-open nav{display:none!important}
 .astaNextTargetCard strong{font-size:10px;color:var(--text)}
 .astaNextTargetCard em{font-style:normal;font-size:8px;font-weight:950;color:#ffd166;margin-top:2px}
 @media(max-width:420px){.astaOutcomePanel{padding:8px}.astaOutcomeStats{gap:4px}.astaOutcomeStat{padding:6px 3px}.astaOutcomeActions{grid-template-columns:1fr auto}}
+
+/* V70.8.22 - Situazione lega live post-esito. Solo UI/lettura; D.S. invariato. */
+.astaLeagueLive{margin-top:9px;padding:9px;border-radius:12px;border:1px solid rgba(77,163,255,.20);background:rgba(77,163,255,.045)}
+.astaLeagueLiveHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.astaLeagueLiveTitle{font-size:9px;font-weight:950;letter-spacing:.7px;color:var(--muted)}
+.astaLeagueLiveOpen{border:0;background:transparent;color:var(--accent);font-size:9px;font-weight:950;padding:2px 0}
+.astaLeagueLiveGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:7px}
+.astaLeagueLiveCard{min-width:0;padding:7px 6px;border-radius:10px;background:rgba(255,255,255,.035);border:1px solid rgba(120,160,210,.14)}
+.astaLeagueLiveCard.high{border-color:rgba(248,113,113,.32);background:rgba(239,68,68,.05)}
+.astaLeagueLiveCard.medium{border-color:rgba(251,191,36,.25)}
+.astaLeagueLiveRank{font-size:7px;color:var(--muted);font-weight:950}
+.astaLeagueLiveName{font-size:10px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.astaLeagueLiveMeta{font-size:8px;color:var(--muted);line-height:1.25;margin-top:3px}
+.astaLeagueLiveMeta b{color:var(--text)}
+.astaLeagueLiveLeader{margin-top:6px;font-size:9px;color:var(--muted);line-height:1.35}
+.astaLeagueLiveLeader b{color:var(--text)}
+@media(max-width:390px){.astaLeagueLive{padding:8px}.astaLeagueLiveGrid{gap:4px}.astaLeagueLiveCard{padding:6px 5px}.astaLeagueLiveName{font-size:9px}.astaLeagueLiveMeta{font-size:7.5px}}
+
 /* V70.8.21 - Riepilogo post-esito più completo. Solo UI/lettura dati; D.S. invariato. */
 .astaOutcomeDetailGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-top:7px}
 .astaOutcomeDetail{padding:7px 4px;border-radius:10px;background:rgba(255,255,255,.035);text-align:center;border:1px solid rgba(120,160,210,.10)}
@@ -5678,7 +5696,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.21b</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.22</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -8496,6 +8514,43 @@ function chooseAstaLiveNextTarget(index){
   setTimeout(()=>selectAstaLivePlayer(Number(index)),30);
 }
 function dismissAstaLiveOutcome(){ASTA_LIVE_LAST_OUTCOME=null;renderAstaOutcomePanel();}
+
+function astaLeagueLiveSnapshot(){
+  const totalSlots=Object.values(LIMITS).reduce((sum,n)=>sum+n,0);
+  const rows=(state.managers||[]).map((name,i)=>{
+    const count=roster(i).length;
+    const missing=Math.max(0,totalSlots-count);
+    const cash=budget(i);
+    const roleMissing={};
+    ['P','D','C','A'].forEach(r=>roleMissing[r]=Math.max(0,LIMITS[r]-roleCount(i,r)));
+    const weakRole=['P','D','C','A'].sort((a,b)=>roleMissing[b]-roleMissing[a] || ['P','D','C','A'].indexOf(a)-['P','D','C','A'].indexOf(b))[0];
+    return {name,i,count,missing,budget:cash,pressure:missing>0?cash/missing:0,roleMissing,weakRole};
+  });
+  const active=rows.filter(x=>x.missing>0).map(x=>x.pressure).sort((a,b)=>a-b);
+  const median=active.length?(active.length%2?active[(active.length-1)/2]:(active[active.length/2-1]+active[active.length/2])/2):0;
+  rows.forEach(x=>{
+    if(x.missing===0)x.danger={key:'complete',label:'COMPLETA',score:-1};
+    else if(x.i===state.me)x.danger={key:'mine',label:'MIA',score:-2};
+    else if(!median)x.danger={key:'medium',label:'MEDIO',score:2};
+    else{
+      const rel=x.pressure/median;
+      x.danger=rel>=1.35?{key:'high',label:'ALTO',score:3}:rel<=0.70?{key:'low',label:'BASSO',score:1}:{key:'medium',label:'MEDIO',score:2};
+    }
+  });
+  const rivals=rows.filter(x=>x.i!==state.me&&x.missing>0)
+    .sort((a,b)=>b.danger.score-a.danger.score || b.pressure-a.pressure || b.budget-a.budget);
+  const richest=[...rivals].sort((a,b)=>b.budget-a.budget || b.pressure-a.pressure)[0]||null;
+  return {rivals:rivals.slice(0,3),richest};
+}
+function renderAstaLeagueLiveSnapshot(){
+  const snap=astaLeagueLiveSnapshot();
+  if(!snap.rivals.length)return '';
+  return `<div class="astaLeagueLive">
+    <div class="astaLeagueLiveHead"><div class="astaLeagueLiveTitle">📊 SITUAZIONE LEGA LIVE</div><button class="astaLeagueLiveOpen" onclick="openLeagueSituationPage()">APRI TUTTA ›</button></div>
+    <div class="astaLeagueLiveGrid">${snap.rivals.map((x,i)=>`<div class="astaLeagueLiveCard ${x.danger.key}"><div class="astaLeagueLiveRank">#${i+1} · PERICOLO ${x.danger.label}</div><div class="astaLeagueLiveName">${esc(x.name)}</div><div class="astaLeagueLiveMeta"><b>${x.budget} cr</b> · ${x.missing} slot<br>${x.pressure.toFixed(1)} cr/slot · scoperto ${x.weakRole}</div></div>`).join('')}</div>
+    ${snap.richest?`<div class="astaLeagueLiveLeader">💰 Più liquidità: <b>${esc(snap.richest.name)}</b> · ${snap.richest.budget} crediti rimasti.</div>`:''}
+  </div>`;
+}
 function renderAstaOutcomePanel(){
   const box=document.getElementById('astaOutcomePanel');
   if(!box)return;
@@ -8539,6 +8594,7 @@ function renderAstaOutcomePanel(){
     ${buyerValid?`<div class="astaOutcomeRival"><div class="astaOutcomeRivalTitle">👥 AVVERSARIO AGGIORNATO · ${esc(state.managers[rival]||'Rivale')}</div><div class="astaOutcomeRivalText">Restano <b>${rivalCash} crediti</b> per <b>${rivalSlots} slot</b>${rivalSlots>0?` · pressione economica <b>${rivalPressure} cr/slot</b>`:' · rosa completata'}. La situazione lega è stata aggiornata con questo acquisto.</div></div>`:''}
     ${role&&plan?`<div class="astaOutcomeNext"><div><div class="astaOutcomeNextName">Piano ${esc(roleName(role))}</div><div class="astaOutcomeNextMeta">${plan.missing} slot mancanti · fascia reparto ${plan.min}-${plan.max} cr</div></div><div class="astaOutcomeNextPrice">MEDIA ${plan.avg}</div></div>`:''}
     ${nextTargets.length?`<div class="astaNextTargetsTitle">🎯 ${won?'PROSSIMO OBIETTIVO D.S.':'MIGLIOR SOSTITUTO + ALTERNATIVE'}</div><div class="astaNextTargetsGrid">${nextTargets.map((x,i)=>`<button class="astaNextTargetCard ${i===0?'best':''}" onclick="chooseAstaLiveNextTarget(${x.index})"><span class="astaNextTargetRank">${i===0?(won?'CONSIGLIATO':'MIGLIOR SOSTITUTO'):'ALTERNATIVA '+i}</span><b>${esc(x.p.name)}</b><small>${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi}</small><div><span>IDEALE <strong>${x.ideal}</strong></span><span>MAX <strong>${x.max}</strong></span></div><em>APRI IN ASTA LIVE</em></button>`).join('')}</div>`:`<div class="astaOutcomeNext"><div><div class="astaOutcomeNextName">${slots===0?'Rosa completata':'Nessun obiettivo sostenibile ora'}</div><div class="astaOutcomeNextMeta">${slots===0?'Asta completata.':'Il D.S. sta proteggendo il budget residuo.'}</div></div></div>`}
+    ${renderAstaLeagueLiveSnapshot()}
     <div class="astaOutcomeActions">
       <button class="secondary" onclick="dismissAstaLiveOutcome()">CHIUDI</button>
     </div>`;
@@ -8577,7 +8633,7 @@ function renderAstaLiveSuggestions(){
 }
 function selectAstaLivePlayer(index){
   const chosen=PLAYER_ARCHIVE[index];
-  // V70.8.21b: il blocco portieri è una strategia della MIA rosa,
+  // V70.8.22: il blocco portieri è una strategia della MIA rosa,
   // non deve impedire di aprire un portiere che può essere acquistato da un avversario.
   if(chosen && !marketRoleAllowed(chosen.role)){
     alert(`Asta iniziale: blocco ${initialBlockLabel()}. Puoi chiamare ${allowedInitialRoleText()}.`);
@@ -14202,7 +14258,7 @@ function searchPlayers(){
 function selectArchivePlayer(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p || alreadyBoughtPlayer(p.name)) return;
-  // V70.8.21b: selezione sempre consentita; il vincolo P1→P2/P3
+  // V70.8.22: selezione sempre consentita; il vincolo P1→P2/P3
   // viene verificato solo se l'acquirente finale è la mia squadra.
   selectedArchivePlayer=p;
   document.getElementById('pname').value=p.name;
