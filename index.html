@@ -5536,6 +5536,29 @@ body.league-situation-open nav{display:none!important}
   .astaLiveSmartBar{margin-top:7px}.astaLiveDecisionBadge{margin-top:8px!important;padding:9px 10px!important}
   .astaVerdict{padding:9px 10px!important}
 }
+
+
+/* V70.8.14 — Rosa avanzata: riepilogo economico solo UI, nessuna modifica al D.S. */
+.rosterAdvanced{margin-top:10px;display:grid;gap:8px}
+.rosterAdvancedTop{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.rosterAdvCard{background:#081321;border:1px solid var(--line);border-radius:14px;padding:9px 7px;text-align:center}
+.rosterAdvCard span{display:block;color:var(--muted);font-size:9px;font-weight:850;letter-spacing:.55px;text-transform:uppercase}
+.rosterAdvCard b{display:block;font-size:18px;margin-top:3px}
+.rosterAdvRoles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rosterAdvRole{background:linear-gradient(180deg,#0d1d31,#091523);border:1px solid var(--line);border-radius:14px;padding:8px 5px}
+.rosterAdvRoleHead{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.rosterAdvRoleHead b{font-size:13px}
+.rosterAdvRoleHead span{font-size:9px;color:var(--muted);font-weight:800}
+.rosterAdvRoleValue{font-size:17px;font-weight:950;margin-top:3px}
+.rosterAdvRoleMeta{font-size:9px;color:var(--muted);margin-top:2px;line-height:1.25}
+.rosterAdvProgress{height:4px;background:#06101d;border-radius:99px;overflow:hidden;margin-top:6px}
+.rosterAdvProgress i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.rosterAdvancedNote{font-size:10px;color:var(--muted);line-height:1.35;padding:0 2px}
+@media(max-width:390px){
+  .rosterAdvCard{padding:8px 4px}.rosterAdvCard b{font-size:16px}
+  .rosterAdvRoles{gap:5px}.rosterAdvRole{padding:7px 4px}
+  .rosterAdvRoleValue{font-size:15px}.rosterAdvRoleMeta{font-size:8px}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5546,7 +5569,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.13b</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.14</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -13720,6 +13743,37 @@ function openParticipant(i){
 
   const participantTitle=document.querySelector('#participantModal .participantStickyTitle');
   if(participantTitle)participantTitle.textContent=i===state.me?'La mia rosa':n;
+
+  // V70.8.14 — Riepilogo economico della mia rosa. Solo lettura dei dati già esistenti.
+  const myAdvanced=i===state.me?(()=>{
+    const avg=total>0?(s/total):0;
+    const slotsLeft=Math.max(0,25-total);
+    const safeForFuture=Math.max(0,b-slotsLeft);
+    const roleCards=['P','D','C','A'].map(role=>{
+      const rr=r.filter(x=>x.role===role);
+      const roleSpent=rr.reduce((sum,x)=>sum+Number(x.price||0),0);
+      const roleAvg=rr.length?roleSpent/rr.length:0;
+      const filled=roleCount(i,role);
+      const limit=LIMITS[role];
+      const pctRole=Math.min(100,(filled/limit)*100);
+      return `<div class="rosterAdvRole">
+        <div class="rosterAdvRoleHead"><b>${role}</b><span>${filled}/${limit}</span></div>
+        <div class="rosterAdvRoleValue">${roleSpent} cr</div>
+        <div class="rosterAdvRoleMeta">media ${roleAvg?roleAvg.toFixed(1):'0'} · mancano ${Math.max(0,limit-filled)}</div>
+        <div class="rosterAdvProgress"><i style="width:${pctRole}%"></i></div>
+      </div>`;
+    }).join('');
+    return `<div class="rosterAdvanced">
+      <div class="rosterAdvancedTop">
+        <div class="rosterAdvCard"><span>Media acquisto</span><b>${avg?avg.toFixed(1):'0'} cr</b></div>
+        <div class="rosterAdvCard"><span>Slot mancanti</span><b>${slotsLeft}</b></div>
+        <div class="rosterAdvCard"><span>Spendibili extra</span><b>${safeForFuture} cr</b></div>
+      </div>
+      <div class="rosterAdvRoles">${roleCards}</div>
+      <div class="rosterAdvancedNote">💡 “Spendibili extra” = crediti residui oltre al minimo di 1 credito necessario per ogni slot ancora vuoto. È un riepilogo contabile, non modifica i tetti del D.S.</div>
+    </div>`;
+  })():'';
+
   document.getElementById('participantDetail').innerHTML=`
     <div class="detailHero">
       <div class="detailName">${esc(n)} ${i===state.me?'<span class="tag good">LA MIA ROSA</span>':''}</div>
@@ -13738,6 +13792,7 @@ function openParticipant(i){
       <div class="progress" style="margin-top:13px"><i style="width:${pct}%"></i></div>
     </div>
 
+    ${myAdvanced}
     ${grouped || '<div class="empty" style="margin-top:14px">Nessun giocatore acquistato da questo partecipante.</div>'}
   `;
   document.getElementById('participantModal').classList.add('show');
