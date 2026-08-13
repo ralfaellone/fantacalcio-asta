@@ -5614,6 +5614,27 @@ body.league-situation-open nav{display:none!important}
   .astaQuickAlt{padding:7px 5px!important;min-height:68px}
   .astaQuickAlt b{font-size:10px}
 }
+
+/* V70.8.18 - Chiusura Asta Live rapida: solo flusso/UI, D.S. invariato. */
+.astaOutcomePanel{display:none;margin-top:7px;padding:10px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,rgba(15,31,50,.96),rgba(8,20,34,.96));box-shadow:0 8px 24px rgba(0,0,0,.16)}
+.astaOutcomePanel.show{display:block}
+.astaOutcomePanel.won{border-color:rgba(57,217,138,.34)}
+.astaOutcomePanel.lost{border-color:rgba(255,177,66,.34)}
+.astaOutcomeTop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.astaOutcomeKicker{font-size:9px;font-weight:950;letter-spacing:.9px;color:var(--muted)}
+.astaOutcomeTitle{font-size:15px;font-weight:950;line-height:1.15;margin-top:2px}
+.astaOutcomeBadge{font-size:9px;font-weight:950;padding:5px 7px;border-radius:999px;background:rgba(255,255,255,.06);white-space:nowrap}
+.astaOutcomeStats{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px}
+.astaOutcomeStat{padding:7px 5px;border-radius:10px;background:rgba(255,255,255,.045);text-align:center}
+.astaOutcomeStat span{display:block;font-size:8px;color:var(--muted);font-weight:900}
+.astaOutcomeStat b{display:block;font-size:14px;margin-top:1px}
+.astaOutcomeNext{margin-top:7px;padding:8px;border-radius:11px;background:rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.astaOutcomeNextName{font-size:12px;font-weight:950}
+.astaOutcomeNextMeta{font-size:9px;color:var(--muted);margin-top:2px}
+.astaOutcomeNextPrice{font-size:10px;font-weight:950;white-space:nowrap}
+.astaOutcomeActions{display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:7px}
+.astaOutcomeActions button{min-height:38px;padding:8px 9px;border-radius:10px;font-size:10px;font-weight:950}
+@media(max-width:420px){.astaOutcomePanel{padding:8px}.astaOutcomeStats{gap:4px}.astaOutcomeStat{padding:6px 3px}.astaOutcomeActions{grid-template-columns:1fr auto}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -5624,7 +5645,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.17</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.18</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -5699,6 +5720,7 @@ body.league-situation-open nav{display:none!important}
 
     <div id="astaLiveKpis" class="astaLiveKpis"></div>
     <div id="astaMarketContext" class="astaMarketContext"></div>
+    <div id="astaOutcomePanel" class="astaOutcomePanel"></div>
 
     <div class="astaLiveSearchWrap">
       <input id="astaLiveSearch" class="astaLiveSearch" placeholder="🔎 Cerca il giocatore chiamato..." autocomplete="off"
@@ -8396,7 +8418,69 @@ let ASTA_LIVE_PLAYER=-1;
 let ASTA_LIVE_LAST_PRICE=null;
 // V70.8.7 - memorizza se REGISTRA ESITO arriva davvero da Asta Live.
 let ASTA_LIVE_OUTCOME_SOURCE=null;
+let ASTA_LIVE_LAST_OUTCOME=null;
 
+function astaLivePriorityRole(){
+  const me=state.me;
+  const openRoles=(isInitialMarket()?initialBlockRoles():['P','D','C','A']).filter(r=>roleCount(me,r)<LIMITS[r]);
+  if(!openRoles.length)return null;
+  if(isInitialMarket())return initialBlockPriorityRole()||openRoles[0];
+  return openRoles.map(r=>({r,urg:roleUrgencyScore(r,me),plan:liveRoleBudgetPlan(r,me)}))
+    .sort((a,b)=>b.urg-a.urg || b.plan.max-a.plan.max)[0]?.r||openRoles[0];
+}
+function astaLiveNextTarget(outcome){
+  const me=state.me;
+  if(!outcome)return null;
+  if(outcome.type==='lost' && Number.isInteger(outcome.sourceIndex)){
+    const rows=automaticLostAlternativesFor(outcome.sourceIndex);
+    if(rows.length)return {index:rows[0].index,p:rows[0].p,ideal:rows[0].ai?.ideal||0,max:rows[0].ai?.maxRec||0,reason:'Miglior sostituto'};
+  }
+  const role=astaLivePriorityRole();
+  if(!role)return null;
+  const rows=PLAYER_ARCHIVE.map((p,index)=>buyNowCandidate(index)).filter(Boolean)
+    .filter(x=>x.p.role===role && Number(x.px?.ideal||0)<=safeMaxBid(me))
+    .sort((a,b)=>b.score-a.score || b.fit-a.fit || b.ai.score-a.ai.score);
+  const x=rows[0];
+  return x?{index:x.index,p:x.p,ideal:x.px?.ideal||0,max:x.px?.hardMax||x.ai?.maxRec||0,reason:'Prossimo obiettivo'}:null;
+}
+function goToAstaLive(){
+  const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Asta'));
+  if(btn)tab('rosa',btn);
+}
+function chooseAstaLiveNextTarget(index){
+  if(!Number.isInteger(Number(index))||Number(index)<0)return;
+  ASTA_LIVE_LAST_OUTCOME=null;
+  goToAstaLive();
+  setTimeout(()=>selectAstaLivePlayer(Number(index)),30);
+}
+function dismissAstaLiveOutcome(){ASTA_LIVE_LAST_OUTCOME=null;renderAstaOutcomePanel();}
+function renderAstaOutcomePanel(){
+  const box=document.getElementById('astaOutcomePanel');
+  if(!box)return;
+  const o=ASTA_LIVE_LAST_OUTCOME;
+  if(!o){box.className='astaOutcomePanel';box.innerHTML='';return;}
+  const me=state.me, cash=budget(me), slots=remainingRosterSlots(me), role=astaLivePriorityRole();
+  const next=astaLiveNextTarget(o);
+  const plan=role?liveRoleBudgetPlan(role,me):null;
+  const won=o.type==='won';
+  box.className='astaOutcomePanel show '+(won?'won':'lost');
+  box.innerHTML=`
+    <div class="astaOutcomeTop">
+      <div><div class="astaOutcomeKicker">ESITO REGISTRATO</div><div class="astaOutcomeTitle">${won?'✅ Preso '+esc(o.name):'↪️ Perso '+esc(o.name)}</div></div>
+      <span class="astaOutcomeBadge">${won?'-'+o.price+' cr':esc(state.managers[o.buyer]||'RIVALE')}</span>
+    </div>
+    <div class="astaOutcomeStats">
+      <div class="astaOutcomeStat"><span>CREDITI</span><b>${cash}</b></div>
+      <div class="astaOutcomeStat"><span>SLOT</span><b>${slots}</b></div>
+      <div class="astaOutcomeStat"><span>PRIORITÀ</span><b>${role?esc(role):'—'}</b></div>
+    </div>
+    ${role&&plan?`<div class="astaOutcomeNext"><div><div class="astaOutcomeNextName">Piano ${esc(roleName(role))}</div><div class="astaOutcomeNextMeta">${plan.missing} slot mancanti · fascia reparto ${plan.min}-${plan.max} cr</div></div><div class="astaOutcomeNextPrice">MEDIA ${plan.avg}</div></div>`:''}
+    ${next?`<div class="astaOutcomeNext"><div><div class="astaOutcomeNextName">${esc(next.reason)} · ${esc(next.p.name)}</div><div class="astaOutcomeNextMeta">${next.p.role} · ${esc(next.p.team)} · QI ${next.p.qi}</div></div><div class="astaOutcomeNextPrice">IDEALE ${next.ideal}</div></div>`:`<div class="astaOutcomeNext"><div><div class="astaOutcomeNextName">${slots===0?'Rosa completata':'Nessun obiettivo sostenibile ora'}</div><div class="astaOutcomeNextMeta">${slots===0?'Asta completata.':'Il D.S. sta proteggendo il budget residuo.'}</div></div></div>`}
+    <div class="astaOutcomeActions">
+      ${next?`<button class="primary" style="position:static" onclick="chooseAstaLiveNextTarget(${next.index})">🎯 PROSSIMO OBIETTIVO</button>`:`<button class="secondary" onclick="dismissAstaLiveOutcome()">CHIUDI</button>`}
+      <button class="secondary" onclick="dismissAstaLiveOutcome()">✕</button>
+    </div>`;
+}
 
 function renderAstaLive(){
   renderMarketContextBars();
@@ -8409,6 +8493,7 @@ function renderAstaLive(){
     <div class="astaLiveKpi"><span>POSTI</span><b>${slots}</b></div>
     <div class="astaLiveKpi"><span>MAX SICURA</span><b>${safeMaxBid(me)}</b></div>`;
   renderAstaLiveSelected();
+  renderAstaOutcomePanel();
 }
 function renderAstaLiveSuggestions(){
   const input=document.getElementById('astaLiveSearch');
@@ -14272,7 +14357,8 @@ function saveBuy(){
 
   // V70.8.7: se il giocatore selezionato in Asta Live viene registrato
   // a un avversario, dopo il salvataggio mostra subito 3 alternative.
-  const lostFromAstaLive=(ASTA_LIVE_OUTCOME_SOURCE!=null && pidx===ASTA_LIVE_OUTCOME_SOURCE && buyer!==state.me);
+  const fromAstaLive=(ASTA_LIVE_OUTCOME_SOURCE!=null && pidx===ASTA_LIVE_OUTCOME_SOURCE);
+  const lostFromAstaLive=(fromAstaLive && buyer!==state.me);
   const lostSourceIndex=lostFromAstaLive?ASTA_LIVE_OUTCOME_SOURCE:null;
 
   state.purchases.push({
@@ -14294,13 +14380,28 @@ function saveBuy(){
     }
   });
   persist();
+
+  // V70.8.18: se l'esito nasce da Asta Live, chiudi il form e torna subito alla console
+  // con budget/slot/priorità aggiornati e un prossimo obiettivo operativo.
+  if(fromAstaLive){
+    ASTA_LIVE_LAST_OUTCOME={
+      type:buyer===state.me?'won':'lost',
+      name,price,buyer,sourceIndex:pidx,ts:Date.now()
+    };
+    ASTA_LIVE_PLAYER=-1;
+  }
+
   closeBuy();
   render();
-
-  // V70.8.7: resetta sempre il contesto; se l'hai perso, apri il Piano B automatico.
   ASTA_LIVE_OUTCOME_SOURCE=null;
-  if(lostFromAstaLive && lostSourceIndex!=null){
-    setTimeout(()=>openLostAlternativesPage(lostSourceIndex,name,price,buyer),90);
+
+  if(fromAstaLive){
+    setTimeout(()=>{
+      goToAstaLive();
+      renderAstaOutcomePanel();
+      const box=document.getElementById('astaOutcomePanel');
+      if(box)box.scrollIntoView({block:'nearest',behavior:'smooth'});
+    },60);
   }
 }
 function del(id){if(confirm('Eliminare questo acquisto?')){state.purchases=state.purchases.filter(x=>x.id!==id);persist();render()}}
