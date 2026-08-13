@@ -518,6 +518,23 @@ nav{position:fixed;left:0;right:0;bottom:0;padding:8px 14px calc(env(safe-area-i
 .editBuy{border:0;background:transparent;color:var(--accent);font-size:18px;padding:5px}
 .historyCount{color:var(--muted);font-size:11px;margin:7px 2px 10px}
 
+/* V70.8.23 - Cronologia asta intelligente. Solo UI/analisi, D.S. invariato. */
+.historyQuickFilters{display:flex;gap:6px;overflow-x:auto;padding:2px 0 9px;scrollbar-width:none}
+.historyQuickFilters::-webkit-scrollbar{display:none}
+.historyQuickBtn{border:1px solid var(--line);background:#0b1727;color:var(--muted);border-radius:999px;padding:8px 11px;font-size:10px;font-weight:950;white-space:nowrap}
+.historyQuickBtn.active{background:var(--accent);border-color:var(--accent);color:#111}
+.historySmartItem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px 12px;border-radius:15px;background:var(--card);border:1px solid var(--line)}
+.historySmartMain{min-width:0}
+.historySmartTop{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.historySmartName{font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.historySmartMeta{color:var(--muted);font-size:10px;margin-top:4px;line-height:1.35}
+.historySmartBudget{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:3px 6px;border-radius:999px;background:#081321;border:1px solid var(--line);color:var(--muted);font-size:9px;font-weight:850}
+.historyDangerUp{display:inline-block;padding:3px 6px;border-radius:999px;border:1px solid rgba(255,190,80,.35);background:rgba(255,190,80,.08);color:#ffcf70;font-size:8px;font-weight:950}
+.historySmartRight{text-align:right;display:flex;align-items:center;gap:7px}
+.historySmartPrice{font-size:21px;font-weight:950;line-height:1}
+.historySmartPrice small{display:block;color:var(--muted);font-size:8px;margin-top:3px}
+@media(max-width:390px){.historySmartItem{padding:10px}.historySmartPrice{font-size:19px}.historySmartMeta{font-size:9px}}
+
 
 /* V11.2 - Scheda partecipante ottimizzata per iPhone */
 #participantModal{
@@ -5562,7 +5579,7 @@ body.league-situation-open nav{display:none!important}
 
 
 
-/* V70.8.22b — Portieri avversari registrabili anche con blocco P attivo sulla mia rosa. D.S. invariato. */
+/* V70.8.23 — Portieri avversari registrabili anche con blocco P attivo sulla mia rosa. D.S. invariato. */
 .astaQuickOutcome{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
 .astaQuickOutcome button{min-height:44px;border-radius:12px;font-size:11px;font-weight:950}
 .astaQuickMine{background:linear-gradient(180deg,#0e6b45,#08462f);border:1px solid rgba(57,217,138,.55);color:#eafff5;box-shadow:0 8px 20px rgba(57,217,138,.10)}
@@ -5657,7 +5674,7 @@ body.league-situation-open nav{display:none!important}
 .astaNextTargetCard em{font-style:normal;font-size:8px;font-weight:950;color:#ffd166;margin-top:2px}
 @media(max-width:420px){.astaOutcomePanel{padding:8px}.astaOutcomeStats{gap:4px}.astaOutcomeStat{padding:6px 3px}.astaOutcomeActions{grid-template-columns:1fr auto}}
 
-/* V70.8.22b - Situazione lega live post-esito. Solo UI/lettura; D.S. invariato. */
+/* V70.8.23 - Situazione lega live post-esito. Solo UI/lettura; D.S. invariato. */
 .astaLeagueLive{margin-top:9px;padding:9px;border-radius:12px;border:1px solid rgba(77,163,255,.20);background:rgba(77,163,255,.045)}
 .astaLeagueLiveHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .astaLeagueLiveTitle{font-size:9px;font-weight:950;letter-spacing:.7px;color:var(--muted)}
@@ -5696,7 +5713,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.22b</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.23</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -5882,6 +5899,14 @@ body.league-situation-open nav{display:none!important}
   </div>
   <div class="section">
     <h2>📋 Cronologia acquisti</h2>
+    <div class="historyQuickFilters" id="historyQuickFilters">
+      <button class="historyQuickBtn active" data-hf="ALL" onclick="setHistoryFastFilter('ALL')">Tutti</button>
+      <button class="historyQuickBtn" data-hf="P" onclick="setHistoryFastFilter('P')">P</button>
+      <button class="historyQuickBtn" data-hf="D" onclick="setHistoryFastFilter('D')">D</button>
+      <button class="historyQuickBtn" data-hf="C" onclick="setHistoryFastFilter('C')">C</button>
+      <button class="historyQuickBtn" data-hf="A" onclick="setHistoryFastFilter('A')">A</button>
+      <button class="historyQuickBtn" data-hf="RIVALS" onclick="setHistoryFastFilter('RIVALS')">Solo avversari</button>
+    </div>
     <div class="historyTools">
       <input id="historySearch" placeholder="Cerca giocatore..." oninput="renderHistory()">
       <select id="historyManager" onchange="renderHistory()"></select>
@@ -8633,7 +8658,7 @@ function renderAstaLiveSuggestions(){
 }
 function selectAstaLivePlayer(index){
   const chosen=PLAYER_ARCHIVE[index];
-  // V70.8.22b: il blocco portieri è una strategia della MIA rosa,
+  // V70.8.23: il blocco portieri è una strategia della MIA rosa,
   // non deve impedire di aprire un portiere che può essere acquistato da un avversario.
   if(chosen && !marketRoleAllowed(chosen.role)){
     alert(`Asta iniziale: blocco ${initialBlockLabel()}. Puoi chiamare ${allowedInitialRoleText()}.`);
@@ -14258,7 +14283,7 @@ function searchPlayers(){
 function selectArchivePlayer(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p || alreadyBoughtPlayer(p.name)) return;
-  // V70.8.22b: selezione sempre consentita; il vincolo P1→P2/P3
+  // V70.8.23: selezione sempre consentita; il vincolo P1→P2/P3
   // viene verificato solo se l'acquirente finale è la mia squadra.
   selectedArchivePlayer=p;
   document.getElementById('pname').value=p.name;
@@ -14617,6 +14642,38 @@ function saveSettings(){
   render();
 }
 
+let HISTORY_FAST_FILTER='ALL';
+function setHistoryFastFilter(v){
+  HISTORY_FAST_FILTER=v||'ALL';
+  document.querySelectorAll('.historyQuickBtn').forEach(b=>b.classList.toggle('active',b.dataset.hf===HISTORY_FAST_FILTER));
+  const roleSel=document.getElementById('historyRole');
+  if(roleSel && ['P','D','C','A'].includes(HISTORY_FAST_FILTER)) roleSel.value=HISTORY_FAST_FILTER;
+  else if(roleSel && HISTORY_FAST_FILTER==='ALL') roleSel.value='';
+  renderHistory();
+}
+
+function historyPurchaseSnapshots(){
+  const totalSlots=Object.values(LIMITS).reduce((a,b)=>a+b,0);
+  const ordered=[...state.purchases].sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const spentBy=Array((state.managers||[]).length).fill(0);
+  const countBy=Array((state.managers||[]).length).fill(0);
+  const snapshots=new Map();
+  ordered.forEach(x=>{
+    const buyer=Number(x.buyer);
+    const price=Number(x.price)||0;
+    const beforeBudget=Math.max(0,INITIAL-spentBy[buyer]);
+    const beforeMissing=Math.max(0,totalSlots-countBy[buyer]);
+    const beforePressure=beforeMissing>0?beforeBudget/beforeMissing:0;
+    spentBy[buyer]+=price; countBy[buyer]+=1;
+    const afterBudget=Math.max(0,INITIAL-spentBy[buyer]);
+    const afterMissing=Math.max(0,totalSlots-countBy[buyer]);
+    const afterPressure=afterMissing>0?afterBudget/afterMissing:0;
+    const pressureRise=beforePressure>0 && afterPressure>beforePressure*1.08;
+    snapshots.set(x.id,{afterBudget,afterMissing,beforePressure,afterPressure,pressureRise});
+  });
+  return snapshots;
+}
+
 function populateHistoryManager(){
   const sel=document.getElementById('historyManager');
   if(!sel)return;
@@ -14628,26 +14685,47 @@ function renderHistory(){
   const box=document.getElementById('historyList');
   if(!box)return;
   populateHistoryManager();
+  document.querySelectorAll('.historyQuickBtn').forEach(b=>b.classList.toggle('active',b.dataset.hf===HISTORY_FAST_FILTER));
   const q=normalizePlayerText(document.getElementById('historySearch')?.value||'');
   const manager=document.getElementById('historyManager')?.value??'';
   const role=document.getElementById('historyRole')?.value||'';
   const order=document.getElementById('historyOrder')?.value||'new';
+  const snapshots=historyPurchaseSnapshots();
   let rows=[...state.purchases].filter(x=>{
     if(q && !normalizePlayerText(x.name).includes(q))return false;
     if(manager!=='' && x.buyer!==Number(manager))return false;
-    if(role && x.role!==role)return false;
+    if(HISTORY_FAST_FILTER==='RIVALS' && Number(x.buyer)===Number(state.me))return false;
+    const quickRole=['P','D','C','A'].includes(HISTORY_FAST_FILTER)?HISTORY_FAST_FILTER:'';
+    if(quickRole && x.role!==quickRole)return false;
+    if(!quickRole && role && x.role!==role)return false;
     return true;
   });
   if(order==='new')rows.sort((a,b)=>(b.ts||0)-(a.ts||0));
   if(order==='old')rows.sort((a,b)=>(a.ts||0)-(b.ts||0));
   if(order==='priceDesc')rows.sort((a,b)=>b.price-a.price);
   if(order==='priceAsc')rows.sort((a,b)=>a.price-b.price);
-  const total=rows.reduce((s,x)=>s+x.price,0);
-  document.getElementById('historyCount').textContent=`${rows.length} acquisti visualizzati · ${total} crediti`;
-  box.innerHTML=rows.length?rows.map(x=>`<div class="item">
-    <div><div class="name"><span class="tag">${x.role}</span>${esc(x.name)}</div><div class="meta">${esc(state.managers[x.buyer])}</div></div>
-    <div style="display:flex;align-items:center"><div class="price">${x.price}</div><div class="historyActions"><button class="editBuy" onclick="openEditBuy('${x.id}')">✎</button><button class="delete" onclick="del('${x.id}')">×</button></div></div>
-  </div>`).join(''):'<div class="empty">Nessun acquisto con questi filtri.</div>';
+  const total=rows.reduce((sum,x)=>sum+(Number(x.price)||0),0);
+  const rivals=rows.filter(x=>Number(x.buyer)!==Number(state.me)).length;
+  document.getElementById('historyCount').textContent=`${rows.length} acquisti · ${total} crediti · ${rivals} avversari`;
+  box.innerHTML=rows.length?rows.map(x=>{
+    const snap=snapshots.get(x.id)||{};
+    const buyerName=state.managers[x.buyer]||`Squadra ${Number(x.buyer)+1}`;
+    const mine=Number(x.buyer)===Number(state.me);
+    const danger=snap.pressureRise && !mine?'<span class="historyDangerUp">⚠️ PRESSIONE ↑</span>':'';
+    const budgetAfter=Number.isFinite(snap.afterBudget)?snap.afterBudget:Math.max(0,INITIAL);
+    const pressureAfter=Number.isFinite(snap.afterPressure)?snap.afterPressure:0;
+    return `<div class="historySmartItem">
+      <div class="historySmartMain">
+        <div class="historySmartTop"><span class="tag">${x.role}</span><span class="historySmartName">${esc(x.name)}</span>${danger}</div>
+        <div class="historySmartMeta">${esc(buyerName)}${mine?' · LA MIA ROSA':''}</div>
+        <div class="historySmartBudget">dopo acquisto: ${budgetAfter} cr${snap.afterMissing>0?` · ${pressureAfter.toFixed(1)} cr/slot`:''}</div>
+      </div>
+      <div class="historySmartRight">
+        <div class="historySmartPrice">${x.price}<small>crediti</small></div>
+        <div class="historyActions"><button class="editBuy" onclick="openEditBuy('${x.id}')">✎</button><button class="delete" onclick="del('${x.id}')">×</button></div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">Nessun acquisto con questi filtri.</div>';
 }
 function openEditBuy(id){
   const x=state.purchases.find(p=>p.id===id); if(!x)return;
