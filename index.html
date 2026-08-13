@@ -5399,6 +5399,21 @@ body.league-situation-open nav{display:none!important}
 
 
 
+
+/* V70.8.12 — Situazione lega avanzata: solo analisi visiva, nessun impatto sul D.S. */
+.leagueThreatHero{margin:0 0 10px;padding:11px 12px;border-radius:15px;background:linear-gradient(145deg,rgba(239,68,68,.10),rgba(12,27,45,.96));border:1px solid rgba(248,113,113,.22)}
+.leagueThreatHeroTop{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.leagueThreatHeroLabel{font-size:8px;font-weight:950;letter-spacing:.08em;color:#fca5a5}
+.leagueThreatHeroName{font-size:16px;font-weight:950;margin-top:2px}
+.leagueThreatHeroMeta{font-size:9px;color:var(--muted);margin-top:3px;line-height:1.35}
+.leagueSituationRow.highRisk{border-color:rgba(248,113,113,.28);background:linear-gradient(145deg,rgba(239,68,68,.055),var(--card))}
+.leagueSituationRow.mediumRisk{border-color:rgba(251,191,36,.20)}
+.leagueSituationExtra{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(142,164,189,.10);font-size:9px;color:var(--muted)}
+.leagueSituationExtra b{color:var(--text)}
+.leagueWeakRole{display:inline-flex;align-items:center;gap:4px;padding:4px 6px;border-radius:999px;background:rgba(77,163,255,.07);border:1px solid rgba(77,163,255,.16);color:#8ec5ff;font-weight:900;white-space:nowrap}
+.leagueSituationRank{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:9px;font-weight:950;color:var(--muted);margin-right:6px;vertical-align:middle}
+@media(max-width:390px){.leagueSituationRow{padding:9px 10px}.leagueSituationName{font-size:14px}.leagueSituationMeta{font-size:10px}.leagueSituationBudget{font-size:16px}.leagueSituationRoles{margin-top:6px}.leagueSituationRole{padding:5px 3px}.leagueThreatHero{padding:10px 11px}}
+
 /* V70.8.8 — Restyling Home: solo grafica, nessuna modifica al D.S. o alle formule */
 .homeV7088{padding-top:8px!important}
 .homeV7088Topline{display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px;color:#91a5bd;font-size:7px;font-weight:950;letter-spacing:.12em}
@@ -5493,7 +5508,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.11</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.12</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -5730,7 +5745,7 @@ body.league-situation-open nav{display:none!important}
       <button class="leagueSituationBack" onclick="closeLeagueSituationPage()">← Indietro</button>
       <div>
         <div class="leagueSituationTitle">Situazione lega</div>
-        <div class="leagueSituationSub">Crediti, posti mancanti e reparti di tutti i 12 partecipanti</div>
+        <div class="leagueSituationSub">Rivali ordinati per pressione d’asta, crediti per slot e reparti scoperti</div>
       </div>
     </div>
     <div id="leagueSituationSummary" class="leagueSituationSummary"></div>
@@ -9404,6 +9419,7 @@ function renderRosesPage(){
 function renderLeagueSituation(){
   const list=document.getElementById('leagueSituationList');
   const summary=document.getElementById('leagueSituationSummary');
+  const legend=document.getElementById('leagueDangerLegend');
   if(!list||!summary)return;
 
   const totalSlots=Object.values(LIMITS).reduce((s,n)=>s+n,0);
@@ -9411,7 +9427,10 @@ function renderLeagueSituation(){
     const count=roster(i).length;
     const missing=Math.max(0,totalSlots-count);
     const bud=budget(i);
-    return {name,i,count,missing,budget:bud,spent:spent(i),pressure:missing>0?bud/missing:0};
+    const roleMissing={};
+    ['P','D','C','A'].forEach(r=>roleMissing[r]=Math.max(0,LIMITS[r]-roleCount(i,r)));
+    const weakRole=['P','D','C','A'].sort((a,b)=>roleMissing[b]-roleMissing[a] || ['P','D','C','A'].indexOf(a)-['P','D','C','A'].indexOf(b))[0];
+    return {name,i,count,missing,budget:bud,spent:spent(i),pressure:missing>0?bud/missing:0,roleMissing,weakRole};
   });
   const totalBudget=rows.reduce((s,x)=>s+x.budget,0);
   const totalMissing=rows.reduce((s,x)=>s+x.missing,0);
@@ -9424,29 +9443,49 @@ function renderLeagueSituation(){
     : 0;
 
   function dangerFor(x){
-    if(x.missing===0)return {key:'complete',label:'ROSA COMPLETA'};
-    if(x.i===state.me)return null;
-    if(!median)return {key:'medium',label:'PERICOLO MEDIO'};
+    if(x.missing===0)return {key:'complete',label:'ROSA COMPLETA',score:-1};
+    if(x.i===state.me)return {key:'mine',label:'LA MIA ROSA',score:-2};
+    if(!median)return {key:'medium',label:'PERICOLO MEDIO',score:2};
     const rel=x.pressure/median;
-    if(rel>=1.35)return {key:'high',label:'PERICOLO ALTO'};
-    if(rel<=0.70)return {key:'low',label:'PERICOLO BASSO'};
-    return {key:'medium',label:'PERICOLO MEDIO'};
+    if(rel>=1.35)return {key:'high',label:'PERICOLO ALTO',score:3};
+    if(rel<=0.70)return {key:'low',label:'PERICOLO BASSO',score:1};
+    return {key:'medium',label:'PERICOLO MEDIO',score:2};
   }
 
-  const dangerous=rows.filter(x=>{const d=dangerFor(x);return d&&d.key==='high'}).length;
+  rows.forEach(x=>x.danger=dangerFor(x));
+  const dangerous=rows.filter(x=>x.danger.key==='high').length;
+  const complete=rows.filter(x=>x.missing===0).length;
+  const rivals=rows.filter(x=>x.i!==state.me && x.missing>0).sort((a,b)=>b.danger.score-a.danger.score || b.pressure-a.pressure || b.budget-a.budget);
+  const topThreat=rivals[0]||null;
+
   summary.innerHTML=`
     <div class="leagueSituationKpi"><span>CREDITI RIMASTI</span><b>${totalBudget}</b></div>
     <div class="leagueSituationKpi"><span>POSTI MANCANTI</span><b>${totalMissing}</b></div>
-    <div class="leagueSituationKpi"><span>PERICOLO ALTO</span><b>${dangerous}</b></div>`;
+    <div class="leagueSituationKpi"><span>ROSE COMPLETE</span><b>${complete}/12</b></div>`;
 
-  list.innerHTML=rows.map(x=>{
-    const danger=dangerFor(x);
+  if(legend){
+    legend.innerHTML=topThreat
+      ? `<div class="leagueThreatHero"><div class="leagueThreatHeroTop"><div><div class="leagueThreatHeroLabel">⚠️ AVVERSARIO PIÙ PERICOLOSO</div><div class="leagueThreatHeroName">${esc(topThreat.name)}</div></div><span class="leagueDangerBadge ${topThreat.danger.key}">${topThreat.danger.label}</span></div><div class="leagueThreatHeroMeta">${topThreat.budget} crediti · ${topThreat.missing} slot · <b>${topThreat.pressure.toFixed(1)} cr/slot</b> · reparto più scoperto ${topThreat.weakRole} (${topThreat.roleMissing[topThreat.weakRole]} mancanti)</div></div><b>Ordinamento:</b> avversari più pericolosi prima · la tua rosa resta sempre in cima.`
+      : `<b>Situazione lega</b> · nessun avversario con rosa da completare.`;
+  }
+
+  const mine=rows.find(x=>x.i===state.me);
+  const completeRivals=rows.filter(x=>x.i!==state.me && x.missing===0).sort((a,b)=>a.name.localeCompare(b.name));
+  const ordered=[...(mine?[mine]:[]),...rivals,...completeRivals];
+  let rivalRank=0;
+
+  list.innerHTML=ordered.map(x=>{
+    const danger=x.danger;
     const badge=x.i===state.me?'':`<span class="leagueDangerBadge ${danger.key}">${danger.label}</span>`;
+    const riskClass=danger.key==='high'?'highRisk':danger.key==='medium'?'mediumRisk':'';
+    const rank=x.i===state.me?'':(++rivalRank);
+    const pressureLabel=x.missing>0?`${x.pressure.toFixed(1)} cr/slot`:'—';
+    const weak=x.missing>0?`${x.weakRole} · ${x.roleMissing[x.weakRole]} mancanti`:'completa';
     return `
-    <div class="leagueSituationRow ${x.i===state.me?'mine':''}" onclick="closeLeagueSituationPage();openParticipant(${x.i})">
+    <div class="leagueSituationRow ${x.i===state.me?'mine':''} ${riskClass}" onclick="closeLeagueSituationPage();openParticipant(${x.i})">
       <div class="leagueSituationTop">
         <div style="min-width:0">
-          <div class="leagueSituationName">${esc(x.name)}${x.i===state.me?' · LA MIA ROSA':''}</div>
+          <div class="leagueSituationName">${rank?`<span class="leagueSituationRank">${rank}</span>`:''}${esc(x.name)}${x.i===state.me?' · LA MIA ROSA':''}</div>
           <div class="leagueSituationMeta">${x.count}/${totalSlots} giocatori · ${x.missing===0?'rosa completa':`${x.missing} posti mancanti`} · spesi ${x.spent} cr</div>
           ${badge}
         </div>
@@ -9455,6 +9494,7 @@ function renderLeagueSituation(){
       <div class="leagueSituationRoles">
         ${['P','D','C','A'].map(r=>`<div class="leagueSituationRole">${r}<b>${roleCount(x.i,r)}/${LIMITS[r]}</b></div>`).join('')}
       </div>
+      <div class="leagueSituationExtra"><span><b>${pressureLabel}</b> disponibili per posto</span><span class="leagueWeakRole">${x.missing>0?'SCOPERTO '+weak:'✓ ROSA COMPLETA'}</span></div>
     </div>`;
   }).join('');
 }
