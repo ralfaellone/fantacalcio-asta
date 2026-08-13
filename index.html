@@ -5562,7 +5562,7 @@ body.league-situation-open nav{display:none!important}
 
 
 
-/* V70.8.21 — Esito rapido Asta Live. Solo flusso UI, D.S. invariato. */
+/* V70.8.21b — Portieri avversari registrabili anche con blocco P attivo sulla mia rosa. D.S. invariato. */
 .astaQuickOutcome{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
 .astaQuickOutcome button{min-height:44px;border-radius:12px;font-size:11px;font-weight:950}
 .astaQuickMine{background:linear-gradient(180deg,#0e6b45,#08462f);border:1px solid rgba(57,217,138,.55);color:#eafff5;box-shadow:0 8px 20px rgba(57,217,138,.10)}
@@ -5678,7 +5678,7 @@ body.league-situation-open nav{display:none!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.21</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.8.21b</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -8577,10 +8577,8 @@ function renderAstaLiveSuggestions(){
 }
 function selectAstaLivePlayer(index){
   const chosen=PLAYER_ARCHIVE[index];
-  if(chosen && chosen.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(chosen,state.me)){
-    alert(`Blocco portieri ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`);
-    return;
-  }
+  // V70.8.21b: il blocco portieri è una strategia della MIA rosa,
+  // non deve impedire di aprire un portiere che può essere acquistato da un avversario.
   if(chosen && !marketRoleAllowed(chosen.role)){
     alert(`Asta iniziale: blocco ${initialBlockLabel()}. Puoi chiamare ${allowedInitialRoleText()}.`);
     return;
@@ -14204,10 +14202,8 @@ function searchPlayers(){
 function selectArchivePlayer(index){
   const p=PLAYER_ARCHIVE[index];
   if(!p || alreadyBoughtPlayer(p.name)) return;
-  if(p.role==='P' && keeperBlockLocked(state.me) && !keeperAllowedPlayer(p,state.me)){
-    alert(`Blocco portieri ${keeperBlockTeam(state.me)}: P2 e P3 devono essere della stessa squadra del P1.`);
-    return;
-  }
+  // V70.8.21b: selezione sempre consentita; il vincolo P1→P2/P3
+  // viene verificato solo se l'acquirente finale è la mia squadra.
   selectedArchivePlayer=p;
   document.getElementById('pname').value=p.name;
   const priceInput=document.getElementById('pprice');
@@ -14397,8 +14393,8 @@ function saveBuy(){
   const hint=document.getElementById('buyHint');
 
   if(!name||!price||price<1){hint.textContent='Inserisci nome e prezzo.';hint.className='hint danger';updateBuyPreview();return}
-  if(role==='P' && keeperBlockLocked(buyer)){
-    const locked=keeperBlockTeam(buyer);
+  if(role==='P' && buyer===state.me && keeperBlockLocked(state.me)){
+    const locked=keeperBlockTeam(state.me);
     const pcheck=PLAYER_ARCHIVE.find(p=>normalizePlayerText(p.name)===normalizePlayerText(name));
     if(pcheck && String(pcheck.team||'').trim()!==locked){
       hint.textContent=`Blocco portieri ${locked}: P2 e P3 devono essere della stessa squadra del P1.`;
