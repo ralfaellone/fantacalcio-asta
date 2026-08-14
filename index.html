@@ -6713,6 +6713,327 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   }
 }
 
+
+/* V70.9.3 — Situazione Lega Premium. SOLO UI: calcoli e D.S. invariati. */
+#leagueSituationModal{
+  background:
+    radial-gradient(circle at 50% -12%,rgba(46,102,164,.13),transparent 32%),
+    var(--bg)!important;
+}
+#leagueSituationModal .leagueSituationShell{
+  max-width:790px!important;
+  padding-bottom:34px!important;
+}
+#leagueSituationModal .leagueSituationHeader{
+  margin:0 -2px 10px!important;
+  padding:8px 2px 11px!important;
+  background:rgba(6,16,28,.94)!important;
+  backdrop-filter:blur(22px)!important;
+  border-bottom:1px solid rgba(143,166,193,.10)!important;
+}
+#leagueSituationModal .leagueSituationBack{
+  min-height:38px!important;
+  padding:8px 11px!important;
+  border-radius:12px!important;
+  background:rgba(255,255,255,.035)!important;
+  border-color:rgba(143,166,193,.12)!important;
+  box-shadow:none!important;
+}
+#leagueSituationModal .leagueSituationTitle{
+  font-size:23px!important;
+  letter-spacing:-.75px!important;
+  line-height:1!important;
+}
+#leagueSituationModal .leagueSituationSub{
+  margin-top:4px!important;
+  max-width:520px!important;
+  font-size:9px!important;
+  line-height:1.3!important;
+  color:#7c91aa!important;
+}
+
+/* KPI iniziali */
+#leagueSituationModal .leagueSituationSummary{
+  gap:6px!important;
+  margin:2px 0 10px!important;
+}
+#leagueSituationModal .leagueSituationKpi{
+  min-height:65px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  padding:8px 5px!important;
+  border-radius:13px!important;
+  background:linear-gradient(145deg,rgba(17,35,57,.88),rgba(9,23,39,.92))!important;
+  border:1px solid rgba(143,166,193,.10)!important;
+  box-shadow:none!important;
+}
+#leagueSituationModal .leagueSituationKpi span{
+  font-size:7px!important;
+  letter-spacing:.10em!important;
+  color:#758ba4!important;
+}
+#leagueSituationModal .leagueSituationKpi b{
+  margin-top:4px!important;
+  font-size:20px!important;
+  letter-spacing:-.5px!important;
+}
+
+/* Avversario più pericoloso */
+#leagueSituationModal .leagueThreatHero{
+  position:relative!important;
+  overflow:hidden!important;
+  margin:0 0 10px!important;
+  padding:12px 13px!important;
+  border-radius:16px!important;
+  background:
+    radial-gradient(circle at 100% 0,rgba(255,108,108,.11),transparent 34%),
+    linear-gradient(145deg,rgba(42,24,34,.78),rgba(9,23,39,.96))!important;
+  border:1px solid rgba(255,112,112,.18)!important;
+  box-shadow:0 10px 24px rgba(0,0,0,.13)!important;
+}
+#leagueSituationModal .leagueThreatHero:before{
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  background:linear-gradient(180deg,#ff7b7b,#f4c430);
+}
+#leagueSituationModal .leagueThreatHeroLabel{
+  font-size:7px!important;
+  letter-spacing:.13em!important;
+  color:#ffaaaa!important;
+}
+#leagueSituationModal .leagueThreatHeroName{
+  margin-top:3px!important;
+  font-size:18px!important;
+  letter-spacing:-.3px!important;
+}
+#leagueSituationModal .leagueThreatHeroMeta{
+  margin-top:5px!important;
+  font-size:9px!important;
+  line-height:1.35!important;
+  color:#899db4!important;
+}
+
+/* Lista squadre */
+#leagueSituationModal .leagueSituationList{
+  gap:7px!important;
+}
+#leagueSituationModal .leagueSituationRow{
+  position:relative!important;
+  overflow:hidden!important;
+  padding:10px 11px!important;
+  border-radius:14px!important;
+  background:linear-gradient(145deg,rgba(14,29,48,.90),rgba(9,22,37,.92))!important;
+  border:1px solid rgba(143,166,193,.095)!important;
+  box-shadow:none!important;
+}
+#leagueSituationModal .leagueSituationRow:active{
+  transform:scale(.992)!important;
+}
+#leagueSituationModal .leagueSituationRow.highRisk{
+  background:
+    linear-gradient(145deg,rgba(50,28,34,.38),rgba(9,22,37,.94))!important;
+  border-color:rgba(255,112,112,.17)!important;
+}
+#leagueSituationModal .leagueSituationRow.mediumRisk{
+  border-color:rgba(244,196,48,.13)!important;
+}
+#leagueSituationModal .leagueSituationRow.mine{
+  outline:none!important;
+  background:
+    radial-gradient(circle at 100% 0,rgba(73,158,255,.09),transparent 34%),
+    linear-gradient(145deg,rgba(16,37,62,.94),rgba(8,23,40,.96))!important;
+  border-color:rgba(91,169,255,.22)!important;
+}
+#leagueSituationModal .leagueSituationRow.mine:before{
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  background:#5ca9ff;
+}
+
+/* Posizione/classifica */
+#leagueSituationModal .leagueSituationName{
+  display:flex!important;
+  align-items:center!important;
+  min-width:0!important;
+  font-size:14px!important;
+  letter-spacing:-.15px!important;
+}
+#leagueSituationModal .leagueSituationRank{
+  flex:0 0 auto!important;
+  width:27px!important;
+  height:27px!important;
+  margin-right:7px!important;
+  border-radius:9px!important;
+  background:rgba(255,255,255,.035)!important;
+  border:1px solid rgba(143,166,193,.12)!important;
+  color:#b6c4d4!important;
+  font-size:9px!important;
+  box-shadow:none!important;
+}
+#leagueSituationModal .leagueSituationRow:not(.mine):nth-of-type(2) .leagueSituationRank{
+  color:#2a2100!important;
+  background:linear-gradient(180deg,#f8d94f,#d7ad17)!important;
+  border-color:rgba(255,220,82,.55)!important;
+}
+#leagueSituationModal .leagueSituationRow:not(.mine):nth-of-type(3) .leagueSituationRank{
+  color:#1c2630!important;
+  background:linear-gradient(180deg,#dbe5ee,#a8b7c6)!important;
+  border-color:rgba(222,233,242,.45)!important;
+}
+#leagueSituationModal .leagueSituationRow:not(.mine):nth-of-type(4) .leagueSituationRank{
+  color:#2d1b0c!important;
+  background:linear-gradient(180deg,#d99b62,#a76b39)!important;
+  border-color:rgba(225,160,99,.45)!important;
+}
+#leagueSituationModal .leagueSituationMeta{
+  margin-top:3px!important;
+  font-size:9px!important;
+  color:#758aa2!important;
+}
+
+/* Crediti: molto leggibili */
+#leagueSituationModal .leagueSituationBudget{
+  min-width:66px!important;
+  padding:5px 7px!important;
+  border-radius:11px!important;
+  text-align:center!important;
+  font-size:20px!important;
+  line-height:1!important;
+  background:rgba(244,196,48,.045)!important;
+  border:1px solid rgba(244,196,48,.10)!important;
+  color:#f2d260!important;
+}
+#leagueSituationModal .leagueSituationBudget small{
+  margin-top:3px!important;
+  font-size:6px!important;
+  letter-spacing:.09em!important;
+  color:#85794f!important;
+  text-transform:uppercase!important;
+}
+
+/* P/D/C/A */
+#leagueSituationModal .leagueSituationRoles{
+  gap:4px!important;
+  margin-top:7px!important;
+}
+#leagueSituationModal .leagueSituationRole{
+  min-height:35px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  padding:5px 3px!important;
+  border-radius:9px!important;
+  background:rgba(255,255,255,.022)!important;
+  border:1px solid rgba(143,166,193,.07)!important;
+  font-size:7px!important;
+  color:#71869e!important;
+}
+#leagueSituationModal .leagueSituationRole b{
+  margin-top:2px!important;
+  font-size:11px!important;
+}
+
+/* Riga pressione + reparto scoperto */
+#leagueSituationModal .leagueSituationExtra{
+  margin-top:6px!important;
+  padding-top:6px!important;
+  border-top-color:rgba(143,166,193,.07)!important;
+  font-size:8px!important;
+  color:#7489a1!important;
+}
+#leagueSituationModal .leagueSituationExtra b{
+  color:#dce7f2!important;
+}
+#leagueSituationModal .leagueWeakRole{
+  padding:4px 6px!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.025)!important;
+  border:1px solid rgba(143,166,193,.08)!important;
+  font-size:7px!important;
+  font-weight:950!important;
+  letter-spacing:.04em!important;
+}
+
+/* Badge pericolo */
+#leagueSituationModal .leagueDangerBadge{
+  padding:4px 7px!important;
+  border-radius:999px!important;
+  font-size:7px!important;
+  letter-spacing:.06em!important;
+  font-weight:950!important;
+  box-shadow:none!important;
+}
+#leagueSituationModal .leagueDangerBadge.high{
+  color:#ff9b9b!important;
+  background:rgba(255,107,107,.07)!important;
+  border-color:rgba(255,107,107,.20)!important;
+}
+#leagueSituationModal .leagueDangerBadge.medium{
+  color:#f1d36b!important;
+  background:rgba(244,196,48,.055)!important;
+  border-color:rgba(244,196,48,.16)!important;
+}
+#leagueSituationModal .leagueDangerBadge.low{
+  color:#7edbad!important;
+  background:rgba(57,217,138,.05)!important;
+  border-color:rgba(57,217,138,.15)!important;
+}
+
+/* Piccola barra visiva di potere di spesa, ottenuta graficamente dai box esistenti */
+#leagueSituationModal .leagueSituationRow .leagueSituationBudget:after{
+  content:"";
+  display:block;
+  height:2px;
+  margin:5px 1px 0;
+  border-radius:999px;
+  background:linear-gradient(90deg,#f4c430,rgba(244,196,48,.12));
+  opacity:.8;
+}
+
+@media(max-width:420px){
+  #leagueSituationModal .leagueSituationShell{
+    padding-left:11px!important;
+    padding-right:11px!important;
+  }
+  #leagueSituationModal .leagueSituationHeader{
+    padding-top:7px!important;
+  }
+  #leagueSituationModal .leagueSituationTitle{
+    font-size:21px!important;
+  }
+  #leagueSituationModal .leagueSituationSub{
+    font-size:8px!important;
+  }
+  #leagueSituationModal .leagueSituationKpi{
+    min-height:59px!important;
+  }
+  #leagueSituationModal .leagueSituationKpi b{
+    font-size:18px!important;
+  }
+  #leagueSituationModal .leagueThreatHero{
+    padding:11px 12px!important;
+  }
+  #leagueSituationModal .leagueSituationRow{
+    padding:9px 10px!important;
+  }
+  #leagueSituationModal .leagueSituationName{
+    font-size:13px!important;
+  }
+  #leagueSituationModal .leagueSituationRank{
+    width:25px!important;
+    height:25px!important;
+  }
+  #leagueSituationModal .leagueSituationBudget{
+    min-width:61px!important;
+    font-size:18px!important;
+  }
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -6723,7 +7044,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
