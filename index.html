@@ -7312,7 +7312,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.6b</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.6c</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -10082,7 +10082,7 @@ function renderDashboardControl(){
   }
 
   setTimeout(()=>{
-    if(token!==DASH_RENDER_TOKEN || activePageId()!=='home')return;
+    if(activePageId()!=='home')return;
     try{
       renderDashboardControlRaw();
     }catch(err){
@@ -10134,6 +10134,64 @@ function renderDashboardControl(){
     const m=document.getElementById('dashboardNextMove');
     if(m)m.dataset.ready='1';
   },20);
+
+  // V70.9.6c: sicurezza iPhone/PWA.
+  // Se per qualsiasi motivo il rendering differito non sostituisce il loader,
+  // prova comunque a costruire la Prossima Mossa senza dipendere dal render-token.
+  setTimeout(()=>{
+    const m=document.getElementById('dashboardNextMove');
+    if(!m || activePageId()!=='home')return;
+    if(!m.textContent.includes('Aggiorno il consiglio AI'))return;
+    try{
+      const total=LIMITS.P+LIMITS.D+LIMITS.C+LIMITS.A;
+      if(roster(state.me).length>=total){
+        m.innerHTML='<div class="empty"><b>✅ Rosa completata</b><br>Asta completata: non ci sono altri acquisti da pianificare.</div>';
+        return;
+      }
+      let candidates=[];
+      for(let index=0;index<PLAYER_ARCHIVE.length;index++){
+        try{
+          const x=buyNowCandidate(index);
+          if(x)candidates.push(x);
+        }catch(e){}
+      }
+      candidates.sort((a,b)=>
+        Number(b?.score||0)-Number(a?.score||0) ||
+        Number(b?.fit||0)-Number(a?.fit||0) ||
+        Number(b?.ai?.score||0)-Number(a?.ai?.score||0)
+      );
+      const x=candidates[0];
+      if(!x){
+        m.innerHTML='<div class="empty">Nessun consiglio disponibile in questo momento.</div>';
+        return;
+      }
+      m.innerHTML=`
+        <div class="dashMove dashAiHero">
+          <div style="margin-bottom:6px"><span class="ai2Chip">AI ASTA 2.0 · ${activeFormationPlan().name}</span></div>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+            <div>
+              <div class="dashMoveName">${esc(x.p.name)}</div>
+              <div class="playerMetaLine">${x.p.role} · ${esc(x.p.team)} · QI ${x.p.qi} · FVM ${x.p.fvm}</div>
+            </div>
+            <span class="tag good">${x.score}/99</span>
+          </div>
+          <div class="dashMoveWhy">${buyNowReason(x)}</div>
+          <div class="dashMoveMetrics">
+            <div class="dashMoveMetric"><span>IDEALE</span><b>${x.px.ideal}</b></div>
+            <div class="dashMoveMetric"><span>RANGE</span><b>${x.px.low}-${x.px.high}</b></div>
+            <div class="dashMoveMetric"><span>NON OLTRE</span><b>${x.px.maxRec}</b></div>
+          </div>
+          <div class="dashMoveActions">
+            <button class="secondary" onclick="openAIForPlayer(${x.index})">🤖 ANALIZZA</button>
+            <button class="primary" style="position:static" onclick="buyFromListone(${x.index})">ASTA</button>
+          </div>
+        </div>`;
+      m.dataset.ready='1';
+    }catch(err){
+      console.error('Fallback Prossima Mossa AI',err);
+      m.innerHTML='<div class="empty">Consiglio AI non disponibile. Riapri la Dashboard.</div>';
+    }
+  },250);
 }
 
 let ASTA_LIVE_PLAYER=-1;
