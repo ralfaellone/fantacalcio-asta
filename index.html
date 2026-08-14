@@ -7199,6 +7199,67 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   padding-bottom:10px !important;
 }
 
+
+/* V70.9.5 — Giocatori Premium. SOLO UI: D.S. e logiche invariati. */
+#players .listoneToolbar{position:sticky!important;top:0!important;z-index:12!important;margin:0 -2px 8px!important;padding:6px 2px 9px!important;background:rgba(6,16,28,.95)!important;backdrop-filter:blur(20px)!important;border-bottom:1px solid rgba(143,166,193,.08)!important}
+#players .listoneSearch{min-height:46px!important;padding:12px 13px!important;border-radius:15px!important;background:linear-gradient(145deg,rgba(11,27,45,.94),rgba(7,20,34,.96))!important;border:1px solid rgba(143,166,193,.12)!important;box-shadow:none!important;font-size:13px!important}
+#players .listoneSearch::placeholder{color:#6f849b!important}
+#players .listoneFilters{gap:5px!important;padding:8px 0 2px!important}
+#players .filterBtn{padding:7px 10px!important;min-height:32px!important;border-radius:999px!important;font-size:9px!important;letter-spacing:.02em!important;background:rgba(255,255,255,.025)!important;border:1px solid rgba(143,166,193,.10)!important;color:#879ab0!important}
+#players .filterBtn.active{background:linear-gradient(180deg,#f7d34d,#e7ba20)!important;color:#171305!important;border-color:rgba(244,196,48,.55)!important;box-shadow:0 7px 18px rgba(244,196,48,.10)!important}
+#players .listoneCount{margin:7px 2px 0!important;font-size:8px!important;color:#70859c!important}
+#players #playerList{gap:6px!important}
+#players .playerCard{position:relative!important;overflow:hidden!important;min-height:62px!important;padding:10px 11px!important;border-radius:14px!important;background:linear-gradient(145deg,rgba(14,29,48,.90),rgba(8,21,36,.94))!important;border:1px solid rgba(143,166,193,.085)!important;box-shadow:none!important}
+#players .playerCard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:rgba(143,166,193,.18)}
+#players .playerCard:not(.taken):before{background:rgba(57,217,138,.50)}
+#players .playerCard.taken{opacity:.72!important;background:linear-gradient(145deg,rgba(24,25,32,.82),rgba(12,18,27,.90))!important}
+#players .playerCard.taken:before{background:rgba(255,107,107,.42)}
+#players .playerCardInner{gap:9px!important}
+#players .playerName{font-size:14px!important;line-height:1.08!important;letter-spacing:-.22px!important}
+#players .playerInfo{margin-top:4px!important;font-size:8px!important;line-height:1.3!important;color:#74899f!important}
+#players .playerRight{min-width:58px!important}
+#players .playerFvm{font-size:18px!important;line-height:1!important;color:#f0d060!important}
+#players .statusAvailable,#players .statusTaken{margin-top:4px!important;font-size:7px!important;letter-spacing:.06em!important}
+#players .statusAvailable{color:#6de1a8!important}
+#players .statusTaken{color:#ff9292!important}
+#players .favBtn{width:35px!important;height:35px!important;border-radius:11px!important;background:rgba(255,255,255,.025)!important;border-color:rgba(143,166,193,.10)!important;font-size:18px!important}
+#players .favBtn.on{color:#f6d44f!important;background:rgba(244,196,48,.055)!important;border-color:rgba(244,196,48,.18)!important;box-shadow:none!important}
+#playerDetailModal .playerDetailHeader{background:rgba(6,16,28,.96)!important;border-bottom-color:rgba(143,166,193,.09)!important}
+#playerDetailModal .playerDetailBack{border-radius:12px!important;background:rgba(255,255,255,.03)!important;border-color:rgba(143,166,193,.11)!important}
+#playerDetailModal .playerDetailTitle{font-size:16px!important}
+#playerDetailModal .playerDetailHero{padding:12px!important;border-radius:17px!important;background:radial-gradient(circle at 100% 0,rgba(244,196,48,.055),transparent 32%),linear-gradient(145deg,rgba(17,35,57,.94),rgba(8,22,37,.97))!important;border-color:rgba(244,196,48,.12)!important;box-shadow:none!important}
+#playerDetailModal .playerDetailName{font-size:23px!important;letter-spacing:-.55px!important}
+#playerDetailModal .playerDetailSub{font-size:9px!important;color:#788da5!important}
+#playerDetailModal .playerDetailGrid{gap:5px!important;margin-top:9px!important}
+#playerDetailModal .playerDetailMetric{padding:7px 4px!important;border-radius:11px!important;background:rgba(255,255,255,.025)!important;border-color:rgba(143,166,193,.075)!important}
+#playerDetailModal .playerDetailMetric span{font-size:7px!important}
+#playerDetailModal .playerDetailMetric b{font-size:16px!important}
+#playerDetailModal .playerDecisionStatus{margin-top:7px!important;gap:5px!important}
+#playerDetailModal .playerDecisionBadge{padding:5px 7px!important;font-size:8px!important;border-radius:999px!important}
+#playerDetailModal .playerDetailQuickActions{gap:5px!important}
+#playerDetailModal .playerDetailQuickActions button{padding:8px 4px!important;border-radius:10px!important;font-size:8px!important;background:rgba(255,255,255,.025)!important;border-color:rgba(143,166,193,.085)!important}
+#playerDetailModal .playerDecisionGrid{gap:5px!important;margin-top:6px!important}
+#playerDetailModal .playerDecisionBox{padding:8px!important;border-radius:11px!important;background:rgba(255,255,255,.022)!important;border-color:rgba(143,166,193,.075)!important}
+#playerDetailModal .playerDecisionBox span{font-size:7px!important}
+#playerDetailModal .playerDecisionBox b{font-size:15px!important}
+#playerDetailModal .playerDecisionBox small{font-size:8px!important}
+#playerDetailModal .playerDecisionVerdict{padding:9px 10px!important;border-radius:12px!important;font-size:10px!important;background:rgba(255,255,255,.022)!important;border-color:rgba(143,166,193,.075)!important}
+#playerDetailModal .playerDetailStats{gap:4px!important}
+#playerDetailModal .playerDetailStat{padding:6px 3px!important;border-radius:10px!important;background:rgba(255,255,255,.022)!important;border-color:rgba(143,166,193,.07)!important}
+#playerDetailModal .playerDetailStat span{font-size:7px!important}
+#playerDetailModal .playerDetailStat b{font-size:14px!important}
+#playerDetailModal .playerAltMiniList{gap:5px!important}
+#playerDetailModal .playerAltMini{padding:8px!important;border-radius:11px!important;background:rgba(255,255,255,.022)!important;border-color:rgba(143,166,193,.075)!important}
+#playerDetailModal .playerAltMiniName{font-size:11px!important}
+#playerDetailModal .playerAltMiniMeta{font-size:8px!important}
+#playerDetailModal .playerAltMiniPrice{font-size:8px!important}
+#playerDetailModal .playerAltMiniPrice b{font-size:14px!important}
+#playerDetailModal .playerDetailFooter{background:rgba(6,16,28,.97)!important;border-top-color:rgba(143,166,193,.09)!important}
+#playerDetailModal .playerDetailActions{gap:6px!important}
+#playerDetailModal .playerDetailActions button{min-height:42px!important;border-radius:12px!important;padding:9px 7px!important;font-size:10px!important}
+@media(min-width:760px){#players{max-width:1000px;margin:0 auto}#players #playerList{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}#players .playerCard{min-height:68px!important}}
+@media(max-width:420px){#players .listoneToolbar{padding-top:5px!important}#players .listoneSearch{min-height:44px!important;font-size:12px!important}#players .filterBtn{padding:7px 9px!important;font-size:8px!important}#players .playerCard{min-height:58px!important;padding:9px 10px!important}#players .playerName{font-size:13px!important}#players .playerFvm{font-size:17px!important}#playerDetailModal .playerDetailName{font-size:21px!important}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -7209,7 +7270,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.4b</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.5</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
