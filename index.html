@@ -5372,7 +5372,6 @@ nav button .ico{font-size:19px!important}
 .defenseLive689 small{display:block;margin-top:2px;font-size:5.5px;color:#86a89a}
 
 
-
 /* V70.8.17 — Home: Priorità asta adesso. Solo lettura dati già calcolati, nessuna modifica al D.S. */
 .auctionNowCard{margin:0;padding:14px;border-radius:20px;background:linear-gradient(145deg,rgba(20,36,58,.96),rgba(8,19,33,.96));border:1px solid rgba(244,196,48,.18);box-shadow:0 12px 32px rgba(0,0,0,.16)}
 .auctionNowTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
@@ -5436,8 +5435,6 @@ nav button .ico{font-size:19px!important}
 .leagueSituationRole b{display:block;color:var(--text);font-size:12px;margin-top:1px}
 body.league-situation-open{overflow:hidden!important;height:100dvh!important}
 body.league-situation-open nav{display:none!important}
-
-
 
 
 /* V70.8.13b — Situazione lega avanzata: solo analisi visiva, nessun impatto sul D.S. */
@@ -5539,7 +5536,6 @@ body.league-situation-open nav{display:none!important}
 }
 
 
-
 /* V70.8.13b — Asta Live più leggibile: solo UI, nessuna modifica alle formule D.S. */
 .astaDecision{padding-bottom:8px}
 .astaDecisionHead{padding-bottom:8px;border-bottom:1px solid rgba(142,164,189,.12)}
@@ -5576,7 +5572,6 @@ body.league-situation-open nav{display:none!important}
   .astaLiveSmartBar{margin-top:7px}.astaLiveDecisionBadge{margin-top:8px!important;padding:9px 10px!important}
   .astaVerdict{padding:9px 10px!important}
 }
-
 
 
 /* V70.8.23 — Portieri avversari registrabili anche con blocco P attivo sulla mia rosa. D.S. invariato. */
@@ -7692,6 +7687,168 @@ nav{z-index:20!important}
   }
 }
 
+
+/* V70.9.9 — Stabilizzazione UI.
+   Solo consolidamento grafico: nessuna formula, prezzo o logica D.S. modificata. */
+
+/* Safe-area/header coerenti */
+:root{
+  --ui-safe-top:env(safe-area-inset-top);
+  --ui-safe-bottom:env(safe-area-inset-bottom);
+}
+body{
+  overflow-x:hidden;
+}
+.top,
+.listoneToolbar,
+.leagueSituationHeader,
+.participantSticky,
+.settingsHeader,
+.playerDetailHeader,
+.simHeader{
+  transform:translateZ(0);
+}
+
+/* Evita che elementi sticky/fixed si sovrappongano in modo imprevedibile */
+.listoneToolbar{z-index:12!important}
+nav{z-index:20!important}
+#participantModal{z-index:150!important}
+#settingsModal{z-index:160!important}
+#simModal{z-index:170!important}
+#leagueSituationModal{z-index:180!important}
+#playerDetailModal{z-index:200!important}
+#aiModal{z-index:220!important}
+
+/* Modali: un solo comportamento di scroll */
+.participantSheet,
+.settingsBody,
+.playerDetailBody,
+.simBody,
+.leagueSituationShell{
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+/* Pulsanti: dimensione minima coerente */
+button{
+  touch-action:manipulation;
+}
+.primary,
+.secondary,
+.archiveBtn,
+.filterBtn,
+.buyRoleBtn,
+.advisorRoleBtn,
+.nextMoveRoleBtn{
+  -webkit-appearance:none;
+}
+
+/* Card e bordi uniformati */
+.card,
+.item,
+.playerCard,
+.managerCard,
+.rosterAdvRole,
+.rosterPlanBox,
+.leagueSituationRow,
+.advisorCard,
+.strategyCard,
+.nextMoveCard,
+.auditCard,
+.playerDecisionBox,
+.playerAltMini{
+  border-color:rgba(143,166,193,.09);
+}
+
+/* Nessuna ombra pesante nelle liste lunghe */
+.item,
+.playerCard,
+.managerCard,
+.leagueSituationRow,
+.playerAltMini,
+.advisorCard,
+.strategyCard,
+.nextMoveCard,
+.auditCard{
+  box-shadow:none!important;
+}
+
+/* Stabilità layout numeri */
+.price,
+.playerFvm,
+.astaPriceInput,
+.leagueSituationBudget,
+.rosterAdvCard b,
+.rosterAdvRoleSpend{
+  font-variant-numeric:tabular-nums;
+}
+
+/* Footer e barre inferiori sempre sopra al contenuto ma sotto ai modali */
+.playerDetailFooter,
+.settingsFooter{
+  isolation:isolate;
+}
+
+/* Input iPhone: evita zoom involontario e mantiene leggibilità */
+@media(max-width:600px){
+  input,
+  select,
+  textarea{
+    font-size:16px;
+  }
+
+  .listoneSearch,
+  .field input,
+  .field select,
+  .astaPriceInput{
+    font-size:16px!important;
+  }
+
+  .astaPriceInput{
+    font-size:40px!important;
+  }
+
+  .top,
+  .listoneToolbar,
+  .leagueSituationHeader,
+  .participantSticky,
+  .settingsHeader,
+  .playerDetailHeader,
+  .simHeader{
+    backface-visibility:hidden;
+  }
+
+  .page{
+    min-width:0;
+  }
+
+  .row,
+  .grid2,
+  .rolebar,
+  .detailStats,
+  .detailRoles,
+  .playerValueGrid,
+  .buySummary,
+  .buySummary3,
+  .liveGrid,
+  .aiGrid,
+  .advisorRoleBar,
+  .strategyGrid,
+  .simSummary,
+  .simRoles{
+    min-width:0;
+  }
+
+  .item .name,
+  .playerName,
+  .quickName,
+  .nextMoveName,
+  .leagueSituationName,
+  .playerAltMiniName{
+    min-width:0;
+  }
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -7702,7 +7859,7 @@ nav{z-index:20!important}
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.8</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -7934,14 +8091,6 @@ nav{z-index:20!important}
 <button onclick="tab('players',this)"><span class="ico">👥</span>Rose</button>
 <button onclick="tab('more',this)"><span class="ico">•••</span>Altro</button>
 </nav>
-
-
-
-
-
-
-
-
 
 
 <div id="leagueSituationModal" aria-hidden="true">
@@ -8908,7 +9057,6 @@ function goToParticipants(){
 }
 
 
-
 function goToHistory(){
   const btn=[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Altro'));
   if(btn)tab('more',btn);
@@ -9094,7 +9242,6 @@ function renderStrategy40(){
       </div>
     </div>`;
 }
-
 
 
 function acquiredStrongProfile(purchase){
@@ -9514,7 +9661,6 @@ function strongRosterVerdict(g){
 
   return text;
 }
-
 
 
 function purchasePlanDelta(buyerIndex=state.me){
@@ -10450,7 +10596,6 @@ function renderDashboardControlRaw(){
       </div>`).join(''):`<div class="empty">Nessun acquisto registrato.</div>`;
   }
 }
-
 
 
 let DASH_RENDER_TOKEN=0;
@@ -12191,8 +12336,6 @@ function render(){
 }
 
 
-
-
 function goalKey(name){return normalizePlayerText(name)}
 function goalMeta(name){
   if(!state.favoriteMeta || typeof state.favoriteMeta!=='object')state.favoriteMeta={};
@@ -12390,14 +12533,6 @@ function renderListone(){
     </div>`;
   }).join('')+(totalRows>visibleRows.length?`<button class="secondary listoneLoadMore" onclick="loadMoreListone()">MOSTRA ALTRI ${Math.min(60,totalRows-visibleRows.length)} · ${totalRows-visibleRows.length} RIMASTI</button>`:''):'<div class="empty">Nessun giocatore trovato con questi filtri.</div>';
 }
-
-
-
-
-
-
-
-
 
 
 let AI_ROSTER_MODULE=localStorage.getItem('astaFantaFormationModule')||'';
@@ -14454,7 +14589,6 @@ function renderAdvisor(){
 const ROLE_BUDGET_SHARE={P:.06,D:.20,C:.29,A:.45};
 
 
-
 function firstIncompleteRole(){
   return ['P','D','C','A'].find(r=>roleCount(state.me,r)<LIMITS[r])||'';
 }
@@ -14578,7 +14712,6 @@ function renderNextMove(){
     </div>`;
   }).join('') : '<div class="empty">Nessun giocatore disponibile in questo reparto.</div>';
 }
-
 
 
 function defaultSimPlans(){return {A:[],B:[],C:[]}}
@@ -15091,7 +15224,6 @@ function globalAuctionLearningRaw(){
 }
 
 
-
 function globalAuctionLearning(){
   if(PERF_CACHE.globalMarket && PERF_CACHE.globalMarket.rev===PERF_REV){
     return PERF_CACHE.globalMarket.value;
@@ -15356,7 +15488,6 @@ function aiPlayerAnalysisBaseRaw(index,buyerIndex=state.me){
 
   return {p,buyerIndex,available,safe,roleSlots,totalSlots,scarcityPct,ideal,low,high,maxRec,score,reasons,verdict};
 }
-
 
 
 function aiPlayerAnalysisBase(index,buyerIndex=state.me){
@@ -15632,9 +15763,6 @@ function aiPlayerAnalysisRaw(index,buyerIndex=state.me){
     reasons
   };
 }
-
-
-
 
 
 /* V69.1 - BASE D'ASTA GLOBALE
@@ -16098,7 +16226,6 @@ function buyFromListone(index){
     }
   },0);
 }
-
 
 
 function quickRelease(purchaseId,managerIndex){
@@ -16881,7 +17008,6 @@ window.addEventListener('load',()=>{
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
 render();
 </script>
-
 
 
 <script>
