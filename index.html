@@ -7176,6 +7176,29 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   #roster .item .price{font-size:16px!important}
 }
 
+
+/* V70.9.4b — Fix SALVA Impostazioni partecipanti su iPhone.
+   Solo layout: nessuna logica o dato modificato. */
+#settingsModal .settingsFooter{
+  position:relative;
+  z-index:130;
+  padding:10px 14px calc(env(safe-area-inset-bottom) + 88px) !important;
+  background:rgba(6,16,28,.99) !important;
+  border-top:1px solid rgba(143,166,193,.14) !important;
+}
+#settingsModal .settingsFooter .primary{
+  position:static !important;
+  display:block !important;
+  width:100% !important;
+  min-height:50px !important;
+  margin:0 !important;
+  border-radius:14px !important;
+  box-shadow:0 8px 24px rgba(244,196,48,.12) !important;
+}
+#settingsModal .settingsBody{
+  padding-bottom:10px !important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -7186,7 +7209,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.4b</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
