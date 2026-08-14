@@ -7312,6 +7312,156 @@ body.ai-page-open #aiModal{
   z-index:2147483646 !important;
 }
 
+
+/* V70.9.7 — Navigazione Premium.
+   Solo UI/navigazione visiva: nessuna formula, prezzo o logica D.S. modificata. */
+
+/* Gerarchia modali chiara */
+#participantModal,
+#settingsModal,
+#playerDetailModal,
+#simModal,
+#leagueSituationModal,
+#aiModal{
+  -webkit-overflow-scrolling:touch;
+}
+
+/* Header coerenti */
+.participantSticky,
+.settingsHeader,
+.playerDetailHeader,
+.simHeader,
+.leagueSituationHeader{
+  min-height:58px!important;
+  padding-top:calc(env(safe-area-inset-top) + 8px)!important;
+  padding-bottom:9px!important;
+  background:rgba(6,16,28,.96)!important;
+  backdrop-filter:blur(22px)!important;
+  -webkit-backdrop-filter:blur(22px)!important;
+  border-bottom:1px solid rgba(143,166,193,.10)!important;
+}
+
+/* Pulsanti indietro uniformi */
+.participantBack,
+.settingsBack,
+.playerDetailBack,
+.simBack,
+.leagueSituationBack{
+  min-width:76px!important;
+  min-height:38px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  padding:8px 11px!important;
+  border-radius:12px!important;
+  background:rgba(255,255,255,.035)!important;
+  border:1px solid rgba(143,166,193,.12)!important;
+  color:#f3f7fb!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  box-shadow:none!important;
+}
+
+/* Titoli header */
+.participantStickyTitle,
+.settingsStickyTitle,
+.playerDetailTitle,
+.simTitle,
+.leagueSituationTitle{
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  font-weight:950!important;
+  letter-spacing:-.25px!important;
+}
+
+/* Transizioni leggere */
+#participantModal,
+#settingsModal,
+#playerDetailModal,
+#simModal,
+#leagueSituationModal,
+#aiModal{
+  opacity:0;
+  visibility:hidden;
+  transition:opacity .16s ease, visibility .16s ease;
+}
+#participantModal.show,
+#settingsModal.show,
+#playerDetailModal.show,
+#simModal.show,
+#leagueSituationModal.show,
+#aiModal.show{
+  opacity:1;
+  visibility:visible;
+}
+
+/* Contenuti entrano con un movimento minimo */
+#participantModal.show .participantSheet,
+#settingsModal.show .settingsShell,
+#playerDetailModal.show .playerDetailShell,
+#simModal.show .simShell,
+#leagueSituationModal.show .leagueSituationShell,
+#aiModal.show .sheet{
+  animation:navPremiumIn .18s ease both;
+}
+@keyframes navPremiumIn{
+  from{opacity:.88;transform:translateY(5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Priorità di sovrapposizione */
+#participantModal{z-index:150!important}
+#settingsModal{z-index:160!important}
+#simModal{z-index:170!important}
+#leagueSituationModal{z-index:180!important}
+#playerDetailModal{z-index:200!important}
+#aiModal{z-index:220!important}
+
+/* AI deve sempre comparire sopra la scheda giocatore */
+body.ai-page-open #aiModal{
+  z-index:220!important;
+}
+
+/* Footer pagina giocatore sempre sopra la bottom nav */
+.playerDetailFooter{
+  position:relative!important;
+  z-index:3!important;
+  background:rgba(6,16,28,.98)!important;
+  border-top:1px solid rgba(143,166,193,.10)!important;
+}
+
+/* La bottom nav resta sotto ai modali */
+nav{z-index:20!important}
+
+/* iPhone */
+@media(max-width:420px){
+  .participantSticky,
+  .settingsHeader,
+  .playerDetailHeader,
+  .simHeader,
+  .leagueSituationHeader{
+    min-height:55px!important;
+  }
+  .participantBack,
+  .settingsBack,
+  .playerDetailBack,
+  .simBack,
+  .leagueSituationBack{
+    min-width:72px!important;
+    min-height:36px!important;
+    font-size:10px!important;
+  }
+  .participantStickyTitle,
+  .settingsStickyTitle,
+  .playerDetailTitle,
+  .simTitle{
+    font-size:15px!important;
+  }
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -7322,7 +7472,7 @@ body.ai-page-open #aiModal{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.6d</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.7</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
