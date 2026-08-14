@@ -7920,6 +7920,30 @@ button{
   .auctionRestoreBtn{min-height:44px!important}
 }
 
+
+/* V70.10.1 — Integrità e lista backup */
+.auctionSecurityActions{display:grid;grid-template-columns:1fr;gap:7px;margin-top:8px}
+.auctionSecurityHealth{margin-top:8px;padding:8px 9px;border-radius:11px;font-size:8px;line-height:1.35;color:#9eb0c4;background:rgba(255,255,255,.02);border:1px solid rgba(143,166,193,.08)}
+.auctionSecurityHealth.good{color:#7ee0ad;background:rgba(57,217,138,.05);border-color:rgba(57,217,138,.13)}
+.auctionSecurityHealth.warn{color:#f2d16a;background:rgba(244,196,48,.05);border-color:rgba(244,196,48,.14)}
+.auctionSecurityHealth.bad{color:#ff9d9d;background:rgba(255,107,107,.05);border-color:rgba(255,107,107,.14)}
+#backupListModal{z-index:230!important}
+.backupListSheet{max-height:88dvh;overflow:hidden}
+.backupListHeader{display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid rgba(143,166,193,.09)}
+.backupListBack{flex:0 0 auto;min-width:76px}
+.backupListTitle{font-size:17px;font-weight:950;letter-spacing:-.3px}
+.backupListSub{margin-top:2px;font-size:8px;color:#74899f}
+.backupListBody{padding-top:10px;overflow:auto;max-height:calc(88dvh - 76px);-webkit-overflow-scrolling:touch}
+.backupListItem{display:grid;grid-template-columns:1fr auto;gap:7px 10px;align-items:center;padding:10px;margin-bottom:7px;border-radius:13px;background:linear-gradient(145deg,rgba(12,29,47,.90),rgba(7,20,34,.95));border:1px solid rgba(143,166,193,.09)}
+.backupListItem.invalid{opacity:.72}
+.backupListWhen{font-size:12px;font-weight:900}
+.backupListMeta{margin-top:3px;font-size:8px;color:#74899f}
+.backupListState{padding:4px 7px;border-radius:999px;font-size:7px;font-weight:950}
+.backupListState.ok{color:#7ee0ad;background:rgba(57,217,138,.055);border:1px solid rgba(57,217,138,.14)}
+.backupListState.bad{color:#ff9d9d;background:rgba(255,107,107,.055);border:1px solid rgba(255,107,107,.14)}
+.backupListRestore{grid-column:1/-1;width:100%;min-height:40px}
+@media(max-width:420px){.backupListSheet{max-height:92dvh}.backupListBody{max-height:calc(92dvh - 76px)}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -7930,7 +7954,7 @@ button{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.10.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.10.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -8157,7 +8181,11 @@ button{
         <span class="auctionSecurityBadge">AUTO</span>
       </div>
       <div id="autoBackupCount" class="auctionSecurityInfo">Backup disponibili: 0</div>
-      <button id="restorePreviousBackupBtn" class="secondary auctionRestoreBtn" onclick="restorePreviousAuctionBackup()">↩️ RIPRISTINA BACKUP PRECEDENTE</button>
+      <div id="autoBackupHealth" class="auctionSecurityHealth">Controllo integrità backup…</div>
+      <div class="auctionSecurityActions">
+        <button class="secondary" onclick="showAuctionBackupList()">📋 VEDI BACKUP DISPONIBILI</button>
+        <button id="restorePreviousBackupBtn" class="secondary auctionRestoreBtn" onclick="restorePreviousAuctionBackup()">↩️ RIPRISTINA BACKUP PRECEDENTE</button>
+      </div>
       <div class="auctionSecurityHint">Conserva automaticamente gli ultimi 5 stati dell'asta. Esporta/Importa JSON restano disponibili qui sotto.</div>
     </div>
   </div>
@@ -8794,14 +8822,46 @@ function formatAuctionBackupTime(ts){
     });
   }catch(e){return '—'}
 }
+function isValidAuctionBackupState(s){
+  if(!s || typeof s!=='object')return false;
+  if(!Array.isArray(s.managers) || !Array.isArray(s.purchases))return false;
+  if(typeof s.me!=='number' || s.me<0 || s.me>=s.managers.length)return false;
+  for(const m of s.managers){
+    if(!m || typeof m!=='object' || typeof m.name!=='string')return false;
+  }
+  for(const p of s.purchases){
+    if(!p || typeof p!=='object' || typeof p.buyer!=='number' || !p.role || !p.name)return false;
+  }
+  return true;
+}
+function auctionBackupIntegrity(){
+  const list=auctionAutoBackups();
+  const valid=list.filter(x=>isValidAuctionBackupState(x.state));
+  return {total:list.length,valid:valid.length,invalid:list.length-valid.length,latestValid:valid[valid.length-1]||null};
+}
+function auctionStateLooksAnomalous(){
+  try{
+    const info=auctionBackupIntegrity();
+    if(!info.latestValid)return false;
+    const cp=Array.isArray(state?.purchases)?state.purchases.length:0;
+    const bp=Array.isArray(info.latestValid.state?.purchases)?info.latestValid.state.purchases.length:0;
+    const cm=Array.isArray(state?.managers)?state.managers.length:0;
+    const bm=Array.isArray(info.latestValid.state?.managers)?info.latestValid.state.managers.length:0;
+    return (cm===0 && bm>0) || (cp===0 && bp>=2) || (bp-cp>=3);
+  }catch(e){ return false; }
+}
 function renderAuctionSecurity(){
   const status=document.getElementById('autoBackupStatus');
   const count=document.getElementById('autoBackupCount');
+  const health=document.getElementById('autoBackupHealth');
   const btn=document.getElementById('restorePreviousBackupBtn');
-  if(!status && !count && !btn)return;
+  if(!status && !count && !health && !btn)return;
 
   const list=auctionAutoBackups();
   const last=list[list.length-1];
+  const integrity=auctionBackupIntegrity();
+  const anomalous=auctionStateLooksAnomalous();
+
   if(status){
     status.textContent=last
       ? `Ultimo backup: ${formatAuctionBackupTime(last.ts)} · ${last.purchases} acquisti`
@@ -8809,31 +8869,100 @@ function renderAuctionSecurity(){
   }
   if(count)count.textContent=`Backup disponibili: ${list.length}/${AUTO_BACKUP_LIMIT}`;
 
+  if(health){
+    if(!list.length){
+      health.className='auctionSecurityHealth';
+      health.textContent='ℹ️ Nessun backup automatico ancora creato.';
+    }else if(integrity.invalid>0){
+      health.className='auctionSecurityHealth bad';
+      health.textContent=`⚠️ ${integrity.invalid} backup non valido rilevato. Verrà ignorato nel ripristino.`;
+    }else if(anomalous){
+      health.className='auctionSecurityHealth warn';
+      health.textContent='⚠️ Lo stato attuale sembra più vuoto dell’ultimo backup valido.';
+    }else{
+      health.className='auctionSecurityHealth good';
+      health.textContent='✅ Integrità backup verificata.';
+    }
+  }
+
   if(btn){
     const currentSig=auctionStateSignature(state);
-    const lastIsCurrent=!!(last && auctionStateSignature(last.state)===currentSig);
-    const canRestore=lastIsCurrent?list.length>=2:list.length>=1;
+    const validList=list.filter(x=>isValidAuctionBackupState(x.state));
+    const lastValid=validList[validList.length-1];
+    const lastIsCurrent=!!(lastValid && auctionStateSignature(lastValid.state)===currentSig);
+    const canRestore=lastIsCurrent?validList.length>=2:validList.length>=1;
     btn.disabled=!canRestore;
     btn.textContent=canRestore?'↩️ RIPRISTINA BACKUP PRECEDENTE':'↩️ NESSUN BACKUP PRECEDENTE';
   }
 }
+function showAuctionBackupList(){
+  const modal=document.getElementById('backupListModal');
+  const body=document.getElementById('backupListBody');
+  if(!modal || !body)return;
+  const list=auctionAutoBackups();
+  body.innerHTML=!list.length
+    ? '<div class="empty">Nessun backup automatico disponibile.</div>'
+    : list.slice().reverse().map((x,i)=>{
+        const valid=isValidAuctionBackupState(x.state);
+        const originalIndex=list.length-1-i;
+        return `<div class="backupListItem ${valid?'':'invalid'}">
+          <div class="backupListMain">
+            <div class="backupListWhen">${formatAuctionBackupTime(x.ts)}</div>
+            <div class="backupListMeta">${Number(x.purchases)||0} acquisti · ${esc(x.label||'Backup automatico')}</div>
+          </div>
+          <div class="backupListState ${valid?'ok':'bad'}">${valid?'VALIDO':'NON VALIDO'}</div>
+          ${valid?`<button class="secondary backupListRestore" onclick="restoreSpecificAuctionBackup(${originalIndex})">RIPRISTINA</button>`:''}
+        </div>`;
+      }).join('');
+  modal.classList.add('show');
+}
+function closeAuctionBackupList(){
+  const modal=document.getElementById('backupListModal');
+  if(modal)modal.classList.remove('show');
+}
+function restoreSpecificAuctionBackup(index){
+  let list=auctionAutoBackups();
+  const x=list[index];
+  if(!x || !isValidAuctionBackupState(x.state)){
+    alert('Questo backup non è valido e non può essere ripristinato.');
+    return;
+  }
+  const when=formatAuctionBackupTime(x.ts);
+  const n=Number(x.purchases)||0;
+  if(!confirm(`Ripristinare questo backup?\n\n${when}\nAcquisti registrati: ${n}\n\nLo stato attuale verrà sostituito.`))return;
+  try{
+    state=JSON.parse(JSON.stringify(x.state));
+    persist();
+    list=list.slice(0,index+1);
+    localStorage.setItem(AUTO_BACKUP_KEY,JSON.stringify(list));
+    closeAuctionBackupList();
+    render();
+    renderAuctionSecurity();
+    alert('Backup ripristinato correttamente.');
+  }catch(e){
+    alert('Ripristino non riuscito.');
+  }
+}
 function restorePreviousAuctionBackup(){
   let list=auctionAutoBackups();
-  if(!list.length){
-    alert('Non ci sono ancora backup automatici da ripristinare.');
+  const validIndexes=list.map((x,i)=>isValidAuctionBackupState(x.state)?i:-1).filter(i=>i>=0);
+  if(!validIndexes.length){
+    alert('Non ci sono backup automatici validi da ripristinare.');
     return;
   }
 
   const currentSig=auctionStateSignature(state);
-  const last=list[list.length-1];
+  const lastValidIndex=validIndexes[validIndexes.length-1];
+  const last=list[lastValidIndex];
   const lastIsCurrent=auctionStateSignature(last.state)===currentSig;
-  const targetIndex=lastIsCurrent?list.length-2:list.length-1;
+  const targetValidPos=lastIsCurrent?validIndexes.length-2:validIndexes.length-1;
 
-  if(targetIndex<0){
+  if(targetValidPos<0){
     alert('Non c’è ancora uno stato precedente disponibile.');
     return;
   }
 
+  const targetIndex=validIndexes[targetValidPos];
   const target=list[targetIndex];
   const when=formatAuctionBackupTime(target.ts);
   const n=Number(target.purchases)||0;
@@ -17215,4 +17344,18 @@ render();
 <script>
 setTimeout(()=>document.body.classList.remove('splash-active'),1800);
 </script>
+
+<div id="backupListModal" class="modal">
+  <div class="sheet backupListSheet">
+    <div class="backupListHeader">
+      <button class="secondary backupListBack" onclick="closeAuctionBackupList()">← Indietro</button>
+      <div>
+        <div class="backupListTitle">Backup disponibili</div>
+        <div class="backupListSub">Ultimi stati salvati automaticamente</div>
+      </div>
+    </div>
+    <div id="backupListBody" class="backupListBody"></div>
+  </div>
+</div>
+
 </body></html>
