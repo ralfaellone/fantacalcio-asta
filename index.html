@@ -7302,6 +7302,16 @@ button:focus-visible,input:focus-visible,select:focus-visible{
 .nextMoveName{font-size:11px!important}.nextMoveMeta{font-size:7px!important}.nextMovePrice b{font-size:14px!important}
 @media(max-width:420px){.dsAiTabs button,.dsAiTab{font-size:7px!important;padding:7px 4px!important}.dsAiHero,.dsHero,.aiHero{padding:12px!important;border-radius:18px!important}.dsAiHeroTitle,.dsHeroTitle,.aiHeroTitle{font-size:18px!important}.dsAiKpi,.dsKpi,.aiKpi{min-height:54px!important}.dsAiKpi b,.dsKpi b,.aiKpi b{font-size:16px!important}.dsAiSection,.dsSection,.aiSection{padding:10px!important;border-radius:14px!important}.dsPlayerCard,.aiPlayerCard,.advisorCard{padding:9px!important}.advisorName{font-size:13px!important}}
 
+
+/* V70.9.6d — Fix apertura ANALISI AI dalla scheda giocatore.
+   AI Asta deve stare sopra la scheda giocatore; tornando indietro si rivede la scheda. */
+#aiModal{
+  z-index:2147483646 !important;
+}
+body.ai-page-open #aiModal{
+  z-index:2147483646 !important;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -7312,7 +7322,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.6c</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.6d</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
