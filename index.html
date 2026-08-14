@@ -6366,6 +6366,353 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   #astaLive .astaOutcomeActions button{min-height:44px!important}
 }
 
+
+/* V70.9.2 — Home Premium Refresh. SOLO UI: D.S. e logiche invariati. */
+#home.homeV7088{
+  padding-top:4px!important;
+}
+#home .homeV7088Topline{
+  margin:1px 1px 9px!important;
+  padding:0 2px!important;
+  font-size:6px!important;
+  letter-spacing:.16em!important;
+  color:#71869f!important;
+}
+#home .homeV7088Topline b{
+  padding:4px 7px!important;
+  border-radius:999px!important;
+  font-size:6px!important;
+  letter-spacing:.12em!important;
+  background:rgba(244,196,48,.055)!important;
+  border-color:rgba(244,196,48,.16)!important;
+  color:#f0ce5d!important;
+}
+
+/* Hero principale: più premium e con budget protagonista */
+#home .dashPremiumHero{
+  position:relative!important;
+  overflow:hidden!important;
+  border-radius:22px!important;
+  padding:17px 15px 15px!important;
+  margin-bottom:9px!important;
+  background:
+    radial-gradient(circle at 92% 8%,rgba(244,196,48,.12),transparent 25%),
+    radial-gradient(circle at 7% 95%,rgba(67,147,235,.10),transparent 30%),
+    linear-gradient(145deg,#132b48,#0a1b2f 64%,#081522)!important;
+  border:1px solid rgba(244,196,48,.22)!important;
+  box-shadow:
+    0 18px 42px rgba(0,0,0,.22),
+    inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+#home .dashPremiumHero:before{
+  content:"";
+  position:absolute;
+  width:150px;
+  height:150px;
+  border-radius:50%;
+  right:-76px;
+  top:-84px;
+  border:1px solid rgba(244,196,48,.10);
+  box-shadow:0 0 0 26px rgba(244,196,48,.018),0 0 0 52px rgba(244,196,48,.012);
+  pointer-events:none;
+}
+#home .dashPremiumHero:after{
+  width:135px!important;
+  height:135px!important;
+  right:-54px!important;
+  bottom:-76px!important;
+  background:rgba(57,217,138,.045)!important;
+}
+#home .dashPremiumEyebrow{
+  color:#8fa4bc!important;
+  font-size:7px!important;
+  letter-spacing:.16em!important;
+}
+#home .dashPremiumCredits{
+  font-size:46px!important;
+  line-height:.95!important;
+  letter-spacing:-2.7px!important;
+  margin-top:4px!important;
+  color:#fff8df!important;
+  text-shadow:0 8px 24px rgba(0,0,0,.28)!important;
+}
+#home .dashPremiumRoster b{
+  font-size:23px!important;
+  color:#eef5fd!important;
+}
+#home .dashPremiumProgress{
+  height:7px!important;
+  margin-top:12px!important;
+  background:rgba(0,0,0,.26)!important;
+  border:1px solid rgba(255,255,255,.025)!important;
+}
+#home .dashPremiumMetrics{
+  gap:6px!important;
+  margin-top:10px!important;
+}
+#home .dashPremiumMetric{
+  min-height:48px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  padding:7px 5px!important;
+  border-radius:12px!important;
+  background:rgba(2,12,23,.39)!important;
+  border:1px solid rgba(143,166,193,.08)!important;
+  backdrop-filter:blur(4px);
+}
+#home .dashPremiumMetric span{
+  font-size:6px!important;
+  color:#71879f!important;
+}
+#home .dashPremiumMetric b{
+  margin-top:3px!important;
+  font-size:15px!important;
+  color:#f6f9fd!important;
+}
+
+/* Reparti come mini-strip uniforme */
+#home .dashHeroRoles{
+  gap:5px!important;
+  margin-top:8px!important;
+}
+#home .dashHeroRoles span{
+  min-height:40px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  padding:6px 2px!important;
+  border-radius:10px!important;
+  border-color:rgba(143,166,193,.075)!important;
+  font-size:6px!important;
+}
+#home .dashHeroRoles b{
+  font-size:12px!important;
+  margin-top:2px!important;
+}
+
+/* Contesto mercato: barra informativa, non una card pesante */
+#home .marketContextBar{
+  margin:0 1px 10px!important;
+  padding:8px 10px!important;
+  min-height:40px!important;
+  border-radius:13px!important;
+  background:rgba(9,24,40,.62)!important;
+  border:1px solid rgba(143,166,193,.09)!important;
+  box-shadow:none!important;
+}
+
+/* Priorità asta adesso: focus centrale */
+#home #dashboardAuctionNow.auctionNowCard{
+  margin-top:0!important;
+  margin-bottom:10px!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 100% 0,rgba(244,196,48,.075),transparent 31%),
+    linear-gradient(145deg,rgba(17,34,55,.96),rgba(8,21,36,.98))!important;
+  border:1px solid rgba(244,196,48,.16)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.14)!important;
+}
+#home .auctionNowHead{
+  padding-bottom:8px!important;
+  margin-bottom:8px!important;
+  border-bottom:1px solid rgba(143,166,193,.09)!important;
+}
+#home .auctionNowTitle{
+  font-size:15px!important;
+  letter-spacing:-.2px!important;
+}
+#home .auctionNowBadge{
+  border-radius:999px!important;
+  padding:4px 7px!important;
+  font-size:7px!important;
+}
+#home .auctionNowGrid{
+  gap:5px!important;
+}
+#home .auctionNowMetric{
+  padding:7px 4px!important;
+  border-radius:10px!important;
+  background:rgba(255,255,255,.022)!important;
+  border-color:rgba(143,166,193,.08)!important;
+}
+#home .auctionNowMetric span{
+  font-size:6px!important;
+}
+#home .auctionNowMetric b{
+  font-size:14px!important;
+}
+#home .auctionNowTargets{
+  gap:5px!important;
+}
+#home .auctionNowTarget{
+  border-radius:11px!important;
+  padding:8px!important;
+  background:rgba(4,15,27,.52)!important;
+  border-color:rgba(143,166,193,.08)!important;
+}
+
+/* Prossima mossa AI: sezione più continua e meno box-in-box */
+#home .homeV7088Section{
+  margin-top:0!important;
+  padding:12px!important;
+  border-radius:17px!important;
+  background:linear-gradient(145deg,rgba(10,28,41,.86),rgba(7,20,34,.90))!important;
+  border:1px solid rgba(57,217,138,.13)!important;
+  box-shadow:none!important;
+}
+#home .homeV7088Ai{
+  background:
+    radial-gradient(circle at 100% 0,rgba(57,217,138,.055),transparent 30%),
+    linear-gradient(145deg,rgba(10,29,38,.90),rgba(7,20,34,.92))!important;
+}
+#home .homeV7088Heading{
+  margin-bottom:7px!important;
+}
+#home .homeV7088Heading h2{
+  font-size:14px!important;
+  letter-spacing:-.15px!important;
+}
+#home .homeV7088Kicker{
+  font-size:6px!important;
+  letter-spacing:.14em!important;
+  color:#70869e!important;
+}
+#home .homeV7088LiveDot{
+  padding:4px 6px!important;
+  font-size:6px!important;
+  background:rgba(57,217,138,.07)!important;
+  border-color:rgba(57,217,138,.18)!important;
+}
+#home #dashboardNextMove .dashMove,
+#home #dashboardNextMove .empty{
+  background:transparent!important;
+  border:0!important;
+  padding:4px 0 0!important;
+  border-radius:0!important;
+}
+
+/* Direttore Sportivo: call-to-action premium */
+#home .dsQuickBar{
+  min-height:70px!important;
+  margin:0!important;
+  padding:11px 12px!important;
+  border-radius:17px!important;
+  background:
+    radial-gradient(circle at 0 50%,rgba(244,196,48,.07),transparent 32%),
+    linear-gradient(135deg,rgba(17,36,59,.94),rgba(8,23,39,.97))!important;
+  border:1px solid rgba(244,196,48,.14)!important;
+  box-shadow:none!important;
+}
+#home .dsQuickIcon{
+  width:40px!important;
+  height:40px!important;
+  border-radius:12px!important;
+  font-size:21px!important;
+  background:rgba(244,196,48,.055)!important;
+  border-color:rgba(244,196,48,.12)!important;
+}
+#home .dsQuickText b{
+  font-size:13px!important;
+}
+#home .dsQuickText span{
+  font-size:8px!important;
+}
+#home .dsQuickGo{
+  font-size:7px!important;
+  padding:5px 7px!important;
+  border-radius:8px!important;
+}
+
+/* Ultimi acquisti: feed compatto */
+#home .homeV7088RecentSection{
+  margin-top:10px!important;
+  padding:11px!important;
+  border-color:rgba(143,166,193,.10)!important;
+  background:rgba(9,23,39,.72)!important;
+}
+#home .dashTextBtn{
+  font-size:6px!important;
+  padding:4px 7px!important;
+  background:rgba(77,163,255,.045)!important;
+  border-color:rgba(77,163,255,.13)!important;
+}
+#home .dashRecent{
+  position:relative!important;
+  margin:5px 0!important;
+  padding:9px 10px 9px 12px!important;
+  border-radius:11px!important;
+  background:rgba(255,255,255,.018)!important;
+  border:1px solid rgba(143,166,193,.075)!important;
+}
+#home .dashRecent:first-child{
+  border-color:rgba(244,196,48,.12)!important;
+  background:rgba(244,196,48,.025)!important;
+}
+#home .dashRecentName{
+  font-size:11px!important;
+}
+#home .dashRecentMeta{
+  font-size:7px!important;
+  color:#758aa3!important;
+}
+#home .dashRecent>b{
+  font-size:12px!important;
+  color:#f4d25d!important;
+}
+
+/* Side panel desktop */
+@media(min-width:760px){
+  #home.homeV7088b{
+    max-width:1180px!important;
+    padding-top:18px!important;
+  }
+  #home .homeV7088bGrid{
+    gap:18px!important;
+    grid-template-columns:minmax(0,1.72fr) minmax(300px,.78fr)!important;
+  }
+  #home .homeV7088bMain{
+    gap:10px!important;
+  }
+  #home .homeV7088bSide{
+    gap:10px!important;
+  }
+  #home .dashPremiumHero{
+    min-height:226px!important;
+    padding:20px 20px 17px!important;
+  }
+  #home .dashPremiumCredits{
+    font-size:56px!important;
+  }
+  #home .homeV7088Section{
+    padding:15px!important;
+  }
+}
+
+/* iPhone */
+@media(max-width:420px){
+  #home .dashPremiumHero{
+    padding:15px 13px 13px!important;
+    border-radius:20px!important;
+  }
+  #home .dashPremiumCredits{
+    font-size:42px!important;
+  }
+  #home .dashPremiumMetric{
+    min-height:44px!important;
+  }
+  #home #dashboardAuctionNow.auctionNowCard{
+    border-radius:16px!important;
+  }
+  #home .homeV7088Section{
+    padding:11px!important;
+    border-radius:15px!important;
+  }
+  #home .dsQuickBar{
+    min-height:64px!important;
+  }
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -6376,7 +6723,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.1</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.2</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
