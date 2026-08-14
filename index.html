@@ -7034,6 +7034,148 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   }
 }
 
+
+/* V70.9.4 — Rosa Premium. SOLO UI: D.S., prezzi e logiche invariati. */
+#roster .rosterAdvanced,
+#roster .rosterAdvWrap{margin-top:8px!important}
+
+#roster .rosterAdvSummary,
+#roster .rosterSummary{
+  border-radius:18px!important;
+  padding:13px!important;
+  background:
+    radial-gradient(circle at 100% 0,rgba(244,196,48,.075),transparent 32%),
+    linear-gradient(145deg,rgba(17,35,57,.94),rgba(8,22,37,.97))!important;
+  border:1px solid rgba(244,196,48,.14)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.14)!important
+}
+#roster .rosterAdvSummaryGrid,
+#roster .rosterSummaryGrid{gap:6px!important}
+#roster .rosterAdvCard{
+  min-height:60px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  padding:8px 5px!important;
+  border-radius:12px!important;
+  background:rgba(255,255,255,.025)!important;
+  border:1px solid rgba(143,166,193,.085)!important;
+  box-shadow:none!important
+}
+#roster .rosterAdvCard span{font-size:7px!important;letter-spacing:.09em!important;color:#748aa2!important}
+#roster .rosterAdvCard b{margin-top:4px!important;font-size:18px!important;letter-spacing:-.35px!important}
+#roster .rosterAdvCard:nth-child(1) b,
+#roster .rosterAdvCard:nth-child(2) b{color:#f2d260!important}
+
+#roster .rosterAdvRoles{gap:6px!important;margin-top:8px!important}
+#roster .rosterAdvRole{
+  position:relative!important;
+  overflow:hidden!important;
+  padding:9px 7px!important;
+  border-radius:13px!important;
+  background:linear-gradient(145deg,rgba(11,27,45,.86),rgba(7,20,34,.92))!important;
+  border:1px solid rgba(143,166,193,.085)!important
+}
+#roster .rosterAdvRole:before{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:0;
+  height:3px;
+  background:linear-gradient(90deg,#f4c430,rgba(244,196,48,.10));
+  opacity:.55
+}
+#roster .rosterAdvRoleHead{margin-bottom:6px!important}
+#roster .rosterAdvRoleName{font-size:12px!important;letter-spacing:-.1px!important}
+#roster .rosterAdvRoleCount{font-size:8px!important;color:#7d92aa!important}
+#roster .rosterAdvRoleSpend{font-size:17px!important;line-height:1!important}
+#roster .rosterAdvRoleMeta{margin-top:4px!important;font-size:8px!important;color:#72869e!important}
+#roster .rosterAdvRoleBar{height:5px!important;margin-top:7px!important;border-radius:999px!important;background:rgba(0,0,0,.24)!important}
+#roster .rosterAdvRoleBar i{border-radius:999px!important;background:linear-gradient(90deg,#f4c430,#f8d95a)!important}
+
+#roster .rosterPlanWrap,
+#roster .rosterPlan{margin-top:10px!important}
+#roster .rosterPlanBox{
+  padding:10px 11px!important;
+  border-radius:14px!important;
+  background:
+    radial-gradient(circle at 100% 0,rgba(57,217,138,.05),transparent 34%),
+    linear-gradient(145deg,rgba(9,28,37,.83),rgba(7,20,34,.91))!important;
+  border:1px solid rgba(57,217,138,.12)!important;
+  box-shadow:none!important
+}
+#roster .rosterPlanTitle{font-size:13px!important}
+#roster .rosterPlanMeta,
+#roster .rosterPlanHint{font-size:8px!important;color:#768ba3!important}
+#roster .rosterPlanGrid{gap:5px!important;margin-top:7px!important}
+#roster .rosterPlanMetric{padding:7px 4px!important;border-radius:10px!important;background:rgba(255,255,255,.023)!important;border:1px solid rgba(143,166,193,.075)!important}
+#roster .rosterPlanMetric span{font-size:6px!important;letter-spacing:.07em!important}
+#roster .rosterPlanMetric b{margin-top:3px!important;font-size:13px!important}
+
+#roster .detailSectionTitle,
+#roster .rosterRoleTitle{
+  margin:13px 2px 7px!important;
+  font-size:13px!important;
+  letter-spacing:-.12px!important;
+  color:#dfe8f3!important
+}
+#roster .detailSectionTitle span,
+#roster .rosterRoleTitle span{font-size:8px!important;color:#71859c!important}
+
+#roster .list{gap:6px!important}
+#roster .item{
+  position:relative!important;
+  overflow:hidden!important;
+  min-height:52px!important;
+  padding:9px 10px 9px 12px!important;
+  border-radius:13px!important;
+  background:linear-gradient(145deg,rgba(13,28,46,.86),rgba(8,21,36,.91))!important;
+  border:1px solid rgba(143,166,193,.085)!important;
+  box-shadow:none!important
+}
+#roster .item:before{
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:2px;
+  background:rgba(244,196,48,.45)
+}
+#roster .item .name{font-size:13px!important;letter-spacing:-.12px!important}
+#roster .item .meta{margin-top:3px!important;font-size:8px!important;color:#74899f!important}
+#roster .item .price{min-width:48px!important;font-size:17px!important;color:#f0d060!important}
+#roster .item .price small{display:block!important;margin-top:2px!important;font-size:6px!important;color:#786f50!important;letter-spacing:.06em!important}
+#roster .empty{padding:15px 10px!important;border-radius:13px!important;border-color:rgba(143,166,193,.10)!important;background:rgba(255,255,255,.015)!important;color:#71859c!important;font-size:9px!important}
+
+#roster .rosterAdvRole.missing,
+#roster .rosterAdvRole.priority{
+  border-color:rgba(244,196,48,.18)!important;
+  background:
+    radial-gradient(circle at 100% 0,rgba(244,196,48,.06),transparent 34%),
+    linear-gradient(145deg,rgba(18,31,45,.92),rgba(8,21,36,.94))!important
+}
+
+#roster .row{gap:6px!important}
+#roster .row .secondary,
+#roster .row .primary{min-height:42px!important;border-radius:12px!important;padding:10px 8px!important;font-size:10px!important}
+
+@media(min-width:760px){
+  #roster{max-width:1080px;margin:0 auto}
+  #roster .rosterAdvRoles{grid-template-columns:repeat(4,1fr)!important}
+  #roster .rosterAdvCard{min-height:68px!important}
+  #roster .item{min-height:58px!important;padding:11px 12px 11px 14px!important}
+}
+@media(max-width:420px){
+  #roster .rosterAdvSummary,
+  #roster .rosterSummary{padding:11px!important;border-radius:16px!important}
+  #roster .rosterAdvCard{min-height:56px!important}
+  #roster .rosterAdvCard b{font-size:16px!important}
+  #roster .rosterAdvRole{padding:8px 6px!important}
+  #roster .rosterAdvRoleSpend{font-size:16px!important}
+  #roster .rosterPlanBox{padding:9px 10px!important}
+  #roster .item{min-height:49px!important;padding:8px 9px 8px 11px!important}
+  #roster .item .name{font-size:12px!important}
+  #roster .item .price{font-size:16px!important}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -7044,7 +7186,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.3</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.4</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
