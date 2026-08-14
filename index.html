@@ -7849,6 +7849,77 @@ button{
   }
 }
 
+
+/* V70.10.0 — Sicurezza Asta */
+.auctionSecuritySection{
+  margin-top:14px!important;
+}
+.auctionSecurityCard{
+  padding:12px;
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 100% 0,rgba(57,217,138,.07),transparent 34%),
+    linear-gradient(145deg,rgba(12,29,47,.92),rgba(7,20,34,.96));
+  border:1px solid rgba(57,217,138,.14);
+}
+.auctionSecurityTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+.auctionSecurityTitle{
+  font-size:14px;
+  font-weight:950;
+  letter-spacing:-.2px;
+}
+.auctionSecurityMeta{
+  margin-top:4px;
+  color:#8195ad;
+  font-size:9px;
+  line-height:1.35;
+}
+.auctionSecurityBadge{
+  flex:0 0 auto;
+  padding:4px 8px;
+  border-radius:999px;
+  color:#78e0ad;
+  background:rgba(57,217,138,.065);
+  border:1px solid rgba(57,217,138,.16);
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+.auctionSecurityInfo{
+  margin-top:10px;
+  padding:8px 9px;
+  border-radius:11px;
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(143,166,193,.08);
+  color:#dce6f1;
+  font-size:9px;
+  font-weight:850;
+}
+.auctionRestoreBtn{
+  width:100%;
+  margin-top:8px;
+}
+.auctionRestoreBtn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+.auctionSecurityHint{
+  margin-top:8px;
+  color:#6f849b;
+  font-size:8px;
+  line-height:1.35;
+}
+@media(max-width:420px){
+  .auctionSecurityCard{padding:11px;border-radius:14px}
+  .auctionSecurityTitle{font-size:13px}
+  .auctionRestoreBtn{min-height:44px!important}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -7859,7 +7930,7 @@ button{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.9.9</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.10.0</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -8074,6 +8145,21 @@ button{
     </div>
     <input id="statsFile" type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" onchange="importStatsFile(event)">
     <div id="statsImportInfo" class="hint" style="margin-top:7px"></div>
+  </div>
+  <div class="section auctionSecuritySection">
+    <h2>🛡️ Sicurezza Asta</h2>
+    <div class="auctionSecurityCard">
+      <div class="auctionSecurityTop">
+        <div>
+          <div class="auctionSecurityTitle">Backup automatico</div>
+          <div id="autoBackupStatus" class="auctionSecurityMeta">Pronto · salvataggio dopo ogni acquisto</div>
+        </div>
+        <span class="auctionSecurityBadge">AUTO</span>
+      </div>
+      <div id="autoBackupCount" class="auctionSecurityInfo">Backup disponibili: 0</div>
+      <button id="restorePreviousBackupBtn" class="secondary auctionRestoreBtn" onclick="restorePreviousAuctionBackup()">↩️ RIPRISTINA BACKUP PRECEDENTE</button>
+      <div class="auctionSecurityHint">Conserva automaticamente gli ultimi 5 stati dell'asta. Esporta/Importa JSON restano disponibili qui sotto.</div>
+    </div>
   </div>
   <div class="section"><button class="secondary" onclick="exportData()">⬆️ Esporta backup</button></div>
   <div class="section"><button class="secondary" onclick="document.getElementById('importFile').click()">⬇️ Importa backup</button><input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(event)"></div>
@@ -8658,6 +8744,116 @@ function persist(){
     refreshAIRosterIfOpen();
     refreshTop5LiveIfOpen();
   });
+}
+
+/* V70.10.0 — Sicurezza Asta / backup automatici interni.
+   Non modifica le logiche D.S. e non sostituisce Esporta/Importa JSON. */
+const AUTO_BACKUP_KEY='astaFantaAutoBackupsV1';
+const AUTO_BACKUP_LIMIT=5;
+
+function auctionAutoBackups(){
+  try{
+    const list=JSON.parse(localStorage.getItem(AUTO_BACKUP_KEY)||'[]');
+    return Array.isArray(list)?list.filter(x=>x && x.state):[];
+  }catch(e){
+    return [];
+  }
+}
+function auctionStateSignature(s){
+  try{return JSON.stringify(s)}catch(e){return ''}
+}
+function saveAuctionAutoBackup(label='Backup automatico'){
+  try{
+    let list=auctionAutoBackups();
+    const sig=auctionStateSignature(state);
+    const last=list[list.length-1];
+    if(last && auctionStateSignature(last.state)===sig){
+      renderAuctionSecurity();
+      return;
+    }
+    list.push({
+      ts:Date.now(),
+      label:String(label||'Backup automatico'),
+      purchases:Array.isArray(state.purchases)?state.purchases.length:0,
+      state:JSON.parse(sig)
+    });
+    if(list.length>AUTO_BACKUP_LIMIT)list=list.slice(-AUTO_BACKUP_LIMIT);
+    localStorage.setItem(AUTO_BACKUP_KEY,JSON.stringify(list));
+    renderAuctionSecurity();
+  }catch(e){
+    console.warn('Backup automatico non disponibile',e);
+  }
+}
+function ensureAuctionBackupBaseline(){
+  saveAuctionAutoBackup('Stato precedente');
+}
+function formatAuctionBackupTime(ts){
+  try{
+    return new Date(ts).toLocaleString('it-IT',{
+      day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'
+    });
+  }catch(e){return '—'}
+}
+function renderAuctionSecurity(){
+  const status=document.getElementById('autoBackupStatus');
+  const count=document.getElementById('autoBackupCount');
+  const btn=document.getElementById('restorePreviousBackupBtn');
+  if(!status && !count && !btn)return;
+
+  const list=auctionAutoBackups();
+  const last=list[list.length-1];
+  if(status){
+    status.textContent=last
+      ? `Ultimo backup: ${formatAuctionBackupTime(last.ts)} · ${last.purchases} acquisti`
+      : 'Pronto · salvataggio dopo ogni acquisto';
+  }
+  if(count)count.textContent=`Backup disponibili: ${list.length}/${AUTO_BACKUP_LIMIT}`;
+
+  if(btn){
+    const currentSig=auctionStateSignature(state);
+    const lastIsCurrent=!!(last && auctionStateSignature(last.state)===currentSig);
+    const canRestore=lastIsCurrent?list.length>=2:list.length>=1;
+    btn.disabled=!canRestore;
+    btn.textContent=canRestore?'↩️ RIPRISTINA BACKUP PRECEDENTE':'↩️ NESSUN BACKUP PRECEDENTE';
+  }
+}
+function restorePreviousAuctionBackup(){
+  let list=auctionAutoBackups();
+  if(!list.length){
+    alert('Non ci sono ancora backup automatici da ripristinare.');
+    return;
+  }
+
+  const currentSig=auctionStateSignature(state);
+  const last=list[list.length-1];
+  const lastIsCurrent=auctionStateSignature(last.state)===currentSig;
+  const targetIndex=lastIsCurrent?list.length-2:list.length-1;
+
+  if(targetIndex<0){
+    alert('Non c’è ancora uno stato precedente disponibile.');
+    return;
+  }
+
+  const target=list[targetIndex];
+  const when=formatAuctionBackupTime(target.ts);
+  const n=Number(target.purchases)||0;
+  if(!confirm(`Ripristinare il backup precedente?\n\n${when}\nAcquisti registrati: ${n}\n\nLo stato attuale verrà sostituito.`))return;
+
+  try{
+    state=JSON.parse(JSON.stringify(target.state));
+    persist();
+
+    // Dopo un ripristino elimina soltanto gli snapshot "futuri":
+    // premendo di nuovo RIPRISTINA si può tornare ancora indietro.
+    list=list.slice(0,targetIndex+1);
+    localStorage.setItem(AUTO_BACKUP_KEY,JSON.stringify(list));
+
+    render();
+    renderAuctionSecurity();
+    alert('Backup precedente ripristinato correttamente.');
+  }catch(e){
+    alert('Ripristino non riuscito.');
+  }
 }
 
 function loadPlayerStats(){
@@ -12332,6 +12528,7 @@ function render(){
     renderMarketSeasonPanel();
     renderHistory();
     renderStatsImportInfo();
+    renderAuctionSecurity();
   }
 }
 
@@ -16747,6 +16944,10 @@ function saveBuy(){
   const lostFromAstaLive=(fromAstaLive && buyer!==state.me);
   const lostSourceIndex=lostFromAstaLive?ASTA_LIVE_OUTCOME_SOURCE:null;
 
+  // Prima modifica: conserva lo stato corrente come punto di ritorno.
+  // Se coincide già con l'ultimo backup non viene duplicato.
+  ensureAuctionBackupBaseline();
+
   state.purchases.push({
     id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     name,role,price,buyer,ts:Date.now(),
@@ -16766,6 +16967,7 @@ function saveBuy(){
     }
   });
   persist();
+  saveAuctionAutoBackup(`Dopo acquisto: ${name}`);
 
   // V70.8.18: se l'esito nasce da Asta Live, chiudi il form e torna subito alla console
   // con budget/slot/priorità aggiornati e un prossimo obiettivo operativo.
