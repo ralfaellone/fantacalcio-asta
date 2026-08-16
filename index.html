@@ -8169,7 +8169,7 @@ button{
   <p>La tua asta. La tua strategia.</p>
 </div>
 <div id="appScroll">
-<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.10.2b</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
+<header class="top"><div><div class="title">Asta Fanta</div><div class="sub">12 partecipanti · Classic · V70.10.2c</div></div><div style="display:flex;align-items:center"><div class="pill"><span id="leagueBudgetPill">600</span> crediti</div><button class="topSettings" onclick="openSettings()" aria-label="Impostazioni">⚙️</button></div></header>
 
 <section id="home" class="page active homeV7088 homeV7088b">
   <div class="homeV7088Topline"><span>⚡ CENTRO ASTA</span><b>DASHBOARD LIVE</b></div>
@@ -9428,7 +9428,33 @@ function importOfficialListone(event){
       let best=[];
 
       for(const sheetName of workbook.SheetNames){
-        const rows=XLSX.utils.sheet_to_json(workbook.Sheets[sheetName],{defval:''});
+        const sheet=workbook.Sheets[sheetName];
+
+        // V70.10.2c: il Listone Fantacalcio 2026/27 ha una riga titolo
+        // sopra alle intestazioni vere (Id, R, RM, Nome, Squadra, Qt.A, Qt.I, ...).
+        // Individuiamo automaticamente la riga intestazioni prima di importare.
+        const raw=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',blankrows:false});
+        let headerRow=-1;
+
+        for(let r=0;r<Math.min(raw.length,12);r++){
+          const normalized=(raw[r]||[]).map(v=>normalizeHeader(v));
+          const hasName=normalized.some(v=>v==='nome' || v.includes('nomecalciatore'));
+          const hasRole=normalized.some(v=>v==='r' || v==='ruolo' || v.includes('ruoloclassic'));
+          const hasTeam=normalized.some(v=>v==='squadra' || v==='team' || v==='sq');
+          if(hasName && hasRole && hasTeam){
+            headerRow=r;
+            break;
+          }
+        }
+
+        if(headerRow<0)continue;
+
+        const rows=XLSX.utils.sheet_to_json(sheet,{
+          range:headerRow,
+          defval:'',
+          blankrows:false
+        });
+
         try{
           const mapped=mapOfficialRows(rows);
           if(mapped.length>best.length)best=mapped;
